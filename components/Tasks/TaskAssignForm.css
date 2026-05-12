@@ -1,0 +1,114 @@
+/* Container */
+.react-datepicker {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  font-family: inherit;
+  padding: 8px;
+}
+
+/* Header */
+.react-datepicker__header {
+  background: #f8f9fb;
+  border-bottom: none;
+  padding: 10px 0;
+  border-radius: 12px 12px 0 0;
+}
+
+/* Year range title (2017 - 2028) */
+.react-datepicker__current-month {
+  font-weight: 600;
+  color: #111827;
+  font-size: 14px;
+}
+
+/* Navigation arrows */
+.react-datepicker__navigation {
+  top: 12px;
+}
+
+.react-datepicker__navigation-icon::before {
+  border-color: #6b7280;
+}
+
+.react-datepicker__navigation:hover
+  .react-datepicker__navigation-icon::before {
+  border-color: #111827;
+}
+
+/* Year grid */
+.react-datepicker__year-wrapper {
+  max-width: 260px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 10px;
+}
+
+/* Individual year cell */
+.react-datepicker__year-text {
+  padding: 8px 0;
+  border-radius: 12px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #374151;
+}
+
+/* Hover */
+.react-datepicker__year-text:hover {
+  background: #f3f4f6;
+}
+
+/* Selected year */
+.react-datepicker__year-text--selected {
+  background: #f59e0b !important; /* your yellow */
+  color: #fff;
+  font-weight: 600;
+  border-radius: 12px;
+}
+
+/* Keyboard focused */
+.react-datepicker__year-text--keyboard-selected {
+    background: #f59e0b !important; /* your yellow */
+  color: #fff;
+   font-weight: 600;
+  border-radius: 12px;
+}
+
+/* Remove triangle */
+.react-datepicker__triangle {
+  display: none;
+}
+
+
+/* Force border-radius for ALL year states */
+.react-datepicker__year-text,
+.react-datepicker__year-text:hover,
+.react-datepicker__year-text--selected,
+.react-datepicker__year-text--selected:hover,
+.react-datepicker__year-text--keyboard-selected,
+.react-datepicker__year-text--keyboard-selected:hover,
+.react-datepicker__year-text:focus,
+.react-datepicker__year-text:active {
+  border-radius: 12px !important;
+}
+
+/* Make month/year dropdown fill the calendar height */
+.react-datepicker__month-dropdown,
+.react-datepicker__year-dropdown {
+  height: 100% !important;
+  max-height: none !important;
+  border-radius: 12px;
+}
+
+/* Ensure dropdown content stretches */
+.react-datepicker__month-dropdown-container,
+.react-datepicker__year-dropdown-container {
+  height: 100%;
+}
+
+/* Remove awkward spacing at top */
+.react-datepicker__month-dropdown,
+.react-datepicker__year-dropdown {
+  padding-top: 8px;
+}

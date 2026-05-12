@@ -1,0 +1,112 @@
+/* .number-icon-css {
+  position: absolute !important;
+  right: 10px;
+  top: 8px;
+  cursor: pointer;
+} */
+
+.number-icon-css {
+  position: absolute !important;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+
+  /* 🔽 reduce icon size */
+  font-size: 14px;
+}
+
+.number-icon-css svg {
+  width: 18px;
+  height: 18px;
+}
+
+.unit-css {
+  min-height: 32px; /* 🔽 reduced */
+  padding: 0 10px;
+  font-size: 12px;
+
+  border-radius: 2px;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+
+.error-message,
+.error-messagelong {
+  position: absolute;
+  bottom: -18px !important;
+  font-size: 12px !important;
+  color: var(--bs-danger);
+  transition: bottom 0.2s;
+}
+
+.error-message-side {
+  position: absolute;
+  bottom: -18px;
+  left: 0px !important;
+  font-size: 12px !important;
+  color: var(--bs-danger);
+  transition: bottom 0.2s;
+}
+
+.border-red {
+  border: 1px solid var(--bs-danger);
+}
+
+.form-control {
+  min-height: 40px !important;
+}
+
+.form-control:disabled {
+  background-color: #F9F9F980;
+  opacity: 1;
+  color: #6c757d;
+  cursor: not-allowed;
+  border-color: #E4E7EC !important;
+}
+
+.file-name-display {
+  background-color: var(--bs-secondary-bg);
+  border: 1px solid #ACACAC;
+  border-radius: 8px;
+
+  height: 40px !important;
+  padding: 0 12px !important;
+
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+
+  font-size: 12px !important;
+  line-height: normal !important; /* 🔥 important */
+
+  color: #6c757d;
+}
+.file-name-display {
+  vertical-align: middle;
+}
+
+/* Fix native file input height */
+.form-control[type="file"] {
+  height: 40px !important;
+  padding: 0 !important;
+  line-height: 40px !important;
+  display: flex;
+  align-items: center;
+}
+
+/* 🔥 MOST IMPORTANT — normalize the button */
+.form-control[type="file"]::file-selector-button {
+  height: 100%;
+  padding: 0 12px;
+  margin: 0;
+  border: none;
+  border-right: 1px solid #ACACAC;
+  background: #f8f9fa;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+}

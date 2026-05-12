@@ -1,0 +1,130 @@
+.form-fieldset {
+  border: 1px solid #E4E7EC;
+  border-radius: 5px;
+  height: 55px;
+  padding: 8px 12px 12px 12px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.form-legend {
+  color: #64656D;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 0 8px;
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  background-color: white;
+  outline: none;
+  font-size: 14px;
+  font-weight: 500;
+  /* color: #64656D; */
+  border: none;
+  appearance: none;
+}
+
+.form-select {
+  cursor: pointer;
+  padding-right: 30px;
+}
+
+.form-input::placeholder {
+  color: #cbd5e1;
+}
+
+.dropdown-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #64656D;
+}
+
+
+
+.calculate-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.glass-button {
+  padding: 10px 32px;
+  position: relative;
+  background: rgba(255, 255, 255, 0.19);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all ease 0.3s;
+  color: white;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.glass-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  padding: 1px;
+  background: conic-gradient(
+    from 102.21deg at 52.75% -406.25%, 
+    /* rgba(249, 249, 249, 0.5) -32.95deg,  */
+    rgba(64, 64, 64, 0.5) 10.52deg, 
+    /* rgba(64, 64, 64, 0.35) 32.12deg,  */
+    rgba(255, 255, 255, 0.5) 60.28deg, 
+    rgba(255, 255, 255, 0.5) 107.79deg, 
+    /* rgba(64, 64, 64, 0.35) 187.59deg,  */
+    #F9F9F9 207.58deg, 
+    /* rgba(255, 255, 255, 0.5) 287.31deg,  */
+    rgba(249, 249, 249, 0.5) 327.05deg, 
+    rgba(64, 64, 64, 0.5) 370.52deg
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.card{
+     background: linear-gradient(-234deg, #00A944, #00431B);
+     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+button.log-btn {
+  background:
+    /* Soft bottom-right glow */
+    radial-gradient(
+      120% 150% at 85% 85%,
+      rgba(255,255,255,0.18) 0%,
+      rgba(255,255,255,0.08) 30%,
+      rgba(255,255,255,0.02) 55%,
+      transparent 75%
+    ),
+
+    /* Dark top shading */
+    radial-gradient(
+      100% 120% at 20% 10%,
+      rgba(255,255,255,0.06),
+      transparent 60%
+    ),
+
+    /* Base background */
+    linear-gradient(
+      to bottom,
+      #111111,
+      #1a1a1a,
+      #242424
+    ) !important;
+
+  border-radius: 8px !important;
+  border: none !important;
+  color: #F9F9F9 !important;
+
+ box-shadow:
+  8px 8px 20px rgba(0,0,0,0.25),
+  4px 4px 6px rgba(0,0,0,0.35);
+}
