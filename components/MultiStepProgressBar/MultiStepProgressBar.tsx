@@ -67,7 +67,7 @@ const MultiStepProgressBar = () => {
               {accomplished ? <IoCheckmarkSharp size={18} /> : null}
             </div>
 
-            <span className="step-label d-none d-lg-block">Business Unit</span>
+            <span className="step-label d-none d-lg-block">Organisation Setup</span>
             <span className="step-label d-lg-none">
               <MdOutlineBusinessCenter size={18} />
             </span>

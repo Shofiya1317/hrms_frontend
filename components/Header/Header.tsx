@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-nested-ternary */
 /* eslint-disable max-len */
-/* eslint-disable react/jsx-props-no-multi-spaces */
+/* eslint-disable react/jsx-props-no-multi-lines */
 /* eslint-disable no-unused-vars */
 /* eslint @typescript-eslint/no-unused-vars: off */
 /* eslint-disable react/destructuring-assignment */
@@ -14,10 +14,8 @@ import { IUser } from '@/lib/interface/IUser.interface';
 import { signOut, useSession } from 'next-auth/react';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
-import React, {
-  ReactNode, useEffect, useRef, useState,
-} from 'react';
+import { useRouter } from 'next/navigation';
+import React, { ReactNode, useEffect, useRef, useState } from 'react';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import toast from 'react-hot-toast';
@@ -26,17 +24,8 @@ import { HiOutlineChevronDown } from 'react-icons/hi';
 import { TiWarning } from 'react-icons/ti';
 import Avatar from '../Avatar/Avatar';
 import { Button } from '../Button/Button';
-import { useUser } from '../Context/userProvider';
 import { useModal } from '../Modal/Context';
 import 'bootstrap/dist/css/bootstrap.min.css';
-// export interface IMenuItem {
-//   label: string;
-//   path: string;
-//   icon?: ReactNode;
-//   isActive?: boolean;
-//   featureName?: string;
-//   menuItems?: { label: string; path: string; isActive: boolean }[];
-// }
 
 export interface IMenuItem {
   label: string;
@@ -44,7 +33,7 @@ export interface IMenuItem {
   icon?: ReactNode;
   isActive?: boolean;
   featureName?: string;
-  menuItems?: IMenuItem[]; // recursive type
+  menuItems?: IMenuItem[];
 }
 
 export interface IProfileItem {
@@ -57,293 +46,175 @@ export interface IProfileItem {
 
 export interface HeaderProps {
   user: IUser | undefined;
-  menuItems: IMenuItem[];
   profileMenu: IProfileItem[];
-  skuMenu?: IMenuItem[];
-  vendorMenu?: IMenuItem[];
-  pathname: string; // ✅ ADD THIS
+  pathname: string;
 }
 
-const getCurrentUrlActive = (item: IMenuItem, pathname: string): string => {
-  switch (item.label) {
-    case 'Cockpit':
-      return pathname?.startsWith('/home') ? 'active' : '';
-    case 'Tasks':
-      return pathname?.startsWith('/tasks') || pathname?.startsWith('/task_list') ? 'active' : '';
-    case 'Users':
-      return pathname?.startsWith('/users') ? 'active' : '';
-    case 'Questionnarie':
-      return pathname?.startsWith('/questionnaire_builder') ? 'active' : '';
-    case 'Emission Calculator':
-      return pathname?.startsWith('/emission_calculator') ? 'active' : '';
-    case 'SKU':
-      return pathname?.startsWith('/sku_management')
-        || pathname?.startsWith('/sku_analytics_dashboard')
+// ── Menu Definition ───────────────────────────────────────────────
+export const adminMenuItems: IMenuItem[] = [
+  {
+    label: 'Dashboard',
+    path: '/dashboard',
+  },
+  {
+    label: 'Attendance',
+    path: '',
+    menuItems: [
+      { label: 'Overview', path: '/attendance/dashboard' },
+      { label: 'Attendance Logs', path: '/attendance/logs' },
+      { label: 'Leave Management', path: '/attendance/leave' },
+      // { label: 'Bulk Upload', path: '/attendance/upload' },
+      { label: 'Attendance Policies', path: '/attendance/policies' },
+    ],
+  },
+  {
+    label: 'Employees',
+    path: '',
+    menuItems: [
+      { label: 'Registry', path: '/employees/registry' },
+      { label: 'ID Management', path: '/employees/id_management' },
+      { label: 'Documents', path: '/employees/documents' },
+    ],
+  },
+  {
+    label: 'Analytics',
+    path: '/analytics',
+  },
+  {
+    label: 'Users',
+    path: '/users',
+  },
+];
 
-        ? 'active'
-        : '';
-    case 'Vendor':
-      return pathname?.startsWith('/vendor_management')
-        || pathname?.startsWith('/vendor_analytics_dashboard')
-        || pathname?.startsWith('/vendor_comparison')
-        ? 'active'
-        : '';
-    default:
-      return '';
+// ── Active helpers ────────────────────────────────────────────────
+const isMenuItemActive = (item: IMenuItem, pathname: string): boolean => {
+  if (item.path && item.path !== '' && pathname.startsWith(item.path))
+    return true;
+  if (item.menuItems) {
+    return item.menuItems.some(
+      (sub) => sub.path && pathname.startsWith(sub.path)
+    );
   }
+  return false;
 };
 
-const getCurrentProfileUrlActive = (
-  item: IMenuItem,
-  pathname: string,
-): string => {
+const isProfileItemActive = (item: IMenuItem, pathname: string): boolean => {
   switch (item.label) {
     case 'Settings':
-      return pathname === '/settings/profile'
-        || pathname === '/settings/change_password'
-        || pathname === '/settings/company_profile'
-        || pathname === '/settings/business_unit'
-        ? 'active'
-        : '';
+      return [
+        '/settings/profile',
+        '/settings/change_password',
+        '/settings/company_profile',
+        '/settings/business_unit',
+      ].includes(pathname);
     case 'Users':
-      return pathname === '/users' || pathname === '/users/invite'
-        ? 'active'
-        : '';
+      return pathname === '/users' || pathname === '/users/invite';
     default:
-      return '';
+      return false;
   }
 };
 
-function InsightNavbarItem({
-  item,
+// ── Dropdown Menu ─────────────────────────────────────────────────
+function DropdownMenu({
+  items,
   router,
   pathname,
-  onItemClick,
+  onClose,
 }: {
-  item: IMenuItem;
+  items: IMenuItem[];
   router: AppRouterInstance;
   pathname: string;
-  onItemClick: () => void;
-}) {
-  return (
-    <div>
-      <li
-        aria-hidden
-        className={`sub_item flex justify-between items-center ${getCurrentUrlActive(item, pathname)}`}
-        style={{ cursor: 'pointer' }}
-        onClick={() => {
-          router.push(item?.path);
-          onItemClick();
-        }}
-      >
-        <p className="fs-14 fw-500 mb-0" style={{ letterSpacing: '1.1px' }}>
-          {item.label}
-        </p>
-        {item.icon}
-      </li>
-
-    </div>
-  );
-}
-
-function InsightsMenu({
-  skuMenu,
-  router,
-  pathname,
-  onItemClick,
-}: {
-  skuMenu: IMenuItem[];
-  router: AppRouterInstance;
-  pathname: string;
-  onItemClick: () => void;
+  onClose: () => void;
 }) {
   return (
     <ul className="user-dropdown-submenusection p-2 pb-3">
-      {skuMenu.map((item) => (
-        <InsightNavbarItem
-          item={item}
+      {items.map((item) => (
+        <li
           key={item.label}
-          router={router}
-          pathname={pathname}
-          onItemClick={onItemClick}
-        />
+          aria-hidden
+          className={`sub_item flex justify-between items-center ${
+            item.path && pathname.startsWith(item.path) ? 'active' : ''
+          }`}
+          style={{ cursor: 'pointer' }}
+          onClick={() => {
+            router.push(item.path);
+            onClose();
+          }}
+        >
+          <p className="fs-14 fw-500 mb-0" style={{ letterSpacing: '1.1px' }}>
+            {item.label}
+          </p>
+          {item.icon}
+        </li>
       ))}
     </ul>
   );
 }
 
-function DisclosureNavbarItem({
-  item,
-  router,
-  pathname,
-  onItemClick,
-}: {
-  item: IMenuItem;
-  router: AppRouterInstance;
-  pathname: string;
-  onItemClick: () => void;
-}) {
-  return (
-    <div>
-      <li
-        aria-hidden
-        className={`sub_item flex justify-between items-center ${getCurrentProfileUrlActive(item, pathname)}`}
-        onClick={() => {
-          router.push(item?.path);
-          onItemClick();
-        }}
-      >
-        <p className="fs-14 fw-500 mb-0" style={{ letterSpacing: '1.1px' }}>
-          {item.label}
-        </p>
-        {item.icon}
-      </li>
-    </div>
-  );
-}
-
-function DisclosureMenu({
-  disclosureMenu,
-  router,
-  pathname,
-  onItemClick,
-}: {
-  disclosureMenu: IMenuItem[];
-  router: AppRouterInstance;
-  pathname: string;
-  onItemClick: () => void;
-}) {
-  return (
-    <ul className="user-dropdown-submenusection p-2 pb-3">
-      {disclosureMenu.map((item: IMenuItem) => (
-        <DisclosureNavbarItem
-          item={item}
-          key={item.label}
-          router={router}
-          pathname={item.path || pathname}
-          onItemClick={onItemClick}
-        />
-      ))}
-    </ul>
-  );
-}
-
+// ── Single Navbar Item ────────────────────────────────────────────
 function NavbarItem({
   item,
   pathname,
-  skuMenu,
-  vendorMenu,
-  showSkuMenu,
-  setShowSkuMenu,
-  showVendorMenu,
-  setShowVendorMenu,
+  openMenu,
+  setOpenMenu,
 }: {
   item: IMenuItem;
   pathname: string;
-  skuMenu?: IMenuItem[];
-  vendorMenu?: IMenuItem[];
-  showSkuMenu: boolean;
-  setShowSkuMenu: React.Dispatch<React.SetStateAction<boolean>>;
-  showVendorMenu: boolean;
-  setShowVendorMenu: React.Dispatch<React.SetStateAction<boolean>>;
+  openMenu: string | null;
+  setOpenMenu: React.Dispatch<React.SetStateAction<string | null>>;
 }) {
   const router = useRouter();
+  const hasChildren = !!(item.menuItems && item.menuItems.length > 0);
+  const isOpen = openMenu === item.label;
+  const isActive = isMenuItemActive(item, pathname);
 
-  const handleNavigate = (e: React.MouseEvent) => {
+  const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
-    if (!item.path) return;
-
-    // prevent navigation for dropdown parents
-    if (item.label === 'SKU' || item.label === 'Vendor') return;
-
-    router.push(item.path);
-    setShowSkuMenu(false);
-    setShowVendorMenu(false);
+    if (hasChildren) {
+      setOpenMenu(isOpen ? null : item.label);
+    } else {
+      router.push(item.path);
+      setOpenMenu(null);
+    }
   };
 
   return (
     <Nav.Link as="span">
       <span
-        className={`menu_item_routes ${getCurrentUrlActive(item, pathname)}`}
+        className={`menu_item_routes ${isActive ? 'active' : ''}`}
         style={{ cursor: 'pointer' }}
-        onClick={handleNavigate}
+        onClick={handleClick}
       >
-        {item.label === 'SKU' && skuMenu ? (
-          <div className="flex items-center relative">
-            {/* Label */}
-            <span className="mr-2">{item.label}</span>
-
-            {/* Chevron */}
+        <div className="flex items-center relative">
+          <span className="mr-1">{item.label}</span>
+          {hasChildren && (
             <HiOutlineChevronDown
-              size={20}
+              size={16}
               color="var(--white)"
-              className={`cursor-pointer ${
-                skuMenu.some((menu) => (menu.path
-                  ? pathname.startsWith(menu.path)
-                  : menu.menuItems?.some((sub) => pathname.startsWith(sub.path))))
-                  ? 'active'
-                  : ''
-              }`}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowSkuMenu((prev) => !prev);
-                setShowVendorMenu(false);
+              style={{
+                transition: 'transform 0.2s',
+                transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
               }}
             />
-
-            {showSkuMenu && (
-              <div className="show-insights-menu">
-                <InsightsMenu
-                  skuMenu={skuMenu}
-                  router={router}
-                  pathname={pathname}
-                  onItemClick={() => setShowSkuMenu(false)}
-                />
-              </div>
-            )}
-          </div>
-        ) : item.label === 'Vendor' && vendorMenu ? (
-          <div className="flex items-center relative">
-            <span className="mr-2">{item.label}</span>
-
-            <HiOutlineChevronDown
-              size={20}
-              color="var(--white)"
-              className={`cursor-pointer ${
-                vendorMenu.some((menu) => pathname.startsWith(menu.path))
-                  ? 'active'
-                  : ''
-              }`}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowVendorMenu((prev) => !prev);
-                setShowSkuMenu(false);
-              }}
-            />
-
-            {showVendorMenu && (
-              <div className="show-insights-menu">
-                <DisclosureMenu
-                  disclosureMenu={vendorMenu}
-                  router={router}
-                  pathname={pathname}
-                  onItemClick={() => setShowVendorMenu(false)}
-                />
-              </div>
-            )}
-          </div>
-        ) : (
-          <span>{item.label}</span>
-        )}
+          )}
+          {hasChildren && isOpen && item.menuItems && (
+            <div className="show-insights-menu">
+              <DropdownMenu
+                items={item.menuItems}
+                router={router}
+                pathname={pathname}
+                onClose={() => setOpenMenu(null)}
+              />
+            </div>
+          )}
+        </div>
       </span>
     </Nav.Link>
   );
 }
 
+// ── Profile Menu Item ─────────────────────────────────────────────
 function ProfileNavbarItem({
   item,
   router,
@@ -367,7 +238,6 @@ function ProfileNavbarItem({
           <Button text="Cancel" onClick={hideModal} />
           <Button
             text="Confirm"
-            // isDisabled={actionType === 'Block' && !reason}
             onClick={() => {
               router.push(item?.path);
               signOut({ redirect: false });
@@ -379,29 +249,30 @@ function ProfileNavbarItem({
       </div>
     ),
   });
+
   return (
-    <div>
-      <li
-        aria-hidden
-        className={`sub_item flex justify-between items-center ${getCurrentProfileUrlActive(item, pathname)}`}
-        onClick={() => {
-          if (item.label === 'Logout') {
-            logoutModal();
-            // signOut({ redirect: false });
-          } else {
-            router.push(item?.path);
-          }
-        }}
-      >
-        <p className="fs-14 fw-500 mb-0" style={{ letterSpacing: '1.1px' }}>
-          {item.label}
-        </p>
-        {item.icon}
-      </li>
-    </div>
+    <li
+      aria-hidden
+      className={`sub_item flex justify-between items-center ${
+        isProfileItemActive(item, pathname) ? 'active' : ''
+      }`}
+      onClick={() => {
+        if (item.label === 'Logout') {
+          logoutModal();
+        } else {
+          router.push(item?.path);
+        }
+      }}
+    >
+      <p className="fs-14 fw-500 mb-0" style={{ letterSpacing: '1.1px' }}>
+        {item.label}
+      </p>
+      {item.icon}
+    </li>
   );
 }
 
+// ── Profile Dropdown ──────────────────────────────────────────────
 function Profile({
   profileMenu,
   router,
@@ -425,26 +296,40 @@ function Profile({
   );
 }
 
+// ── Main Header ───────────────────────────────────────────────────
 function Header(props: HeaderProps) {
-  const [isProfileActive, setProfileActive] = useState(true);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [showSkuMenu, setShowSkuMenu] = useState(false);
-  const [showVendorMenu, setShowVendorMenu] = useState(false);
-  const [isActive, setIsActive] = useState(false);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [mobileView, setMobileView] = useState<'menu' | 'profile'>('menu');
   const timeoutId = useRef<any>(null);
+  const navRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
   const { data: session } = useSession();
   const router = useRouter();
-  const INACTIVITYTIMEOUT = 30 * 60 * 1000;
-  const context = useUser();
+  const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
 
-  const notifySignout = () => toast.success('Signed Out', { duration: 3000 });
+  // Close dropdowns only when clicking OUTSIDE the nav/profile areas
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setOpenMenu(null);
+      }
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(e.target as Node)
+      ) {
+        setShowProfileMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleLogout = () => {
-    // ✅ clear persisted user data
     localStorage.removeItem('currentUser');
     localStorage.removeItem('currentRole');
-
-    notifySignout();
+    toast.success('Signed Out', { duration: 3000 });
     signOut({ redirect: false });
     router.push('/sign_in');
   };
@@ -453,17 +338,15 @@ function Header(props: HeaderProps) {
     const handleLogoutOnTimeout = () => handleLogout();
     const handleUserActivity = () => {
       clearTimeout(timeoutId.current);
-      timeoutId.current = setTimeout(handleLogoutOnTimeout, INACTIVITYTIMEOUT);
+      timeoutId.current = setTimeout(handleLogoutOnTimeout, INACTIVITY_TIMEOUT);
     };
     if (session) {
-      timeoutId.current = setTimeout(handleLogoutOnTimeout, INACTIVITYTIMEOUT);
-      document.addEventListener('click', handleUserActivity);
+      timeoutId.current = setTimeout(handleLogoutOnTimeout, INACTIVITY_TIMEOUT);
       document.addEventListener('mousemove', handleUserActivity);
       document.addEventListener('keydown', handleUserActivity);
     }
     return () => {
       clearTimeout(timeoutId.current);
-      document.removeEventListener('click', handleUserActivity);
       document.removeEventListener('mousemove', handleUserActivity);
       document.removeEventListener('keydown', handleUserActivity);
     };
@@ -473,35 +356,33 @@ function Header(props: HeaderProps) {
   return (
     <div className="sticky-top container-fluid p-0">
       <Navbar expand="lg" className="header_bg p-3">
-        <Navbar.Brand
-          href="/home"
-          className="p-0"
-        >
-          <div className="flex justify-between">
-            <div className="flex items-center font-semibold">
-              <Image src={rubicrDashboardLogo} alt="logo" />
-            </div>
+        {/* Logo */}
+        <Navbar.Brand href="/dashboard" className="p-0">
+          <div className="flex items-center font-semibold">
+            <Image src={rubicrDashboardLogo} alt="logo" />
           </div>
         </Navbar.Brand>
+
+        {/* Mobile hamburger */}
         <div className="lg:hidden md:block hamburger">
           <input type="checkbox" id="active" style={{ display: 'none' }} />
           <label
             aria-hidden
             htmlFor="active"
             className="menu-btn"
-            onClick={() => setIsActive(true)}
+            onClick={() => setIsMobileOpen(true)}
           >
             <span />
           </label>
-          {isActive && (
+          {isMobileOpen && (
             <label
               aria-hidden
               htmlFor="active"
               className="close"
-              onClick={() => setIsActive(false)}
+              onClick={() => setIsMobileOpen(false)}
             />
           )}
-          {isActive && (
+          {isMobileOpen && (
             <div className="wrapper">
               <div
                 className="flex justify-center"
@@ -510,21 +391,25 @@ function Header(props: HeaderProps) {
                 <div className="flex items-center">
                   <h5
                     aria-hidden
-                    className={`mx-3 font-semibold menu_item_routes cursor-pointer ${isProfileActive ? 'active' : ''}`}
-                    onClick={() => setProfileActive(true)}
+                    className={`mx-3 font-semibold menu_item_routes cursor-pointer ${
+                      mobileView === 'menu' ? 'active' : ''
+                    }`}
+                    onClick={() => setMobileView('menu')}
                   >
-                    Home
+                    Menu
                   </h5>
                   <h5
                     aria-hidden
-                    className={`mx-3 font-semibold menu_item_routes cursor-pointer ${!isProfileActive ? 'active' : ''}`}
-                    onClick={() => setProfileActive(false)}
+                    className={`mx-3 font-semibold menu_item_routes cursor-pointer ${
+                      mobileView === 'profile' ? 'active' : ''
+                    }`}
+                    onClick={() => setMobileView('profile')}
                   >
                     Profile
                   </h5>
                 </div>
               </div>
-              {isProfileActive ? (
+              {mobileView === 'menu' ? (
                 <ul
                   style={{
                     backgroundColor: 'var(--bgHeader)',
@@ -532,24 +417,21 @@ function Header(props: HeaderProps) {
                     padding: '20px',
                     margin: '0px',
                   }}
-                  data-testid="profile"
                 >
-                  {props?.menuItems?.map((item: IMenuItem) => (
+                  {adminMenuItems.map((item) => (
                     <li key={item.label} className="mb-3 list-unstyled">
                       <NavbarItem
                         item={item}
                         pathname={props.pathname}
-                        showSkuMenu={showSkuMenu}
-                        setShowSkuMenu={setShowSkuMenu}
-                        showVendorMenu={showVendorMenu}
-                        setShowVendorMenu={setShowVendorMenu}
+                        openMenu={openMenu}
+                        setOpenMenu={setOpenMenu}
                       />
                     </li>
                   ))}
                 </ul>
               ) : (
                 <Profile
-                  profileMenu={props?.profileMenu}
+                  profileMenu={props.profileMenu}
                   router={router}
                   pathname={props.pathname}
                 />
@@ -557,31 +439,31 @@ function Header(props: HeaderProps) {
             </div>
           )}
         </div>
-        <Navbar.Collapse role="button" id="navbarScroll">
-          <div className={`custom-nav-container ${isActive ? 'open' : ''}`}>
+
+        {/* Desktop nav */}
+        <Navbar.Collapse id="navbarScroll">
+          <div className="custom-nav-container">
             <div className="flex justify-between items-center flex-grow">
-              <Nav className="flex-grow flex justify-center gap-5">
-                {props?.menuItems.map((item: IMenuItem) => (
+              {/* Nav items — ref attached here for outside-click detection */}
+              <Nav className="flex-grow flex justify-center gap-5" ref={navRef}>
+                {adminMenuItems.map((item) => (
                   <NavbarItem
                     item={item}
-                    key={item?.label}
+                    key={item.label}
                     pathname={props.pathname}
-                    skuMenu={props?.skuMenu}
-                    vendorMenu={props?.vendorMenu}
-                    showSkuMenu={showSkuMenu}
-                    setShowSkuMenu={setShowSkuMenu}
-                    showVendorMenu={showVendorMenu}
-                    setShowVendorMenu={setShowVendorMenu}
+                    openMenu={openMenu}
+                    setOpenMenu={setOpenMenu}
                   />
                 ))}
               </Nav>
+
+              {/* Right side: bell + avatar */}
               <div className="flex items-center gap-3">
-                <div>
-                  <FaRegBell size={22} color="var(--white)" />
-                </div>
+                <FaRegBell size={22} color="var(--white)" />
                 <div
-                  className=" relative"
-                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="relative"
+                  ref={profileRef}
+                  onClick={() => setShowProfileMenu((prev) => !prev)}
                 >
                   <div
                     className="flex items-center gap-3"
@@ -595,15 +477,21 @@ function Header(props: HeaderProps) {
                       className="rounded-circle"
                       avator={props?.user?.avatar_url || ''}
                     />
-                    <div>
-                      <HiOutlineChevronDown size={22} color="var(--white)" />
-                    </div>
+                    <HiOutlineChevronDown
+                      size={22}
+                      color="var(--white)"
+                      style={{
+                        transition: 'transform 0.2s',
+                        transform: showProfileMenu
+                          ? 'rotate(180deg)'
+                          : 'rotate(0deg)',
+                      }}
+                    />
                   </div>
-
                   {showProfileMenu && (
                     <div className="show-profile-menu">
                       <Profile
-                        profileMenu={props?.profileMenu}
+                        profileMenu={props.profileMenu}
                         router={router}
                         pathname={props.pathname}
                       />

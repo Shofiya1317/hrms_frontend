@@ -315,66 +315,11 @@ export type ActionType =
   | 'Re-Assign'
   | null;
 
-export type IQuestionType =
-  | 'TEXT'
-  | 'MULTI_SELECT'
-  | 'SINGLE_SELECT'
-  | 'NUMBER'
-  | 'DATE'
-  | 'FILE'
-  | 'URL'
-  | 'MIXED_TYPE';
 
 export type IUserRole =
   | 'GUEST'
   | 'ADMIN'
-  | 'MANAGER'
-  | 'VENDOR';
-
-export type ITaskStatus =
-  | 'CREATED'
-  | 'IN_PROGRESS'
-  | 'SUBMITTED'
-  | 'REASSIGNED'
-  | 'REVIEWING'
-  | 'COMPLETED'
-  | 'REJECTED';
-
-export type IDataCubeStatus =
-  | 'CREATED'
-  | 'SETUP'
-  | 'DATA_COLLECTING'
-  | 'REPORT_GENERATED';
-
-export type QuestionWrapperProps = Readonly<{
-  label: string | ReactNode;
-  children: ReactNode;
-  isCustomRequired?: boolean;
-  toolTip: string | null;
-}>;
-
-export type TextFieldProps = Readonly<{
-  label?: string;
-  type?: string;
-  isValid: boolean;
-  autoFocus?: boolean;
-  placeholder?: string;
-  component?: ReactNode;
-  disabled?: boolean;
-  as?: string;
-  maxLength?: number;
-  rightIcon?: boolean;
-  icon?: React.ReactNode;
-  onBlur?: () => void;
-  onFocus?: () => void;
-  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onKeyPress?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
-  unit?: string;
-  value?: string;
-  isCustomRequired?: boolean;
-  className?: string;
-  error?: string;
-  // spellCheck?: boolean;
-}>;
+  | 'HR'
+  | 'EMPLOYEE';
 
 export const Roles = ['GUEST', 'MANAGER'];

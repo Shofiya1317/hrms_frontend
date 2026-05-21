@@ -20,7 +20,7 @@ export default function SkipButton({ apiKey, type }: SkipButtonProps) {
       // case 'business_unit':
       //   return '/company_profile/standard_regulations';
       case 'invite':
-        return '/home';
+        return '/dashboard';
       // case 'plan':
       //   return '/home';
       default:

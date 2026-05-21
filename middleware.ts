@@ -67,7 +67,7 @@ export default async function middleware(req: NextRequest) {
     if (
       unProtectedUrlMatches.test(url.pathname)
       && url.pathname !== '/company_profile/company_information'
-      && url.pathname !== '/home'
+      && url.pathname !== '/dashboard'
     ) {
       // return NextResponse.redirect(buildUrlWithQueryParams('/company_profile/company_information'));
       return NextResponse.redirect(buildUrlWithQueryParams('/sign_in'));

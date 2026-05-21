@@ -729,7 +729,7 @@ svg {
 .user-dropdown-submenusection {
   background-color: var(--bgHeader) !important;
   color: var(--white);
-  width: 230px;
+  min-width: 200px;
   border-bottom-right-radius: 12px;
   border-bottom-left-radius: 12px;
 }
@@ -970,13 +970,13 @@ svg {
 /* Company Profile */
 .company-profile-progress-header {
   position: sticky;
-  top: 80px;
+  top: 60px;
   z-index: 2;
   background-color: var(--bgColor);
 }
 .company-profile-header {
   position: sticky;
-  top: 218px;
+  top: 190px;
   z-index: 2;
   background-color: var(--bgColor);
 }

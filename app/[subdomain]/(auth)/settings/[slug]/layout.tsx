@@ -9,11 +9,8 @@ import { redirect } from 'next/navigation';
 import { ReactNode } from 'react';
 import { Col, Row } from 'react-bootstrap';
 import { FaRegUserCircle } from 'react-icons/fa';
-// import { FaUsersGear } from 'react-icons/fa6';
-// import { HiOutlineSquare3Stack3D } from 'react-icons/hi2';
 import { MdAddBusiness } from 'react-icons/md';
 import { RiBarChart2Line, RiLockPasswordLine } from 'react-icons/ri';
-// import { PiClock } from 'react-icons/pi';
 import { DataViewAlt } from '@carbon/icons-react';
 
 export default async function layout({
@@ -45,14 +42,11 @@ export default async function layout({
     return redirect('/sign_in');
   }
 
+  // Remove standard_regulations redirect - only keep company_information and invite_user
   if (session !== null) {
     switch (user?.account?.current_onboarding_stage) {
       case 1:
-        return redirect('/company_profile/standard_regulations');
-      case 2:
-        return redirect('/company_profile/invite_user');
-      // case 3:
-      //   return redirect('/company_profile/plans');
+        return redirect('/company_profile/invite_user'); // Changed from standard_regulations to invite_user
       case 0:
         return redirect('/company_profile/company_information');
       default:
@@ -71,11 +65,6 @@ export default async function layout({
       subText: 'Password details',
       settingIcon: <RiLockPasswordLine size={24} />,
     },
-    // {
-    //   text: 'Emissions Database',
-    //   subText: 'Setup Emission Factors',
-    //   settingIcon: <HiOutlineSquare3Stack3D size={24} />,
-    // },
   ];
 
   const additionalMenu = [
@@ -85,8 +74,8 @@ export default async function layout({
       settingIcon: <RiBarChart2Line size={24} />,
     },
     {
-      text: 'Business Unit',
-      subText: 'Business unit details',
+      text: 'Organisation Setup',
+      subText: 'Organisation setup details',
       settingIcon: <MdAddBusiness size={24} />,
     },
     {
@@ -95,39 +84,11 @@ export default async function layout({
       settingIcon: <DataViewAlt size={24} />,
     },
   ].filter((item) => {
-    if (user?.role === 'VENDOR') {
-      return item.text !== 'Company Profile' && item.text !== 'Business Unit';
+    if (user?.role === 'EMPLOYEE') {
+      return item.text !== 'Company Profile' && item.text !== 'Organisation Setup';
     }
     return true;
   });
-
-  // const additionalMenu = [
-  //   {
-  //     text: 'Company Profile',
-  //     subText: 'Company details',
-  //     settingIcon: <RiBarChart2Line size={24} />,
-  //   },
-  //   {
-  //     text: 'Business Unit',
-  //     subText: 'Business unit details',
-  //     settingIcon: <MdAddBusiness size={24} />,
-  //   },
-  //   {
-  //     text: 'Roles',
-  //     subText: 'Roles details',
-  //     settingIcon: <FaUsersGear size={24} />,
-  //   },
-  //   {
-  //     text: 'Activity Log',
-  //     subText: 'Daily Activity Record',
-  //     settingIcon: <PiClock size={24} />,
-  //   },
-  //   {
-  //     text: 'File Repository',
-  //     subText: 'Data logs',
-  //     settingIcon: <DataViewAlt size={24} />,
-  //   },
-  // ];
 
   const hasAccess = (feature: string) => access?.SETTINGS?.includes(feature);
 
@@ -138,7 +99,6 @@ export default async function layout({
       <Row className="settings-card-container m-0">
         <Col className="col-12 col-lg-3 border-end p-0 ">
           <div className=" p-4">
-            {/* <h4 className="fw-700 mb-0">Settings</h4> */}
             <span className="settings-subtitle">Choose a setting</span>
           </div>
           <ChangeAvatar

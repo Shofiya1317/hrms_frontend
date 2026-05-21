@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, Download, Upload, Mail, Phone, Building2, MapPin, Eye, Edit, Trash2, CheckCircle, XCircle, Clock } from 'lucide-react';
-import AddEmployeeModal, { CreatedEmployee } from './components/AddEmployeeModal';
+import AddEmployeeModal, { CreatedEmployee } from '../AddEmployeeModal';
 
 interface Employee {
   id: string;

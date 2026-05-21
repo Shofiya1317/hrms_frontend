@@ -70,7 +70,7 @@ export const handleUserInviteSubmit = async (
     toast.success('User Invited Successfully');
     if (!isDashboard) {
       // router.push('/company_profile/plans');
-      router.push('/home');
+      router.push('/dashboard');
     }
     router.refresh();
   } else {
@@ -111,7 +111,7 @@ export default function UserInviteForm({
   closeModal?: () => void;
 }>) {
   const pathname = usePathname();
-  const isDashboard = pathname.startsWith('/home');
+  const isDashboard = pathname.startsWith('/dashboard');
   const router = useRouter();
   const { isMobileOnly } = useDeviceDetection();
   const validationSchema = object({

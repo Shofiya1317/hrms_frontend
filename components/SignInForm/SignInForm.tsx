@@ -48,7 +48,7 @@ export const handleSignInSubmit = async (
   // Redirect VENDOR role to task list
   if (userRole === 'VENDOR') {
     toast.success('Signed In');
-    router.push('/home');
+    router.push('/dashboard');
     router.refresh();
     setSubmitting(false);
     return;
@@ -59,7 +59,7 @@ export const handleSignInSubmit = async (
     '/company_profile/business_unit',
     // '/company_profile/standard_regulations',
     '/company_profile/invite_user',
-    '/home',
+    '/dashboard',
   ];
 
   const adjustedStage = currentStage >= 3 ? 3 : currentStage;

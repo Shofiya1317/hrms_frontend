@@ -64,4 +64,10 @@ export interface IAccount {
   suspend_reason: string | null
   sectors: string[]
   business_unit: IBusinessUnit[]
+  // New fields added
+  industry: string | null  // Single industry selection
+  company_size: string | null  // Company size range
+  country: string | null  // Country selection
+  timezone: string | null  // Timezone selection
+  state_city: string | null  // State or city
 }

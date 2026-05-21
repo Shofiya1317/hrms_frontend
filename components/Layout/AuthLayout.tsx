@@ -4,7 +4,6 @@
 
 'use client';
 
-// import blueCube from '@/assests/cube login.gif';
 import LoginImage from '@/assests/LoginImage.png';
 import rubicrDashboardLogo from '@/assests/rubic-logo-white 2.png';
 import appLogoMobile from '@/assests/RubiCrLogo 2.png';
@@ -13,7 +12,7 @@ import { AuthService } from '@/lib/service';
 import { signOut } from 'next-auth/react';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { ReactNode, useEffect, useRef } from 'react';
+import { ReactNode, useRef } from 'react';
 import { Button } from '../Button/Button';
 import MultiStepProgressBar from '../MultiStepProgressBar/MultiStepProgressBar';
 import './AuthLayout.css';
@@ -28,13 +27,13 @@ export function AuthLayout({
 }>) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isMobile, isMobileOnly } = useDeviceDetection();
-
+  const { isMobile } = useDeviceDetection();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const isSignIn = ['/sign_in', '/forgot_password', '/reset_password'].some(
     (path) => pathname.startsWith(path),
   );
+
   const isSignUp = [
     '/sign_up',
     '/accept_invitation',
@@ -43,22 +42,16 @@ export function AuthLayout({
     '/privacy_policy',
     '/confirm_account',
   ].some((path) => pathname.startsWith(path));
+
   const isAuthorized = ['/company_profile'].some((path) => pathname.startsWith(path));
 
   const isLanding = [
-    '/settings',
-    '/home',
-    '/tasks',
+    '/dashboard',
+    '/employees',
+    '/attendance',
+    '/analytics',
     '/users',
-    // '/questionnaire_builder',
-    '/sku_management',
-    '/sku_analytics_dashboard',
-    '/vendor_management',
-    '/vendor_analytics_dashboard',
-    '/vendor_comparison',
-    '/task_list',
-    '/emission_calculator',
-    '/task',
+    '/settings',
   ].some((path) => pathname.startsWith(path));
 
   const renderAuthButton = () => {
@@ -99,11 +92,11 @@ export function AuthLayout({
 
   return (
     <main className="layout-container relative">
+
+      {/* ── Company Profile / Onboarding ── */}
       {(isAuthorized || pathname.startsWith('/company_profile')) && (
         <div className="pt-5 h-full">
-          <div
-            className={`header-container p-3 w-full ${!pathname.startsWith('/company_profile') ? '' : ''}`}
-          >
+          <div className="header-container p-3 w-full">
             <div aria-hidden="true" onClick={() => router.push('/sign_in')}>
               <Image
                 src={appLogoMobile}
@@ -111,7 +104,6 @@ export function AuthLayout({
                 width={isMobile ? 110 : 130}
               />
             </div>
-
             {renderAuthButton()}
           </div>
           <div className="pb-0">
@@ -122,15 +114,19 @@ export function AuthLayout({
           </div>
         </div>
       )}
-      {(isLanding || pathname.startsWith('/home')) && (
+
+      {/* ── Main App (with Header) ── */}
+      {isLanding && (
         <LandingLayout>{children}</LandingLayout>
       )}
+
+      {/* ── Auth Pages (Sign In / Sign Up) ── */}
       {(isSignUp || isSignIn) && (
         <div className="row layout-containers position-relative d-flex vh-100 overflow-hidden">
-          {/* LEFT IMAGE PANEL — DESKTOP ONLY */}
+
+          {/* Left image panel — desktop only */}
           <div className="col-lg-6 d-none d-lg-block p-3 vh-100 position-sticky top-0">
             <div className="position-relative w-100 h-100 ml-3 d-flex justify-content-center overflow-hidden rounded-4 object-contain">
-              {/* IMAGE */}
               <Image
                 src={LoginImage}
                 alt="vendor management"
@@ -138,20 +134,11 @@ export function AuthLayout({
                 sizes="50vw"
                 quality={100}
                 priority
-              // style={{ objectFit: 'cover' }}
               />
-
-              {/* OVERLAY CONTENT */}
               <div
                 className="position-absolute p-3"
-                style={{
-                  width: 500,
-                  left: 90,
-                  top: 60,
-                  zIndex: 2,
-                }}
+                style={{ width: 500, left: 90, top: 60, zIndex: 2 }}
               >
-                {/* Logo */}
                 <div className="mb-5">
                   <Image
                     src={rubicrDashboardLogo}
@@ -160,8 +147,6 @@ export function AuthLayout({
                     priority
                   />
                 </div>
-
-                {/* Heading */}
                 <h2
                   style={{
                     fontFamily: 'Inter, sans-serif',
@@ -174,8 +159,6 @@ export function AuthLayout({
                 >
                   Measure Product Emissions with Precision
                 </h2>
-
-                {/* Description */}
                 <p
                   style={{
                     fontFamily: 'Inter, sans-serif',
@@ -192,7 +175,7 @@ export function AuthLayout({
             </div>
           </div>
 
-          {/* RIGHT FORM PANEL */}
+          {/* Right form panel */}
           <div className="col-12 col-lg-6 p-0 vh-100 overflow-auto right-panel-container position-relative">
             <div
               ref={containerRef}
@@ -203,6 +186,7 @@ export function AuthLayout({
               </div>
             </div>
           </div>
+
         </div>
       )}
     </main>
