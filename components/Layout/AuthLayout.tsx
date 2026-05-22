@@ -48,6 +48,8 @@ export function AuthLayout({
   const isLanding = [
     '/dashboard',
     '/employees',
+    '/employee',
+    '/employee/attendance',
     '/attendance',
     '/analytics',
     '/users',

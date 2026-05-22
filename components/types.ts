@@ -322,4 +322,4 @@ export type IUserRole =
   | 'HR'
   | 'EMPLOYEE';
 
-export const Roles = ['GUEST', 'MANAGER'];
+export const Roles = ['GUEST', 'MANAGER', 'EMPLOYEE', 'HR'];

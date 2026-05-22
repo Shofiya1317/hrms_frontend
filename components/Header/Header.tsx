@@ -1,12 +1,3 @@
-/* eslint-disable jsx-a11y/click-events-have-key-events */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable no-nested-ternary */
-/* eslint-disable max-len */
-/* eslint-disable react/jsx-props-no-multi-lines */
-/* eslint-disable no-unused-vars */
-/* eslint @typescript-eslint/no-unused-vars: off */
-/* eslint-disable react/destructuring-assignment */
-
 'use client';
 
 import rubicrDashboardLogo from '@/assests/rubic-logo-white 2.png';
@@ -48,9 +39,10 @@ export interface HeaderProps {
   user: IUser | undefined;
   profileMenu: IProfileItem[];
   pathname: string;
+  menuItems: IMenuItem[]; // Now receives menu items from parent
 }
 
-// ── Menu Definition ───────────────────────────────────────────────
+// ── Role-based Menu Configuration ─────────────────────────────────
 export const adminMenuItems: IMenuItem[] = [
   {
     label: 'Dashboard',
@@ -63,7 +55,6 @@ export const adminMenuItems: IMenuItem[] = [
       { label: 'Overview', path: '/attendance/dashboard' },
       { label: 'Attendance Logs', path: '/attendance/logs' },
       { label: 'Leave Management', path: '/attendance/leave' },
-      // { label: 'Bulk Upload', path: '/attendance/upload' },
       { label: 'Attendance Policies', path: '/attendance/policies' },
     ],
   },
@@ -85,6 +76,56 @@ export const adminMenuItems: IMenuItem[] = [
     path: '/users',
   },
 ];
+
+// export const adminMenuItems: IMenuItem[] = [
+//   {
+//     label: 'Cockpit',
+//     path: '/employee/dashboard',
+//   },
+//   {
+//     label: 'Attendance',
+//     path: '',
+//     menuItems: [
+//       { label: 'Overview', path: '/employee/attendance/overview' },
+//       { label: 'Check-in/Check-out', path: '/employee/attendance/check-in-out' },
+//       { label: 'Monthly View', path: '/employee/attendance/monthly-view' },
+//       { label: 'Apply Leave', path: '/employee/attendance/apply-leave' },
+//       { label: 'Regularization', path: '/employee/attendance/regularization' },
+//       { label: 'Comp Off', path: '/employee/attendance/comp-off' },
+//     ],
+//   },
+// ];
+
+export const employeeMenuItems: IMenuItem[] = [
+  {
+    label: 'Cockpit',
+    path: '/employee/dashboard',
+  },
+  {
+    label: 'Attendance',
+    path: '',
+    menuItems: [
+      { label: 'Overview', path: '/employee/attendance/overview' },
+      { label: 'Check-in/Check-out', path: '/employee/attendance/check-in-out' },
+      { label: 'Monthly View', path: '/employee/attendance/monthly-view' },
+      { label: 'Apply Leave', path: '/employee/attendance/apply-leave' },
+      { label: 'Regularization', path: '/employee/attendance/regularization' },
+      { label: 'Comp Off', path: '/employee/attendance/comp-off' },
+    ],
+  },
+];
+
+// Helper function to get menu items based on role
+export const getMenuItemsByRole = (role: string): IMenuItem[] => {
+  switch (role?.toLowerCase()) {
+    case 'admin':
+      return adminMenuItems;
+    case 'employee':
+      return employeeMenuItems;
+    default:
+      return adminMenuItems; // Default to admin or empty array
+  }
+};
 
 // ── Active helpers ────────────────────────────────────────────────
 const isMenuItemActive = (item: IMenuItem, pathname: string): boolean => {
@@ -418,7 +459,7 @@ function Header(props: HeaderProps) {
                     margin: '0px',
                   }}
                 >
-                  {adminMenuItems.map((item) => (
+                  {props.menuItems.map((item) => (
                     <li key={item.label} className="mb-3 list-unstyled">
                       <NavbarItem
                         item={item}
@@ -446,7 +487,7 @@ function Header(props: HeaderProps) {
             <div className="flex justify-between items-center flex-grow">
               {/* Nav items — ref attached here for outside-click detection */}
               <Nav className="flex-grow flex justify-center gap-5" ref={navRef}>
-                {adminMenuItems.map((item) => (
+                {props.menuItems.map((item) => (
                   <NavbarItem
                     item={item}
                     key={item.label}

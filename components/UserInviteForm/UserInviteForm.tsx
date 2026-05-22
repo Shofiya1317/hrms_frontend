@@ -171,14 +171,14 @@ export default function UserInviteForm({
                   {
                     email: '',
                     name: '',
-                    role: 'VENDOR',
+                    role: 'HR',
                   },
                 ]
               : [
                   {
                     email: '',
                     name: '',
-                    role: 'MANAGER',
+                    role: 'HR',
                   },
                 ],
           }}
