@@ -2,7 +2,7 @@
 
 import { Formik, Form } from 'formik';
 import { useRouter } from 'next/navigation';
-import { object, string, array } from 'yup';
+import { object, array, string } from 'yup';
 import { Button } from '../Button/Button';
 import toast from 'react-hot-toast';
 import { MdArrowForward } from 'react-icons/md';
@@ -11,6 +11,7 @@ import Select from 'react-select';
 import { useState } from 'react';
 import CreatableSelect from 'react-select/creatable';
 import CustomStyles from '../CustomStyles/CustomStyles';
+import { onboardingStep2 } from '@/lib/service/auth';
 
 interface CustomShift {
   id: string;
@@ -141,10 +142,21 @@ export default function OrganisationSetupForm({ slug }: { slug: string }) {
 
   const onSubmit = async (values: OrganisationSetup) => {
     try {
-      console.log('Organisation Setup Data:', values);
-      toast.success('Organisation setup completed successfully');
-      router.push('/company_profile/invite_user');
-      router.refresh();
+      const payload = {
+        work_location_ids: values.branches_locations,
+        department_ids: values.departments,
+        shift_ids: values.work_shift ? [values.work_shift] : [],
+        work_schedule_ids: values.work_schedule ? [values.work_schedule] : [],
+      };
+      const res = await onboardingStep2(payload, slug);
+      const { success, error } = res?.data as { success: boolean; error: string[] };
+      if (success) {
+        toast.success('Organisation setup completed successfully');
+        router.push('/company_profile/invite_user');
+        router.refresh();
+      } else {
+        toast.error(Array.isArray(error) ? error[0] : error ?? 'Something went wrong');
+      }
     } catch {
       toast.error('Something went wrong');
     }
@@ -355,6 +367,7 @@ export default function OrganisationSetupForm({ slug }: { slug: string }) {
                         text="Custom"
                         type="button"
                         isSolid
+                        className='custom-btn'
                         onClick={() => setShowCustomShiftModal(true)}
                         prefixIconChildren={
                           <IoMdAdd size={20} color="var(--icon-color)" />
@@ -400,6 +413,7 @@ export default function OrganisationSetupForm({ slug }: { slug: string }) {
                         text="Custom"
                         type="button"
                         isSolid
+                        className='custom-btn'
                         onClick={() => setShowCustomScheduleModal(true)}
                         prefixIconChildren={
                           <IoMdAdd size={20} color="var(--icon-color)" />
@@ -540,7 +554,7 @@ export default function OrganisationSetupForm({ slug }: { slug: string }) {
                     onChange={(e) =>
                       setNewShift({
                         ...newShift,
-                        working_hours: parseInt(e.target.value) || '',
+                        working_hours: e.target.value ? parseInt(e.target.value) : '',
                       })
                     }
                   />
@@ -554,7 +568,7 @@ export default function OrganisationSetupForm({ slug }: { slug: string }) {
                     setShowCustomShiftModal(false);
                     setNewShift(emptyShift);
                   }}
-                  isOutline
+                  variant="outline"
                 />
                 <Button
                   text="Add Shift"
@@ -690,7 +704,7 @@ export default function OrganisationSetupForm({ slug }: { slug: string }) {
                     setShowCustomScheduleModal(false);
                     setNewSchedule(emptySchedule);
                   }}
-                  isOutline
+                  variant="outline"
                 />
                 <Button
                   text="Add Schedule"

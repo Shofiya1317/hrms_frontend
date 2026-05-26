@@ -308,6 +308,42 @@ export const companyInformation = (
   slug,
 );
 
+export const onboardingStep1 = (
+  params: {
+    company_name: string;
+    industry: string;
+    country: string;
+    state: string;
+    city: string;
+    address: string;
+    official_email_id: string;
+    website: string;
+    phone_number: string;
+    tax_id: string;
+  },
+  slug: string,
+) => put(
+  '/v1/auth/onboarding/step1',
+  params,
+  undefined,
+  slug,
+);
+
+export const onboardingStep2 = (
+  params: {
+    work_location_ids: string[];
+    department_ids: string[];
+    shift_ids: string[];
+    work_schedule_ids: string[];
+  },
+  slug: string,
+) => put(
+  '/v1/auth/onboarding/step2',
+  params,
+  undefined,
+  slug,
+);
+
 export const invitePeople = (
   params: {
     slug: string,

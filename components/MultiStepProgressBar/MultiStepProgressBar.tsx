@@ -11,14 +11,17 @@ const MultiStepProgressBar = () => {
   const params = useParams();
   const steps = [
     'company_information',
-    'business_unit',
+    'organisation_setup',
     // 'standard_regulations',
     'invite_user',
     // 'plans',
   ];
 
   const stepIndex = steps.indexOf(params?.slug as string);
-  const stepPercentage = stepIndex >= 0 ? ((stepIndex + 1) * 100) / steps.length : 0;
+  const stepPercentage =
+  stepIndex >= 0
+    ? (stepIndex / (steps.length - 1)) * 100
+    : 0;
 
   return (
     <ProgressBar percent={stepPercentage}>

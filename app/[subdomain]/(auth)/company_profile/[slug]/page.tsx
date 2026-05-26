@@ -41,7 +41,7 @@ const onboardingPath = [
   '/dashboard',                                     // Stage 3
 ];
 
-  const currentOnboardingStage = user?.account?.current_onboarding_stage ?? -1;
+  const currentOnboardingStage = user?.account?.onboarding_step ?? -1;
   const adjustedOnboardingStage = currentOnboardingStage >= 4 ? 4 : currentOnboardingStage;
   const targetPath = onboardingPath[adjustedOnboardingStage];
 

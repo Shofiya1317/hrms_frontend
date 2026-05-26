@@ -48,6 +48,7 @@ export interface IAccount {
   industries: string[] | null
   phone_number: string | null
   api_key: string
+  onboarding_step: number
   current_onboarding_stage: number
   tax_id: string | null
   address: string | null
