@@ -7,7 +7,7 @@
     border-radius: 50%;
     border-style: solid;
     border-width: 1px;
-    border-color: rgb(206, 206, 206);
+    border-color: #279188;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -15,7 +15,7 @@
 }
 
 .indexedStep.accomplished {
-    background-color: var(--secondary);
+    background-color: #0F766E;
     color: white;
     border-style: none;
 }
@@ -63,7 +63,7 @@
     top: 0;
     bottom: 0;
     border-radius: 10px;
-    background: var(--secondary);
+    background: #1aa89c;
     z-index: -1;
 }
 

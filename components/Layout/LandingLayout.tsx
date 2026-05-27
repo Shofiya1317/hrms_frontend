@@ -50,9 +50,9 @@ export default function LandingLayout({
         pathname={pathname}
         menuItems={menuItems}
       />
-      <main className="flex-1 w-full min-h-screen bg-background">
-        <div className="transition-all duration-base p-4">
-          <div className="bg-card">{children}</div>
+      <main className="flex-1 w-full min-h-screen" style={{ background: '#f5f7f6' }}>
+        <div className="transition-all duration-base p-2 p-lg-2">
+          {children}
         </div>
       </main>
     </div>

@@ -12,7 +12,7 @@
 
 .layout-container{
   background-color: var(--bgColor);
-  height: 100vh;
+  min-height: 100vh;
   overflow-x: hidden;
 }
 
@@ -83,7 +83,167 @@
 }
 
 .right-panel {
-  background-color: var(--bgColor);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(245, 247, 246, 0.96)),
+    radial-gradient(circle at 15% 15%, rgba(15, 118, 110, 0.12), transparent 32%);
+}
+
+.hrms-auth-shell {
+  background: #f5f7f6;
+}
+
+.hrms-auth-visual {
+  border-radius: 8px;
+  background: #0b343b;
+}
+
+.hrms-auth-visual img {
+  object-fit: cover;
+}
+
+.hrms-auth-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(90deg, rgba(7, 35, 41, 0.88) 0%, rgba(7, 35, 41, 0.7) 38%, rgba(7, 35, 41, 0.18) 100%),
+    linear-gradient(180deg, rgba(7, 35, 41, 0.12) 0%, rgba(7, 35, 41, 0.58) 100%);
+}
+
+.hrms-auth-copy {
+  width: min(490px, 78%);
+  left: 72px;
+  top: 88px;
+  bottom: auto;
+  z-index: 2;
+  color: #ffffff;
+}
+
+.hrms-auth-copy .mb-5 {
+  margin-bottom: 72px !important;
+}
+
+.hrms-auth-copy h2 {
+  max-width: 430px;
+  font-size: 46px;
+  line-height: 1.04;
+  font-weight: 750;
+  letter-spacing: 0;
+  margin: 14px 0 18px;
+}
+
+.hrms-auth-copy p {
+  max-width: 455px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.hrms-kicker {
+  margin: 0;
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hrms-auth-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 54px;
+}
+
+.hrms-auth-metrics div {
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(14px);
+}
+
+.hrms-auth-metrics strong {
+  display: block;
+  color: #ffffff;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.hrms-auth-metrics span {
+  display: block;
+  margin-top: 8px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.hrms-auth-form {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 28px 75px rgba(15, 23, 42, 0.1);
+  padding: 38px;
+}
+
+.hrms-auth-eyebrow,
+.hrms-auth-panel-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #0f766e;
+  background: #e5f2ef;
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.hrms-auth-panel-note {
+  width: 100%;
+  justify-content: center;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 0;
+}
+
+.hrms-onboarding-shell {
+  min-height: 100vh;
+  padding-top: 76px;
+  background: linear-gradient(180deg, #f8faf9 0%, #f5f7f6 100%);
+}
+
+.hrms-onboarding-header {
+  border-bottom: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+}
+
+.hrms-onboarding-body {
+  padding: 28px 16px 56px;
+}
+
+.hrms-onboarding-intro {
+  width: min(820px, 92vw);
+  margin: 0 auto 10px;
+  text-align: center;
+}
+
+.hrms-onboarding-intro h1 {
+  margin: 8px 0;
+  color: #163b45;
+  font-size: 34px;
+  font-weight: 780;
+  letter-spacing: 0;
+}
+
+.hrms-onboarding-intro span {
+  color: #64748b;
+  font-size: 15px;
 }
 
 @media screen and (max-width: 1200px){
@@ -94,6 +254,19 @@
  }
 
 @media screen and (max-width: 576px){
+  .hrms-auth-form {
+    padding: 24px 18px;
+    border-radius: 8px;
+  }
+
+  .hrms-onboarding-intro h1 {
+    font-size: 26px;
+  }
+
+  .hrms-onboarding-body {
+    padding-inline: 12px;
+  }
+
   .container-mobile-product-logo{
     position: fixed;
     left:0px;

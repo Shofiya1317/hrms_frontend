@@ -1,24 +1,28 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Eye, EyeOff, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { useParams } from 'next/navigation';
+import {
+  X,
+  UserPlus,
+  Eye,
+  EyeOff,
+  Loader2,
+  CheckCircle,
+  AlertCircle,
+} from 'lucide-react';
+import {
+  createEmployee,
+  updateEmployee,
+  getEmployees,
+  IEmployeePayload,
+} from '@/lib/service/employee';
+
 interface AddEmployeeModalProps {
   onClose: () => void;
-  onSuccess: (employee: CreatedEmployee) => void;
-}
-
-export interface CreatedEmployee {
-  id: string;
-  fullName: string;
-  email: string;
-  role: 'employee' | 'manager';
-  department: string;
-  phone: string;
-  location: string;
-  managerId: string;
-  managerName: string;
-  joinDate: string;
-  employeeId: string;
+  onSuccess: (employee: any) => void;
+  editingEmployee?: any;
+  isEditing?: boolean;
 }
 
 interface ManagerOption {
@@ -28,14 +32,23 @@ interface ManagerOption {
   jobTitle: string;
 }
 
+// These should be fetched from API in real implementation
 const DEPARTMENTS = [
-  'Engineering',
-  'Human Resources',
-  'Sales',
-  'Finance',
-  'Operations',
-  'Quality Assurance',
-  'Executive',
+  { id: 'dept_eng', name: 'Engineering' },
+  { id: 'dept_hr', name: 'Human Resources' },
+  { id: 'dept_sales', name: 'Sales' },
+  { id: 'dept_finance', name: 'Finance' },
+  { id: 'dept_ops', name: 'Operations' },
+  { id: 'dept_qa', name: 'Quality Assurance' },
+  { id: 'dept_exec', name: 'Executive' },
+];
+
+const EMPLOYMENT_TYPES = [
+  { id: 'emp_full', name: 'Full Time' },
+  { id: 'emp_part', name: 'Part Time' },
+  { id: 'emp_contract', name: 'Contract' },
+  { id: 'emp_intern', name: 'Intern' },
+  { id: 'emp_temp', name: 'Temporary' },
 ];
 
 const ROLES: { value: 'employee' | 'manager'; label: string }[] = [
@@ -43,47 +56,79 @@ const ROLES: { value: 'employee' | 'manager'; label: string }[] = [
   { value: 'manager', label: 'Manager' },
 ];
 
-function generateEmployeeId(): string {
-  const year = new Date().getFullYear();
-  const num = Math.floor(Math.random() * 900) + 100;
-  return `EMP-${year}-${num}`;
-}
+export default function AddEmployeeModal({
+  onClose,
+  onSuccess,
+  editingEmployee,
+  isEditing = false,
+}: AddEmployeeModalProps) {
+  const params = useParams();
+  const subdomain = params?.subdomain as string;
 
-function generateTempPassword(): string {
-  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789@#$';
-  let pwd = '';
-  for (let i = 0; i < 12; i++) {
-    pwd += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return pwd;
-}
-
-export default function AddEmployeeModal({ onClose, onSuccess }: AddEmployeeModalProps) {
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
     email: '',
     role: 'employee' as 'employee' | 'manager',
-    department: '',
+    departmentId: '', // Changed from department to departmentId
+    designation: '',
+    employmentTypeId: '', // Changed from employmentType to employmentTypeId
     phone: '',
-    location: '',
     managerId: '',
     joinDate: new Date().toISOString().split('T')[0],
+    dateOfBirth: '',
+    gender: '',
   });
-  const [password, setPassword] = useState(generateTempPassword());
+  
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [createdEmployee, setCreatedEmployee] = useState<CreatedEmployee | null>(null);
+  const [createdEmployee, setCreatedEmployee] = useState<any>(null);
   const [managers, setManagers] = useState<ManagerOption[]>([]);
 
   useEffect(() => {
-    setManagers([
-      { id: '1', fullName: 'Arjun Mehta', department: 'Management', jobTitle: 'Admin' },
-      { id: '2', fullName: 'Rahul Sharma', department: 'Operations', jobTitle: 'Team Lead' },
-    ]);
-  }, []);
+    if (subdomain) {
+      loadManagers();
+    }
+  }, [subdomain]);
+
+  useEffect(() => {
+    if (editingEmployee && isEditing) {
+      const nameParts = editingEmployee.name?.split(' ') || [];
+      setForm({
+        firstName: nameParts[0] || '',
+        lastName: nameParts.slice(1).join(' ') || '',
+        email: editingEmployee.email || '',
+        role: editingEmployee.role?.toLowerCase() === 'manager' ? 'manager' : 'employee',
+        departmentId: editingEmployee.departmentId || editingEmployee.department || '',
+        designation: editingEmployee.designation || '',
+        employmentTypeId: editingEmployee.employmentTypeId || editingEmployee.employmentType || '',
+        phone: editingEmployee.phone || '',
+        managerId: editingEmployee.managerId || '',
+        joinDate: editingEmployee.joinDate?.split('T')[0] || new Date().toISOString().split('T')[0],
+        dateOfBirth: editingEmployee.dateOfBirth?.split('T')[0] || '',
+        gender: editingEmployee.gender || '',
+      });
+    }
+  }, [editingEmployee, isEditing]);
+
+  const loadManagers = async () => {
+    try {
+      const response = await getEmployees(subdomain, { role: 'manager' });
+      const managersData = response?.data?.data || [];
+      const transformedManagers = managersData.map((manager: any) => ({
+        id: manager.id,
+        fullName: `${manager.first_name || ''} ${manager.last_name || ''}`.trim(),
+        department: manager.department?.name || '',
+        jobTitle: manager.role || '',
+      }));
+      setManagers(transformedManagers);
+    } catch (err) {
+      console.error('Failed to load managers', err);
+    }
+  };
 
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -104,31 +149,59 @@ export default function AddEmployeeModal({ onClose, onSuccess }: AddEmployeeModa
       setError('A valid email address is required.');
       return;
     }
-    if (!form.department) {
+    if (!form.departmentId) {
       setError('Please select a department.');
+      return;
+    }
+    if (!form.employmentTypeId) {
+      setError('Please select an employment type.');
       return;
     }
 
     setLoading(true);
     try {
-      const fullName = `${form.firstName.trim()} ${form.lastName.trim()}`;
-      const employeeId = generateEmployeeId();
-      const created: CreatedEmployee = {
-        id: crypto.randomUUID(),
-        fullName,
+      const payload: IEmployeePayload = {
         email: form.email.trim().toLowerCase(),
-        role: form.role,
-        department: form.department,
-        phone: form.phone,
-        location: form.location,
-        managerId: form.managerId,
-        managerName: selectedManager?.fullName || '',
-        joinDate: form.joinDate,
-        employeeId,
+        role: form.role === 'manager' ? 'manager' : 'employee',
+        first_name: form.firstName.trim(),
+        last_name: form.lastName.trim(),
+        date_of_birth: form.dateOfBirth,
+        gender: form.gender,
+        personal_phone: form.phone,
+        department_id: form.departmentId, // Now sending ID
+        designation_id: form.designation, // Still string, but API might expect ID
+        employment_type_id: form.employmentTypeId, // Now sending ID
+        reporting_manager_id: form.managerId,
+        date_of_joining: form.joinDate,
       };
-      setCreatedEmployee(created);
+
+      // Add password to payload only for new employees and if provided
+      if (!isEditing && password) {
+        (payload as any).password = password;
+      }
+
+      let response;
+      if (isEditing && editingEmployee?.id) {
+        response = await updateEmployee(editingEmployee.id, payload, subdomain);
+        const updatedEmployee = response?.data?.data;
+        setCreatedEmployee(updatedEmployee);
+        onSuccess(updatedEmployee);
+      } else {
+        response = await createEmployee(payload, subdomain);
+        const newEmployee = response?.data?.data;
+        setCreatedEmployee({
+          ...newEmployee,
+          fullName: `${form.firstName.trim()} ${form.lastName.trim()}`,
+          employeeId: newEmployee?.employee_id || `EMP-${Date.now()}`,
+          managerName: selectedManager?.fullName || '',
+          email: form.email.trim().toLowerCase(),
+          role: form.role,
+          department: DEPARTMENTS.find(d => d.id === form.departmentId)?.name || '',
+        });
+        onSuccess(newEmployee);
+      }
+
       setSuccess(true);
-      onSuccess(created);
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');
     } finally {
@@ -136,72 +209,92 @@ export default function AddEmployeeModal({ onClose, onSuccess }: AddEmployeeModa
     }
   };
 
-  if (success && createdEmployee) {
+  // Success screen
+  if (success && createdEmployee && !isEditing) {
     return (
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-          <div className="text-center mb-5">
-            <div className="w-14 h-14 rounded-2xl bg-green-100 flex items-center justify-center mx-auto mb-3">
-              <CheckCircle size={28} className="text-green-600" />
+      <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+        <div
+          className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col"
+          style={{ maxHeight: 'calc(100vh - 2rem)' }}
+        >
+          <div className="overflow-y-auto p-6">
+            <div className="text-center mb-5">
+              <div className="w-14 h-14 rounded-2xl bg-green-100 flex items-center justify-center mx-auto mb-3">
+                <CheckCircle size={28} className="text-green-600" />
+              </div>
+              <h2 className="text-lg font-bold text-[#0f1f2e]">Employee Created!</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Share these credentials with the employee.
+              </p>
             </div>
-            <h2 className="text-lg font-bold text-[#0f1f2e]">Employee Created!</h2>
-            <p className="text-sm text-gray-500 mt-1">Share these credentials with the employee.</p>
+
+            <div className="bg-gray-50 rounded-xl p-4 space-y-2 mb-5 border border-gray-100">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 font-medium">Name</span>
+                <span className="font-semibold text-gray-800">{createdEmployee.fullName}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 font-medium">Employee ID</span>
+                <span className="font-mono font-semibold text-[#2D7A4F]">{createdEmployee.employeeId}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 font-medium">Email</span>
+                <span className="font-semibold text-gray-800">{createdEmployee.email}</span>
+              </div>
+              {password && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 font-medium">Password</span>
+                  <span className="font-mono font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-lg">{password}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 font-medium">Role</span>
+                <span className="font-semibold text-gray-800 capitalize">{createdEmployee.role}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 font-medium">Department</span>
+                <span className="font-semibold text-gray-800">{createdEmployee.department}</span>
+              </div>
+            </div>
+
+            {password && (
+              <p className="text-xs text-amber-600 bg-amber-50 rounded-xl px-3 py-2 mb-4 border border-amber-100">
+                ⚠️ Save these credentials now. The password cannot be retrieved after closing this dialog.
+              </p>
+            )}
+
+            <button
+              onClick={onClose}
+              className="w-full px-4 py-2.5 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors"
+            >
+              Done
+            </button>
           </div>
-
-          <div className="bg-gray-50 rounded-xl p-4 space-y-2 mb-5 border border-gray-100">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500 font-medium">Name</span>
-              <span className="font-semibold text-gray-800">{createdEmployee.fullName}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500 font-medium">Employee ID</span>
-              <span className="font-mono font-semibold text-[#2D7A4F]">{createdEmployee.employeeId}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500 font-medium">Email</span>
-              <span className="font-semibold text-gray-800">{createdEmployee.email}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500 font-medium">Temp Password</span>
-              <span className="font-mono font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-lg">{password}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500 font-medium">Role</span>
-              <span className="font-semibold text-gray-800 capitalize">{createdEmployee.role}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500 font-medium">Department</span>
-              <span className="font-semibold text-gray-800">{createdEmployee.department}</span>
-            </div>
-          </div>
-
-          <p className="text-xs text-amber-600 bg-amber-50 rounded-xl px-3 py-2 mb-4 border border-amber-100">
-            ⚠️ Save these credentials now. The password cannot be retrieved after closing this dialog.
-          </p>
-
-          <button
-            onClick={onClose}
-            className="w-full px-4 py-2.5 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors"
-          >
-            Done
-          </button>
         </div>
       </div>
     );
   }
 
+  // Main form
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/10 z-50 flex items-center justify-center pt-5 mt-4 px-4 overflow-hidden">
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col"
+        style={{ maxHeight: 'calc(100vh - 8rem)', height: 'auto' }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
+        <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-gray-100 rounded-t-2xl bg-white z-10">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-[#e8f5ee] flex items-center justify-center">
               <UserPlus size={17} className="text-[#2D7A4F]" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-[#0f1f2e]">Add New Employee</h2>
-              <p className="text-xs text-gray-400">Fill in the details to add a new employee</p>
+              <h2 className="text-base font-bold text-[#0f1f2e]">
+                {isEditing ? 'Edit Employee' : 'Add New Employee'}
+              </h2>
+              <p className="text-xs text-gray-400">
+                {isEditing ? 'Update employee information' : 'Fill in the details to add a new employee'}
+              </p>
             </div>
           </div>
           <button
@@ -212,191 +305,277 @@ export default function AddEmployeeModal({ onClose, onSuccess }: AddEmployeeModa
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          {/* Name row */}
-          <div className="grid grid-cols-2 gap-3">
+        {/* Scrollable form body */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <form onSubmit={handleSubmit} className="p-6 space-y-5">
+            {/* Row 1: Full Name */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                  First Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={form.firstName}
+                  onChange={(e) => handleChange('firstName', e.target.value)}
+                  placeholder="John"
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                  Last Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={form.lastName}
+                  onChange={(e) => handleChange('lastName', e.target.value)}
+                  placeholder="Doe"
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Row 2: Email */}
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">First Name <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                Work Email <span className="text-red-500">*</span>
+              </label>
               <input
-                type="text"
-                value={form.firstName}
-                onChange={(e) => handleChange('firstName', e.target.value)}
-                placeholder="Priya"
+                type="email"
+                value={form.email}
+                onChange={(e) => handleChange('email', e.target.value)}
+                placeholder="john.doe@company.com"
                 className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
                 required
               />
             </div>
+
+            {/* Row 3: Password (for new employees only) */}
+            {!isEditing && (
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password (optional)"
+                    className="w-full px-3 py-2 pr-10 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  Optional. If left empty, a system-generated password will be sent via email.
+                </p>
+              </div>
+            )}
+
+            {/* Row 4: Role + Employment Type */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                  Role <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={form.role}
+                  onChange={(e) => handleChange('role', e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
+                >
+                  {ROLES.map((r) => (
+                    <option key={r.value} value={r.value}>
+                      {r.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                  Employment Type <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={form.employmentTypeId}
+                  onChange={(e) => handleChange('employmentTypeId', e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
+                  required
+                >
+                  <option value="">Select employment type</option>
+                  {EMPLOYMENT_TYPES.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Row 5: Department + Reporting Manager */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                  Department <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={form.departmentId}
+                  onChange={(e) => handleChange('departmentId', e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
+                  required
+                >
+                  <option value="">Select department</option>
+                  {DEPARTMENTS.map((dept) => (
+                    <option key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                  Reporting Manager
+                </label>
+                <select
+                  value={form.managerId}
+                  onChange={(e) => handleChange('managerId', e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
+                >
+                  <option value="">No manager / Top-level</option>
+                  {managers.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.fullName}
+                      {m.jobTitle ? ` — ${m.jobTitle}` : ''}
+                      {m.department ? ` (${m.department})` : ''}
+                    </option>
+                  ))}
+                </select>
+                {selectedManager && (
+                  <p className="text-xs text-[#2D7A4F] mt-1 font-medium">
+                    Reports to: {selectedManager.fullName}
+                    {selectedManager.department ? ` · ${selectedManager.department}` : ''}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Row 6: Designation */}
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Last Name <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                Designation
+              </label>
               <input
                 type="text"
-                value={form.lastName}
-                onChange={(e) => handleChange('lastName', e.target.value)}
-                placeholder="Nair"
+                value={form.designation}
+                onChange={(e) => handleChange('designation', e.target.value)}
+                placeholder="e.g. Senior Engineer"
                 className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
-                required
               />
             </div>
-          </div>
 
-          {/* Email */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Work Email <span className="text-red-500">*</span></label>
-            <input
-              type="email"
-              value={form.email}
-              onChange={(e) => handleChange('email', e.target.value)}
-              placeholder="priya.n@impactree.in"
-              className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
-              required
-            />
-          </div>
+            {/* Row 7: Date of Birth + Gender */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                  Date of Birth
+                </label>
+                <input
+                  type="date"
+                  value={form.dateOfBirth}
+                  onChange={(e) => handleChange('dateOfBirth', e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                  Gender
+                </label>
+                <select
+                  value={form.gender}
+                  onChange={(e) => handleChange('gender', e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
+                >
+                  <option value="">Select gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
 
-          {/* Temp Password */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Temporary Password</label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 pr-10 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all font-mono"
-              />
+            {/* Row 8: Personal Phone + Date of Joining */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                  Personal Phone
+                </label>
+                <input
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => handleChange('phone', e.target.value)}
+                  placeholder="+91 98765 43210"
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                  Date of Joining <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={form.joinDate}
+                  onChange={(e) => handleChange('joinDate', e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-xl">
+                <AlertCircle size={15} className="text-red-500 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-red-600 font-medium">{error}</p>
+              </div>
+            )}
+
+            {/* Actions Buttons */}
+            <div className="flex gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                onClick={onClose}
+                disabled={loading}
+                className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50"
               >
-                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 size={15} className="animate-spin" />
+                    {isEditing ? 'Updating...' : 'Creating...'}
+                  </>
+                ) : (
+                  <>
+                    <UserPlus size={15} />
+                    {isEditing ? 'Update Employee' : 'Create Employee'}
+                  </>
+                )}
               </button>
             </div>
-            <p className="text-xs text-gray-400 mt-1">Auto-generated. Employee must change on first login.</p>
-          </div>
-
-          {/* Role + Department */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Role <span className="text-red-500">*</span></label>
-              <select
-                value={form.role}
-                onChange={(e) => handleChange('role', e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
-              >
-                {ROLES.map((r) => (
-                  <option key={r.value} value={r.value}>{r.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Department <span className="text-red-500">*</span></label>
-              <select
-                value={form.department}
-                onChange={(e) => handleChange('department', e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
-                required
-              >
-                <option value="">Select department</option>
-                {DEPARTMENTS.map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Manager (from user_profiles) */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Manager</label>
-            <select
-              value={form.managerId}
-              onChange={(e) => handleChange('managerId', e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
-            >
-              <option value="">No manager / Top-level</option>
-              {managers.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.fullName}{m.jobTitle ? ` — ${m.jobTitle}` : ''}{m.department ? ` (${m.department})` : ''}
-                </option>
-              ))}
-            </select>
-            {selectedManager && (
-              <p className="text-xs text-[#2D7A4F] mt-1 font-medium">
-                Reports to: {selectedManager.fullName}{selectedManager.department ? ` · ${selectedManager.department}` : ''}
-              </p>
-            )}
-          </div>
-
-          {/* Phone + Location */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Phone</label>
-              <input
-                type="tel"
-                value={form.phone}
-                onChange={(e) => handleChange('phone', e.target.value)}
-                placeholder="+91 98765 XXXXX"
-                className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Location</label>
-              <input
-                type="text"
-                value={form.location}
-                onChange={(e) => handleChange('location', e.target.value)}
-                placeholder="Bangalore"
-                className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
-              />
-            </div>
-          </div>
-
-          {/* Join Date */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Join Date</label>
-            <input
-              type="date"
-              value={form.joinDate}
-              onChange={(e) => handleChange('joinDate', e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
-            />
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-xl">
-              <AlertCircle size={15} className="text-red-500 mt-0.5 flex-shrink-0" />
-              <p className="text-xs text-red-600 font-medium">{error}</p>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex gap-3 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <>
-                  <Loader2 size={15} className="animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <UserPlus size={15} />
-                  Create Employee
-                </>
-              )}
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );

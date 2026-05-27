@@ -1,18 +1,29 @@
 'use client';
 
-import rubicrDashboardLogo from '@/assests/rubic-logo-white 2.png';
+import rubicrDashboardLogo from '@/assests/RubiCrLogo 2.png';
 import { IUser } from '@/lib/interface/IUser.interface';
 import { signOut, useSession } from 'next-auth/react';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import React, { ReactNode, useEffect, useRef, useState } from 'react';
+import React, {
+  ReactNode, useEffect, useRef, useState,
+} from 'react';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import toast from 'react-hot-toast';
 import { FaRegBell } from 'react-icons/fa';
 import { HiOutlineChevronDown } from 'react-icons/hi';
 import { TiWarning } from 'react-icons/ti';
+import {
+  BarChart3,
+  CalendarClock,
+  ClipboardCheck,
+  LayoutDashboard,
+  Shield,
+  UserRoundCheck,
+  UsersRound,
+} from 'lucide-react';
 import Avatar from '../Avatar/Avatar';
 import { Button } from '../Button/Button';
 import { useModal } from '../Modal/Context';
@@ -46,35 +57,40 @@ export interface HeaderProps {
 // ── Role-based Menu Configuration ─────────────────────────────────
 export const adminMenuItems: IMenuItem[] = [
   {
-    label: 'Dashboard',
+    label: 'Overview',
     path: '/dashboard',
+    icon: <LayoutDashboard size={16} />,
   },
   {
     label: 'Attendance',
     path: '',
+    icon: <CalendarClock size={16} />,
     menuItems: [
-      { label: 'Overview', path: '/attendance/dashboard' },
+      { label: 'Dashboard', path: '/attendance/dashboard' },
       { label: 'Attendance Logs', path: '/attendance/logs' },
       { label: 'Leave Management', path: '/attendance/leave' },
       { label: 'Attendance Policies', path: '/attendance/policies' },
     ],
   },
   {
-    label: 'Employees',
+    label: 'People',
     path: '',
+    icon: <UsersRound size={16} />,
     menuItems: [
-      { label: 'Registry', path: '/employees/registry' },
+      { label: 'Employee Registry', path: '/employees/registry' },
       { label: 'ID Management', path: '/employees/id_management' },
-      { label: 'Documents', path: '/employees/documents' },
+      { label: 'Employee Documents', path: '/employees/documents' },
     ],
   },
   {
-    label: 'Analytics',
+    label: 'Workforce Analytics',
     path: '/analytics',
+    icon: <BarChart3 size={16} />,
   },
   {
-    label: 'Users',
+    label: 'Access Control',
     path: '/users',
+    icon: <Shield size={16} />,
   },
 ];
 
@@ -99,12 +115,14 @@ export const adminMenuItems: IMenuItem[] = [
 
 export const employeeMenuItems: IMenuItem[] = [
   {
-    label: 'Cockpit',
+    label: 'My Workspace',
     path: '/employee/dashboard',
+    icon: <UserRoundCheck size={16} />,
   },
   {
     label: 'Attendance',
     path: '',
+    icon: <ClipboardCheck size={16} />,
     menuItems: [
       { label: 'Overview', path: '/employee/attendance/overview' },
       { label: 'Check-in/Check-out', path: '/employee/attendance/check-in-out' },
@@ -130,11 +148,10 @@ export const getMenuItemsByRole = (role: string): IMenuItem[] => {
 
 // ── Active helpers ────────────────────────────────────────────────
 const isMenuItemActive = (item: IMenuItem, pathname: string): boolean => {
-  if (item.path && item.path !== '' && pathname.startsWith(item.path))
-    return true;
+  if (item.path && item.path !== '' && pathname.startsWith(item.path)) return true;
   if (item.menuItems) {
     return item.menuItems.some(
-      (sub) => sub.path && pathname.startsWith(sub.path)
+      (sub) => sub.path && pathname.startsWith(sub.path),
     );
   }
   return false;
@@ -224,16 +241,22 @@ function NavbarItem({
   return (
     <Nav.Link as="span">
       <span
+        role="button"
+        tabIndex={0}
         className={`menu_item_routes ${isActive ? 'active' : ''}`}
         style={{ cursor: 'pointer' }}
         onClick={handleClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') handleClick(e as unknown as React.MouseEvent);
+        }}
       >
         <div className="flex items-center relative">
+          {item.icon && <span className="mr-2 d-inline-flex">{item.icon}</span>}
           <span className="mr-1">{item.label}</span>
           {hasChildren && (
             <HiOutlineChevronDown
               size={16}
-              color="var(--white)"
+              color="currentColor"
               style={{
                 transition: 'transform 0.2s',
                 transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -340,6 +363,9 @@ function Profile({
 
 // ── Main Header ───────────────────────────────────────────────────
 function Header(props: HeaderProps) {
+  const {
+    menuItems, pathname, profileMenu, user,
+  } = props;
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -359,8 +385,8 @@ function Header(props: HeaderProps) {
         setOpenMenu(null);
       }
       if (
-        profileRef.current &&
-        !profileRef.current.contains(e.target as Node)
+        profileRef.current
+        && !profileRef.current.contains(e.target as Node)
       ) {
         setShowProfileMenu(false);
       }
@@ -376,7 +402,7 @@ function Header(props: HeaderProps) {
   };
 
   useEffect(() => {
-    if (!session) return;
+    if (!session) return undefined;
     timeoutId.current = setTimeout(handleLogout, INACTIVITY_TIMEOUT);
     const handleActivity = () => {
       cancelAnimationFrame(rafId.current);
@@ -397,8 +423,8 @@ function Header(props: HeaderProps) {
   }, [session]);
 
   return (
-    <div className="sticky-top container-fluid p-0">
-      <Navbar expand="lg" className="header_bg p-3">
+<div className="fixed-top container-fluid p-0" style={{ zIndex: 1030 }}>
+        <Navbar expand="lg" className="header_bg p-4">
         {/* Logo */}
         <Navbar.Brand href="/dashboard" className="p-0">
           <div className="flex items-center font-semibold">
@@ -461,11 +487,11 @@ function Header(props: HeaderProps) {
                     margin: '0px',
                   }}
                 >
-                  {props.menuItems.map((item) => (
+                  {menuItems.map((item) => (
                     <li key={item.label} className="mb-3 list-unstyled">
                       <NavbarItem
                         item={item}
-                        pathname={props.pathname}
+                        pathname={pathname}
                         openMenu={openMenu}
                         setOpenMenu={setOpenMenu}
                       />
@@ -474,9 +500,9 @@ function Header(props: HeaderProps) {
                 </ul>
               ) : (
                 <Profile
-                  profileMenu={props.profileMenu}
+                  profileMenu={profileMenu}
                   router={router}
-                  pathname={props.pathname}
+                  pathname={pathname}
                 />
               )}
             </div>
@@ -488,12 +514,12 @@ function Header(props: HeaderProps) {
           <div className="custom-nav-container">
             <div className="flex justify-between items-center flex-grow">
               {/* Nav items — ref attached here for outside-click detection */}
-              <Nav className="flex-grow flex justify-center gap-5" ref={navRef}>
-                {props.menuItems.map((item) => (
+              <Nav className="flex-grow flex justify-center gap-2" ref={navRef}>
+                {menuItems.map((item) => (
                   <NavbarItem
                     item={item}
                     key={item.label}
-                    pathname={props.pathname}
+                    pathname={pathname}
                     openMenu={openMenu}
                     setOpenMenu={setOpenMenu}
                   />
@@ -502,27 +528,36 @@ function Header(props: HeaderProps) {
 
               {/* Right side: bell + avatar */}
               <div className="flex items-center gap-3">
-                <FaRegBell size={22} color="var(--white)" />
+                <button className="hrms-header-icon-btn" type="button" aria-label="Notifications">
+                  <FaRegBell size={18} />
+                </button>
                 <div
+                  role="button"
+                  tabIndex={0}
                   className="relative"
                   ref={profileRef}
                   onClick={() => setShowProfileMenu((prev) => !prev)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      setShowProfileMenu((prev) => !prev);
+                    }
+                  }}
                 >
                   <div
                     className="flex items-center gap-3"
-                    title={props?.user?.name}
+                    title={user?.name}
                   >
                     <Avatar
                       name={
-                        props?.user?.name?.charAt(0)?.toLocaleUpperCase() || ''
+                        user?.name?.charAt(0)?.toLocaleUpperCase() || ''
                       }
                       size="40px"
                       className="rounded-circle"
-                      avator={props?.user?.avatar_url || ''}
+                      avator={user?.avatar_url || ''}
                     />
                     <HiOutlineChevronDown
                       size={22}
-                      color="var(--white)"
+                      color="#64748b"
                       style={{
                         transition: 'transform 0.2s',
                         transform: showProfileMenu
@@ -534,9 +569,9 @@ function Header(props: HeaderProps) {
                   {showProfileMenu && (
                     <div className="show-profile-menu">
                       <Profile
-                        profileMenu={props.profileMenu}
+                        profileMenu={profileMenu}
                         router={router}
-                        pathname={props.pathname}
+                        pathname={pathname}
                       />
                     </div>
                   )}

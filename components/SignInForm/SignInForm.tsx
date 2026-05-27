@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { Stack } from 'react-bootstrap';
 import { toast } from 'react-hot-toast';
 import { MdArrowForward } from 'react-icons/md';
+import { ShieldCheck, UsersRound } from 'lucide-react';
 import { object, string } from 'yup';
 import { Button } from '../Button/Button';
 import { FormikField } from '../FormikField/FormikField';
@@ -106,20 +107,31 @@ export default function SignInForm({ slug }: Readonly<{ slug: string }>) {
       {({ errors, handleSubmit, isSubmitting }) => (
         <Form
           onSubmit={handleSubmit}
-          style={isMobileOnly ? { width: '330px' } : { width: '500px' }}
+          className="hrms-auth-form"
+          style={isMobileOnly ? { width: '330px' } : { width: '460px' }}
         >
-          <div className="text-center  mb-4 page-header-container">
-            <h5 className="page-title">Login</h5>
-            <span className="page-subtitle">Access your account securely</span>
+          <div className="mb-4 page-header-container">
+            <div className="hrms-auth-eyebrow">
+              <ShieldCheck size={15} />
+              HRMS secure workspace
+            </div>
+            <h5 className="page-title">Welcome back</h5>
+            <span className="page-subtitle">
+              Sign in to manage people, attendance, leave, payroll, and approvals.
+            </span>
           </div>
-          <div className="mt-5">
+          <div className="hrms-auth-panel-note">
+            <UsersRound size={18} />
+            <span>For HR admins, managers, and employees</span>
+          </div>
+          <div className="mt-4">
             <FormikField
               name="email"
               errors={errors}
               validationSchema={validationSchema}
-              label="Email Address"
+              label="Work Email"
               type="email"
-              placeholder="Enter your email address"
+              placeholder="name@company.com"
               rightIcon
             />
           </div>
@@ -131,7 +143,7 @@ export default function SignInForm({ slug }: Readonly<{ slug: string }>) {
               label="Password"
               type={hideEyeIcon ? 'text' : 'password'}
               isPassword
-              placeholder="Enter your password"
+              placeholder="Enter password"
               passwordIcon={hideEyeIcon}
               setPasswordIcon={setHideEyeIcon}
             />
@@ -139,7 +151,8 @@ export default function SignInForm({ slug }: Readonly<{ slug: string }>) {
           <Stack direction="horizontal" className="justify-content-end mb-5">
             <a
               href="/forgot_password"
-              className="text-decoration-none text-dark fw-400 font-size-15"
+              className="text-decoration-none fw-500 font-size-14"
+              style={{ color: '#0f766e' }}
             >
               Forgot Password
             </a>

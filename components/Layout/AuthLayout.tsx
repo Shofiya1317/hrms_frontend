@@ -1,7 +1,8 @@
 /* eslint-disable max-len */
+
 'use client';
 
-import LoginImage from '@/assests/LoginImage.png';
+import LoginImage from '@/assests/hrms-auth-background.svg';
 import rubicrDashboardLogo from '@/assests/rubic-logo-white 2.png';
 import appLogoMobile from '@/assests/RubiCrLogo 2.png';
 import { useDeviceDetection } from '@/hooks/useDeviceDetection';
@@ -92,8 +93,8 @@ export function AuthLayout({
 
       {/* ── Company Profile / Onboarding ── */}
       {(isAuthorized || pathname.startsWith('/company_profile')) && (
-        <div className="pt-5 h-full">
-          <div className="header-container p-3 w-full">
+        <div className="hrms-onboarding-shell">
+          <div className="header-container hrms-onboarding-header p-3 w-full">
             <div aria-hidden="true" onClick={() => router.push('/sign_in')}>
               <Image
                 src={appLogoMobile}
@@ -103,8 +104,13 @@ export function AuthLayout({
             </div>
             {renderAuthButton()}
           </div>
-          <div className="pb-0">
-            <div className="w-full py-5 my-3 company-profile-progress-header">
+          <div className="hrms-onboarding-body">
+            <div className="hrms-onboarding-intro">
+              <p className="hrms-kicker">Workspace setup</p>
+              <h1>Build your HR foundation</h1>
+              <span>Set company details, teams, shifts, schedules, and invite users into the right flow.</span>
+            </div>
+            <div className="w-full py-4 company-profile-progress-header">
               <MultiStepProgressBar />
             </div>
             <div className="animated-element">{children}</div>
@@ -119,23 +125,21 @@ export function AuthLayout({
 
       {/* ── Auth Pages (Sign In / Sign Up) ── */}
       {(isSignUp || isSignIn) && (
-        <div className="row layout-containers position-relative d-flex vh-100 overflow-hidden">
+        <div className="row layout-containers position-relative d-flex vh-100 overflow-hidden hrms-auth-shell">
 
           {/* Left image panel — desktop only */}
           <div className="col-lg-6 d-none d-lg-block p-3 vh-100 position-sticky top-0">
-            <div className="position-relative w-100 h-100 ml-3 d-flex justify-content-center overflow-hidden rounded-4 object-contain">
+            <div className="position-relative w-100 h-100 ml-3 d-flex justify-content-center overflow-hidden hrms-auth-visual object-contain">
               <Image
                 src={LoginImage}
-                alt="vendor management"
+                alt="HRMS workspace"
                 fill
                 sizes="50vw"
                 quality={85}
                 priority
               />
-              <div
-                className="position-absolute p-3"
-                style={{ width: 500, left: 90, top: 60, zIndex: 2 }}
-              >
+              <div className="hrms-auth-overlay" />
+              <div className="position-absolute hrms-auth-copy">
                 <div className="mb-5">
                   <Image
                     src={rubicrDashboardLogo}
@@ -144,30 +148,25 @@ export function AuthLayout({
                     priority
                   />
                 </div>
-                <h2
-                  style={{
-                    fontFamily: 'Inter, sans-serif',
-                    fontWeight: 600,
-                    fontSize: 28,
-                    lineHeight: '148%',
-                    color: '#FFFFFF',
-                    marginBottom: 15,
-                  }}
-                >
-                  Measure Product Emissions with Precision
-                </h2>
-                <p
-                  style={{
-                    fontFamily: 'Inter, sans-serif',
-                    fontWeight: 400,
-                    fontSize: 16,
-                    lineHeight: '100%',
-                    color: '#FFFFFF',
-                    margin: 0,
-                  }}
-                >
-                  Transform operational data into actionable emissions insights.
+                <p className="hrms-kicker text-white">Human Resource Management</p>
+                <h2>Run people operations with clarity.</h2>
+                <p>
+                  Track attendance, leaves, employees, documents, approvals, and workforce insights from one calm HR portal.
                 </p>
+                <div className="hrms-auth-metrics">
+                  <div>
+                    <strong>24</strong>
+                    <span>Pending approvals</span>
+                  </div>
+                  <div>
+                    <strong>96%</strong>
+                    <span>Attendance health</span>
+                  </div>
+                  <div>
+                    <strong>3</strong>
+                    <span>New joiners</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

@@ -16,34 +16,6 @@ import { MdArrowForward, MdOutlineEdit } from 'react-icons/md';
 import Select from 'react-select';
 import { isValidPhoneNumber } from 'react-phone-number-input';
 import { array, object, string } from 'yup';
-const timezoneOptions = [
-  { value: 'UTC-12:00', label: '(UTC-12:00) International Date Line West' },
-  { value: 'UTC-11:00', label: '(UTC-11:00) Coordinated Universal Time-11' },
-  { value: 'UTC-10:00', label: '(UTC-10:00) Hawaii' },
-  { value: 'UTC-09:00', label: '(UTC-09:00) Alaska' },
-  { value: 'UTC-08:00', label: '(UTC-08:00) Pacific Time (US & Canada)' },
-  { value: 'UTC-07:00', label: '(UTC-07:00) Mountain Time (US & Canada)' },
-  { value: 'UTC-06:00', label: '(UTC-06:00) Central Time (US & Canada)' },
-  { value: 'UTC-05:00', label: '(UTC-05:00) Eastern Time (US & Canada)' },
-  { value: 'UTC-04:00', label: '(UTC-04:00) Atlantic Time (Canada)' },
-  { value: 'UTC-03:00', label: '(UTC-03:00) Buenos Aires' },
-  { value: 'UTC-02:00', label: '(UTC-02:00) Mid-Atlantic' },
-  { value: 'UTC-01:00', label: '(UTC-01:00) Azores' },
-  { value: 'UTC+00:00', label: '(UTC+00:00) London, Dublin' },
-  { value: 'UTC+01:00', label: '(UTC+01:00) Berlin, Rome, Paris' },
-  { value: 'UTC+02:00', label: '(UTC+02:00) Helsinki, Cairo' },
-  { value: 'UTC+03:00', label: '(UTC+03:00) Moscow, Nairobi' },
-  { value: 'UTC+04:00', label: '(UTC+04:00) Dubai, Baku' },
-  { value: 'UTC+05:00', label: '(UTC+05:00) Islamabad, Karachi' },
-  { value: 'UTC+05:30', label: '(UTC+05:30) Mumbai, Delhi' },
-  { value: 'UTC+06:00', label: '(UTC+06:00) Dhaka' },
-  { value: 'UTC+07:00', label: '(UTC+07:00) Bangkok, Jakarta' },
-  { value: 'UTC+08:00', label: '(UTC+08:00) Singapore, Beijing' },
-  { value: 'UTC+09:00', label: '(UTC+09:00) Tokyo, Seoul' },
-  { value: 'UTC+10:00', label: '(UTC+10:00) Sydney, Melbourne' },
-  { value: 'UTC+11:00', label: '(UTC+11:00) Solomon Islands' },
-  { value: 'UTC+12:00', label: '(UTC+12:00) Auckland, Wellington' },
-];
 
 import { Button } from '../Button/Button';
 import { FormikField } from '../FormikField/FormikField';
@@ -54,6 +26,9 @@ import CustomStyles from '../CustomStyles/CustomStyles';
 import './CompanyInformationForm.css';
 
 import { Country, State, City } from 'country-state-city';
+import { TIMEZONE_OPTIONS, getDefaultTimezone } from '@/components/constants/timezone';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface CompanyInformation {
   company_name: string;
@@ -73,6 +48,8 @@ interface CompanyInformation {
   time_frame: string;
 }
 
+// ─── Static Options ───────────────────────────────────────────────────────────
+
 const companySizeOptions = [
   { value: '1-10', label: '1-10 employees' },
   { value: '11-50', label: '11-50 employees' },
@@ -82,6 +59,8 @@ const companySizeOptions = [
   { value: '1001-5000', label: '1001-5000 employees' },
   { value: '5001+', label: '5001+ employees' },
 ];
+
+// ─── Submit Handler ───────────────────────────────────────────────────────────
 
 const handleCompanyProfileSubmit = async (
   values: CompanyInformation,
@@ -159,7 +138,9 @@ const handleCompanyProfileSubmit = async (
     };
 
     if (success) {
-      toast.success(message || (isSettings ? 'Company Information Updated' : 'Company Information Registered'));
+      toast.success(
+        message || (isSettings ? 'Company Information Updated' : 'Company Information Registered')
+      );
       if (!isSettings) {
         router.push('/company_profile/organisation_setup');
       } else {
@@ -174,6 +155,8 @@ const handleCompanyProfileSubmit = async (
     setSubmitting(false);
   }
 };
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function CompanyInformationForm({
   token,
@@ -191,43 +174,76 @@ export default function CompanyInformationForm({
   const [industryOptions, setIndustryOptions] = useState<Option[]>([]);
 
 
+  /**
+   * Populates stateOptions and cityOptions from account data.
+   * Matches country by EITHER full name ("India") OR ISO code ("IN")
+   * so it works regardless of how the backend stores the country value.
+   */
+  const populateStateCityFromAccount = (acct?: IAccount | null) => {
+    if (!acct?.country) return;
+
+    const allCountries = Country.getAllCountries();
+
+    // Match by name first, then fall back to isoCode match
+    const matchedCountry =
+      (allCountries as any[]).find((c) => c.name === acct.country) ??
+      (allCountries as any[]).find((c) => c.isoCode === acct.country);
+
+    if (!matchedCountry) return;
+
+    const states = State.getStatesOfCountry(matchedCountry.isoCode).map(
+      (s: any) => ({ value: s.isoCode, label: s.name })
+    );
+    setStateOptions(states);
+
+    if (acct.state) {
+      // Match state by label (full name) OR by isoCode
+      const matchedState =
+        states.find((s) => s.label === acct.state) ??
+        states.find((s) => s.value === acct.state);
+
+      if (matchedState) {
+        const cities = City.getCitiesOfState(
+          matchedCountry.isoCode,
+          matchedState.value
+        ).map((c: any) => ({ value: c.name, label: c.name }));
+        setCityOptions(cities);
+      }
+    }
+  };
+
   useEffect(() => {
+    // Load countries
     const countries = Country.getAllCountries().map((country: any) => ({
       value: country.isoCode,
       label: country.name,
     }));
     setCountryOptions(countries);
 
+    // Load industries from API
     MastersService.getIndustries(slug).then((res) => {
       const data = res?.data as IMastersListResponse<IIndustry>;
       if (data?.success) {
-        setIndustryOptions(data.data.map((i: any) => ({ value: i.id, label: i.name })));
+        setIndustryOptions(
+          data.data.map((i: any) => ({ value: i.id, label: i.name }))
+        );
       }
     });
 
-    if (account?.country) {
-      const matchedCountry = Country.getAllCountries().find(
-        (c: any) => c.name === account.country
-      );
-      if (matchedCountry) {
-        const states = State.getStatesOfCountry(matchedCountry.isoCode).map(
-          (s: any) => ({ value: s.isoCode, label: s.name })
-        );
-        setStateOptions(states);
-        if (account.state) {
-          const matchedState = states.find((s) => s.label === account.state);
-          if (matchedState) {
-            const cities = City.getCitiesOfState(
-              matchedCountry.isoCode,
-              matchedState.value
-            ).map((c: any) => ({ value: c.name, label: c.name }));
-            setCityOptions(cities);
-          }
-        }
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Pre-populate state/city options if account already has country/state set
+    populateStateCityFromAccount(account);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Re-run state/city population whenever account prop changes (e.g. async load)
+  useEffect(() => {
+    if (account?.country) {
+      populateStateCityFromAccount(account);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account?.country, account?.state]);
+
+  // ─── Validation Schema ──────────────────────────────────────────────────────
 
   const validationSchema = object({
     company_name: string()
@@ -265,6 +281,8 @@ export default function CompanyInformationForm({
     time_frame: string().nullable(),
   });
 
+  // ─── Submit ─────────────────────────────────────────────────────────────────
+
   const onSubmit = async (
     values: CompanyInformation,
     formikHelpers: FormikHelpers<CompanyInformation>
@@ -286,6 +304,8 @@ export default function CompanyInformationForm({
     );
   };
 
+  // ─── Initial Values ─────────────────────────────────────────────────────────
+
   const initialValues: CompanyInformation = {
     company_name: account?.account_name ?? account?.company_name ?? '',
     industry: account?.industry ?? account?.industries?.[0] ?? '',
@@ -293,7 +313,7 @@ export default function CompanyInformationForm({
     country: account?.country ?? '',
     state: account?.state ?? '',
     city: account?.city ?? '',
-    timezone: account?.timezone ?? '',
+    timezone: account?.timezone ?? getDefaultTimezone(),
     address: account?.address ?? '',
     official_email_id: account?.official_email_id ?? '',
     sectors: account?.sectors ?? [],
@@ -304,6 +324,8 @@ export default function CompanyInformationForm({
     time_frame: 'quarter',
   };
 
+  // ─── Helpers ────────────────────────────────────────────────────────────────
+
   const className = () => {
     if (isMobileOnly) return { width: '290px' };
     if (isSettings) return { width: '100%' };
@@ -311,7 +333,10 @@ export default function CompanyInformationForm({
   };
 
   const getSelectedOption = (value: string, options: Option[]) =>
-    options.find((option) => option.value === value || option.label === value) || null;
+    options.find((option) => option.value === value || option.label === value) ||
+    null;
+
+  // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div style={className()}>
@@ -405,7 +430,10 @@ export default function CompanyInformationForm({
                     <Select
                       name="company_size"
                       options={companySizeOptions}
-                      value={getSelectedOption(values.company_size, companySizeOptions)}
+                      value={getSelectedOption(
+                        values.company_size,
+                        companySizeOptions
+                      )}
                       onChange={(option: Option | null) =>
                         setFieldValue('company_size', option?.value || '')
                       }
@@ -433,8 +461,8 @@ export default function CompanyInformationForm({
                   >
                     <Select
                       name="timezone"
-                      options={timezoneOptions}
-                      value={getSelectedOption(values.timezone, timezoneOptions)}
+                      options={TIMEZONE_OPTIONS}
+                      value={getSelectedOption(values.timezone, TIMEZONE_OPTIONS)}
                       onChange={(option: Option | null) =>
                         setFieldValue('timezone', option?.value || '')
                       }
@@ -473,12 +501,12 @@ export default function CompanyInformationForm({
                         setFieldValue('state', '');
                         setFieldValue('city', '');
                         if (option?.value) {
-                          const states = State.getStatesOfCountry(option.value).map(
-                            (state: any) => ({
-                              value: state.isoCode,
-                              label: state.name,
-                            })
-                          );
+                          const states = State.getStatesOfCountry(
+                            option.value
+                          ).map((state: any) => ({
+                            value: state.isoCode,
+                            label: state.name,
+                          }));
                           setStateOptions(states);
                         } else {
                           setStateOptions([]);
@@ -644,7 +672,11 @@ export default function CompanyInformationForm({
 
               {/* Submit Buttons */}
               <div
-                className={`${isSettings ? 'd-flex justify-content-end mt-3 mb-5' : 'd-flex justify-content-center company-information-btn-container'}`}
+                className={`${
+                  isSettings
+                    ? 'd-flex justify-content-end mt-3 mb-5'
+                    : 'd-flex justify-content-center company-information-btn-container'
+                }`}
               >
                 {isSettings && (
                   <div className="me-3">
@@ -665,7 +697,9 @@ export default function CompanyInformationForm({
                   isLoading={isSubmitting}
                   type="submit"
                   isSolid
-                  className={`w-100 ${isSettings ? '' : 'company-info-btn mt-2 mb-3'}`}
+                  className={`w-100 ${
+                    isSettings ? '' : 'company-info-btn mt-2 mb-3'
+                  }`}
                   sufixIconChildren={
                     !isSettings && (
                       <MdArrowForward
