@@ -375,6 +375,16 @@ export const resendInvitationForSignUp = (
   },
 );
 
+export const getOnboardingStatus = (
+  slug: string,
+  token?: string,
+) => get(
+  '/v1/auth/onboarding/status',
+  undefined,
+  slug,
+  { bearerToken: token, isFetchToken: !token },
+);
+
 export const getVerifyAdminToken = (token: string) => get(
   `/admin/${token}/accountverify`,
   undefined,

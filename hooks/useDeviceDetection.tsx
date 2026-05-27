@@ -7,22 +7,35 @@ import {
   isTablet as detectTablet,
 } from 'react-device-detect';
 
-export const useDeviceDetection = () => {
-  const [isMobile, setIsMobile] = useState(false);
-  const [isMobileOnly, setIsMobileOnly] = useState(false);
-  const [isTablet, setIsTablet] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
+type DeviceState = {
+  isMobile: boolean;
+  isMobileOnly: boolean;
+  isTablet: boolean;
+  isDesktop: boolean;
+  isIOS: boolean;
+};
+
+const defaultState: DeviceState = {
+  isMobile: false,
+  isMobileOnly: false,
+  isTablet: false,
+  isDesktop: false,
+  isIOS: false,
+};
+
+export const useDeviceDetection = (): DeviceState => {
+  const [detected, setDetected] = useState<DeviceState>(defaultState);
 
   useEffect(() => {
-    setIsMobile(detectMobile);
-    setIsMobileOnly(detectMobileOnly);
-    setIsTablet(detectTablet);
-    setIsDesktop(detectDesktop);
-    setIsIOS(detectIos);
+    // Single state update — one re-render instead of five
+    setDetected({
+      isMobile: detectMobile,
+      isMobileOnly: detectMobileOnly,
+      isTablet: detectTablet,
+      isDesktop: detectDesktop,
+      isIOS: detectIos,
+    });
   }, []);
 
-  return {
-    isMobile, isMobileOnly, isTablet, isDesktop, isIOS,
-  };
+  return detected;
 };

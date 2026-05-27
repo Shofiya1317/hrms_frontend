@@ -5,7 +5,8 @@
 
 import { useDeviceDetection } from '@/hooks/useDeviceDetection';
 import { IAccount } from '@/lib/interface/IAccount.interface';
-import { AuthService } from '@/lib/service';
+import { AuthService, MastersService } from '@/lib/service';
+import { IIndustry, IMastersListResponse } from '@/lib/interface/IMasters.interface';
 import { Form, Formik, FormikHelpers } from 'formik';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { usePathname, useRouter } from 'next/navigation';
@@ -15,6 +16,35 @@ import { MdArrowForward, MdOutlineEdit } from 'react-icons/md';
 import Select from 'react-select';
 import { isValidPhoneNumber } from 'react-phone-number-input';
 import { array, object, string } from 'yup';
+const timezoneOptions = [
+  { value: 'UTC-12:00', label: '(UTC-12:00) International Date Line West' },
+  { value: 'UTC-11:00', label: '(UTC-11:00) Coordinated Universal Time-11' },
+  { value: 'UTC-10:00', label: '(UTC-10:00) Hawaii' },
+  { value: 'UTC-09:00', label: '(UTC-09:00) Alaska' },
+  { value: 'UTC-08:00', label: '(UTC-08:00) Pacific Time (US & Canada)' },
+  { value: 'UTC-07:00', label: '(UTC-07:00) Mountain Time (US & Canada)' },
+  { value: 'UTC-06:00', label: '(UTC-06:00) Central Time (US & Canada)' },
+  { value: 'UTC-05:00', label: '(UTC-05:00) Eastern Time (US & Canada)' },
+  { value: 'UTC-04:00', label: '(UTC-04:00) Atlantic Time (Canada)' },
+  { value: 'UTC-03:00', label: '(UTC-03:00) Buenos Aires' },
+  { value: 'UTC-02:00', label: '(UTC-02:00) Mid-Atlantic' },
+  { value: 'UTC-01:00', label: '(UTC-01:00) Azores' },
+  { value: 'UTC+00:00', label: '(UTC+00:00) London, Dublin' },
+  { value: 'UTC+01:00', label: '(UTC+01:00) Berlin, Rome, Paris' },
+  { value: 'UTC+02:00', label: '(UTC+02:00) Helsinki, Cairo' },
+  { value: 'UTC+03:00', label: '(UTC+03:00) Moscow, Nairobi' },
+  { value: 'UTC+04:00', label: '(UTC+04:00) Dubai, Baku' },
+  { value: 'UTC+05:00', label: '(UTC+05:00) Islamabad, Karachi' },
+  { value: 'UTC+05:30', label: '(UTC+05:30) Mumbai, Delhi' },
+  { value: 'UTC+06:00', label: '(UTC+06:00) Dhaka' },
+  { value: 'UTC+07:00', label: '(UTC+07:00) Bangkok, Jakarta' },
+  { value: 'UTC+08:00', label: '(UTC+08:00) Singapore, Beijing' },
+  { value: 'UTC+09:00', label: '(UTC+09:00) Tokyo, Seoul' },
+  { value: 'UTC+10:00', label: '(UTC+10:00) Sydney, Melbourne' },
+  { value: 'UTC+11:00', label: '(UTC+11:00) Solomon Islands' },
+  { value: 'UTC+12:00', label: '(UTC+12:00) Auckland, Wellington' },
+];
+
 import { Button } from '../Button/Button';
 import { FormikField } from '../FormikField/FormikField';
 import { FormikPhoneNumber } from '../FormikPhoneNumber/FormikPhoneNumber';
@@ -53,53 +83,6 @@ const companySizeOptions = [
   { value: '5001+', label: '5001+ employees' },
 ];
 
-const timezoneOptions = [
-  { value: 'UTC-12:00', label: '(UTC-12:00) International Date Line West' },
-  { value: 'UTC-11:00', label: '(UTC-11:00) Coordinated Universal Time-11' },
-  { value: 'UTC-10:00', label: '(UTC-10:00) Hawaii' },
-  { value: 'UTC-09:00', label: '(UTC-09:00) Alaska' },
-  { value: 'UTC-08:00', label: '(UTC-08:00) Pacific Time (US & Canada)' },
-  { value: 'UTC-07:00', label: '(UTC-07:00) Mountain Time (US & Canada)' },
-  { value: 'UTC-06:00', label: '(UTC-06:00) Central Time (US & Canada)' },
-  { value: 'UTC-05:00', label: '(UTC-05:00) Eastern Time (US & Canada)' },
-  { value: 'UTC-04:00', label: '(UTC-04:00) Atlantic Time (Canada)' },
-  { value: 'UTC-03:00', label: '(UTC-03:00) Buenos Aires' },
-  { value: 'UTC-02:00', label: '(UTC-02:00) Mid-Atlantic' },
-  { value: 'UTC-01:00', label: '(UTC-01:00) Azores' },
-  { value: 'UTC+00:00', label: '(UTC+00:00) London, Dublin' },
-  { value: 'UTC+01:00', label: '(UTC+01:00) Berlin, Rome, Paris' },
-  { value: 'UTC+02:00', label: '(UTC+02:00) Helsinki, Cairo' },
-  { value: 'UTC+03:00', label: '(UTC+03:00) Moscow, Nairobi' },
-  { value: 'UTC+04:00', label: '(UTC+04:00) Dubai, Baku' },
-  { value: 'UTC+05:00', label: '(UTC+05:00) Islamabad, Karachi' },
-  { value: 'UTC+05:30', label: '(UTC+05:30) Mumbai, Delhi' },
-  { value: 'UTC+06:00', label: '(UTC+06:00) Dhaka' },
-  { value: 'UTC+07:00', label: '(UTC+07:00) Bangkok, Jakarta' },
-  { value: 'UTC+08:00', label: '(UTC+08:00) Singapore, Beijing' },
-  { value: 'UTC+09:00', label: '(UTC+09:00) Tokyo, Seoul' },
-  { value: 'UTC+10:00', label: '(UTC+10:00) Sydney, Melbourne' },
-  { value: 'UTC+11:00', label: '(UTC+11:00) Solomon Islands' },
-  { value: 'UTC+12:00', label: '(UTC+12:00) Auckland, Wellington' },
-];
-
-const industryOptions = [
-  { value: 'technology', label: 'Technology' },
-  { value: 'healthcare', label: 'Healthcare' },
-  { value: 'finance', label: 'Finance & Banking' },
-  { value: 'retail', label: 'Retail & E-commerce' },
-  { value: 'manufacturing', label: 'Manufacturing' },
-  { value: 'education', label: 'Education' },
-  { value: 'construction', label: 'Construction' },
-  { value: 'real_estate', label: 'Real Estate' },
-  { value: 'transportation', label: 'Transportation & Logistics' },
-  { value: 'hospitality', label: 'Hospitality & Tourism' },
-  { value: 'media', label: 'Media & Entertainment' },
-  { value: 'agriculture', label: 'Agriculture' },
-  { value: 'energy', label: 'Energy & Utilities' },
-  { value: 'consulting', label: 'Consulting' },
-  { value: 'other', label: 'Other' },
-];
-
 const handleCompanyProfileSubmit = async (
   values: CompanyInformation,
   slug: string,
@@ -130,6 +113,7 @@ const handleCompanyProfileSubmit = async (
       const onboardingPayload = {
         company_name: values.company_name,
         industry: values.industry,
+        company_size: values.company_size,
         country: values.country,
         state: values.state,
         city: values.city,
@@ -169,7 +153,6 @@ const handleCompanyProfileSubmit = async (
       });
     }
 
-    // API response: { success: boolean, message: string }
     const { success, message } = res?.data as {
       success: boolean;
       message: string;
@@ -205,6 +188,8 @@ export default function CompanyInformationForm({
   const [countryOptions, setCountryOptions] = useState<Option[]>([]);
   const [stateOptions, setStateOptions] = useState<Option[]>([]);
   const [cityOptions, setCityOptions] = useState<Option[]>([]);
+  const [industryOptions, setIndustryOptions] = useState<Option[]>([]);
+
 
   useEffect(() => {
     const countries = Country.getAllCountries().map((country: any) => ({
@@ -212,6 +197,36 @@ export default function CompanyInformationForm({
       label: country.name,
     }));
     setCountryOptions(countries);
+
+    MastersService.getIndustries(slug).then((res) => {
+      const data = res?.data as IMastersListResponse<IIndustry>;
+      if (data?.success) {
+        setIndustryOptions(data.data.map((i: any) => ({ value: i.id, label: i.name })));
+      }
+    });
+
+    if (account?.country) {
+      const matchedCountry = Country.getAllCountries().find(
+        (c: any) => c.name === account.country
+      );
+      if (matchedCountry) {
+        const states = State.getStatesOfCountry(matchedCountry.isoCode).map(
+          (s: any) => ({ value: s.isoCode, label: s.name })
+        );
+        setStateOptions(states);
+        if (account.state) {
+          const matchedState = states.find((s) => s.label === account.state);
+          if (matchedState) {
+            const cities = City.getCitiesOfState(
+              matchedCountry.isoCode,
+              matchedState.value
+            ).map((c: any) => ({ value: c.name, label: c.name }));
+            setCityOptions(cities);
+          }
+        }
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const validationSchema = object({
@@ -272,20 +287,20 @@ export default function CompanyInformationForm({
   };
 
   const initialValues: CompanyInformation = {
-    company_name: account?.account_name ?? '',
-    industry: (account as any)?.industry ?? '',
-    company_size: (account as any)?.company_size ?? '',
-    country: (account as any)?.country ?? '',
-    state: (account as any)?.state ?? '',
-    city: (account as any)?.city ?? '',
-    timezone: (account as any)?.timezone ?? '',
+    company_name: account?.account_name ?? account?.company_name ?? '',
+    industry: account?.industry ?? account?.industries?.[0] ?? '',
+    company_size: account?.company_size ?? '',
+    country: account?.country ?? '',
+    state: account?.state ?? '',
+    city: account?.city ?? '',
+    timezone: account?.timezone ?? '',
     address: account?.address ?? '',
     official_email_id: account?.official_email_id ?? '',
-    sectors: account?.sectors || [],
-    company_website_url: account?.website_url ?? '',
+    sectors: account?.sectors ?? [],
+    company_website_url: account?.website ?? account?.website_url ?? '',
     phone_number: account?.phone_number ?? '',
     tax_id: account?.tax_id ?? '',
-    standards: ['BRSR'],
+    standards: account?.standards ?? ['BRSR'],
     time_frame: 'quarter',
   };
 
@@ -295,13 +310,8 @@ export default function CompanyInformationForm({
     return { width: '700px' };
   };
 
-  const getSelectedOption = (value: string, options: Option[]) => {
-    return (
-      options.find(
-        (option) => option.value === value || option.label === value
-      ) || null
-    );
-  };
+  const getSelectedOption = (value: string, options: Option[]) =>
+    options.find((option) => option.value === value || option.label === value) || null;
 
   return (
     <div style={className()}>

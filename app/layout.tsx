@@ -2,34 +2,11 @@ import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import { headers } from 'next/headers';
 import { Toaster } from 'react-hot-toast';
-import ClientProvider from '../components/ClientProvider/ClientProvider';
-import { UserProvider } from '../components/Context/userProvider';
+import Providers from '../components/Providers';
 import { AuthLayout } from '../components/Layout/AuthLayout';
-import { ModalProvider } from '../components/Modal/Context';
-// import 'bootstrap/dist/css/bootstrap.min.css';
 import './globals.css';
 import './plate.css';
 
-// const geistSans = localFont({
-//   src: './fonts/GeistVF.woff',
-//   variable: '--font-geist-sans',
-//   weight: '100 900',
-// });
-// const geistMono = localFont({
-//   src: './fonts/GeistMonoVF.woff',
-//   variable: '--font-geist-mono',
-//   weight: '100 900',
-// });
-
-// const inter = Inter({
-//   subsets: ['latin'],
-// });
-
-// const interItalic = localFont({
-//   src: './fonts/Inter-Italic-VariableFont_opsz,wght.woff',
-//   variable: '--font-inter-italic',
-//   weight: '100 900',
-// });
 const interVariable = localFont({
   src: './fonts/Inter-VariableFont_opsz,wght.woff',
   variable: '--font-inter-variable',
@@ -53,15 +30,11 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={interVariable.className}>
-        <ClientProvider>
-          <ModalProvider>
-            <UserProvider>
-              <AuthLayout slug={slug}>
-                {children}
-              </AuthLayout>
-            </UserProvider>
-          </ModalProvider>
-        </ClientProvider>
+        <Providers>
+          <AuthLayout slug={slug}>
+            {children}
+          </AuthLayout>
+        </Providers>
         <Toaster
           position="bottom-center"
           gutter={8}

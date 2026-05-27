@@ -9,6 +9,21 @@ export const config = {
   ],
 };
 
+// In-memory cache for slug verification — prevents an API call on every request
+const slugCache = new Map<string, { success: boolean; message: string; ts: number }>();
+const SLUG_CACHE_TTL = 60_000; // 1 minute
+
+async function verifySlug(subdomain: string): Promise<{ success: boolean; message: string }> {
+  const cached = slugCache.get(subdomain);
+  if (cached && Date.now() - cached.ts < SLUG_CACHE_TTL) {
+    return { success: cached.success, message: cached.message };
+  }
+  const res = await AuthService.slugVerify(subdomain);
+  const { success, message } = res?.data as { success: boolean; message: string; error: string[] };
+  slugCache.set(subdomain, { success, message, ts: Date.now() });
+  return { success, message };
+}
+
 export default async function middleware(req: NextRequest) {
   const url = req.nextUrl;
   const session = await getToken({ req, secret: process.env.AUTH_SECRET });
@@ -35,12 +50,7 @@ export default async function middleware(req: NextRequest) {
   if (subdomain !== 'app' && ((subdomain === 'localhost' || subdomain === 'primeclm' || subdomain.length < 4))) {
     return NextResponse.rewrite(buildUrlWithQueryParams(`/${subdomain}/`));
   }
-  const subdomains = await AuthService.slugVerify(subdomain);
-  const { success, message } = subdomains?.data as {
-    success: boolean;
-    message: string;
-    error: string[];
-  };
+  const { success, message } = await verifySlug(subdomain);
 
   const unProtectedUrlMatches: RegExp = /^\/(accept_invitation|reset_password|privacy_policy|forgot_password|update_password|update_password_email_verify|sign_up|terms_of_service|email_verify|invite|sign_in|confirm_account|contracts\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\/guest|templates\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\/guest)$/;
 

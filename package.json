@@ -79,6 +79,7 @@
     "@udecode/plate-trailing-block": "^39.0.0",
     "@udecode/plate-yjs": "^39.0.0",
     "@uploadthing/react": "7.3.0",
+    "@vvo/tzdb": "^6.198.0",
     "apexcharts": "^4.7.0",
     "axios": "^1.14.0",
     "bootstrap": "^5.3.3",

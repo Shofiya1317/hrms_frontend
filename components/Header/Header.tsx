@@ -17,6 +17,7 @@ import Avatar from '../Avatar/Avatar';
 import { Button } from '../Button/Button';
 import { useModal } from '../Modal/Context';
 import 'bootstrap/dist/css/bootstrap.min.css';
+// Note: move this import to app/globals.css to avoid it being bundled per-component
 
 export interface IMenuItem {
   label: string;
@@ -343,7 +344,8 @@ function Header(props: HeaderProps) {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [mobileView, setMobileView] = useState<'menu' | 'profile'>('menu');
-  const timeoutId = useRef<any>(null);
+  const timeoutId = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rafId = useRef<number>(0);
   const navRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const { data: session } = useSession();
@@ -368,28 +370,28 @@ function Header(props: HeaderProps) {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('currentRole');
     toast.success('Signed Out', { duration: 3000 });
     signOut({ redirect: false });
     router.push('/sign_in');
   };
 
   useEffect(() => {
-    const handleLogoutOnTimeout = () => handleLogout();
-    const handleUserActivity = () => {
-      clearTimeout(timeoutId.current);
-      timeoutId.current = setTimeout(handleLogoutOnTimeout, INACTIVITY_TIMEOUT);
+    if (!session) return;
+    timeoutId.current = setTimeout(handleLogout, INACTIVITY_TIMEOUT);
+    const handleActivity = () => {
+      cancelAnimationFrame(rafId.current);
+      rafId.current = requestAnimationFrame(() => {
+        if (timeoutId.current) clearTimeout(timeoutId.current);
+        timeoutId.current = setTimeout(handleLogout, INACTIVITY_TIMEOUT);
+      });
     };
-    if (session) {
-      timeoutId.current = setTimeout(handleLogoutOnTimeout, INACTIVITY_TIMEOUT);
-      document.addEventListener('mousemove', handleUserActivity);
-      document.addEventListener('keydown', handleUserActivity);
-    }
+    document.addEventListener('mousemove', handleActivity, { passive: true });
+    document.addEventListener('keydown', handleActivity, { passive: true });
     return () => {
-      clearTimeout(timeoutId.current);
-      document.removeEventListener('mousemove', handleUserActivity);
-      document.removeEventListener('keydown', handleUserActivity);
+      if (timeoutId.current) clearTimeout(timeoutId.current);
+      cancelAnimationFrame(rafId.current);
+      document.removeEventListener('mousemove', handleActivity);
+      document.removeEventListener('keydown', handleActivity);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);

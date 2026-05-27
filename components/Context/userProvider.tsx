@@ -8,24 +8,19 @@ import React, {
   ReactNode,
   useCallback,
   useMemo,
+  useRef,
   useState,
-  useEffect,
 } from 'react';
 
 export interface UserContextProp {
-  getCurrentUser: () => Promise<{
-    user: IUser;
-  } | null>;
+  getCurrentUser: () => Promise<{ user: IUser } | null>;
   currentUser: IUser | undefined;
   currentRole: Record<string, string[]> | undefined;
-  getCurrentRoleAccess: () => Promise<{
-    access: Record<string, string[]>;
-  } | null>;
+  getCurrentRoleAccess: () => Promise<{ access: Record<string, string[]> } | null>;
   roleAccessDetails: IRoleAccess | undefined;
-  getRoleAccess: () => Promise<{
-    roleAccess: IRoleAccess;
-  } | null>;
+  getRoleAccess: () => Promise<{ roleAccess: IRoleAccess } | null>;
 }
+
 export interface UserProviderProps {
   children: ReactNode;
 }
@@ -34,30 +29,51 @@ const UserContext = React.createContext<UserContextProp | null>(null);
 
 function UserProvider({ children }: Readonly<UserProviderProps>) {
   const params = useParams();
-  const [isMounted, setIsMounted] = useState(false);
+  const subdomain = params?.subdomain as string;
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  // No localStorage in initializers — prevents server/client hydration mismatch
+  const [currentUser, setCurrentUser] = useState<IUser | undefined>(undefined);
+  const [currentRole, setCurrentRole] = useState<Record<string, string[]> | undefined>(undefined);
+  const [roleAccessDetails, setRoleAccessDetails] = useState<IRoleAccess | undefined>(undefined);
 
-  const [currentUser, setCurrentUser] = useState<IUser | undefined>(() => {
-    if (typeof window === 'undefined') return undefined;
-    const stored = localStorage.getItem('currentUser');
-    return stored ? JSON.parse(stored) : undefined;
-  });
+  // Prevents duplicate concurrent API calls
+  const fetchingRef = useRef(false);
 
-  const [currentRole, setCurrentRole] = useState<
-    Record<string, string[]> | undefined
-  >(() => {
-    if (typeof window === 'undefined') return undefined;
-    const stored = localStorage.getItem('currentRole');
-    return stored ? JSON.parse(stored) : undefined;
-  });
+  const getCurrentRoleAccess = useCallback(async () => {
+    const res = await RoleService.getCurrentAccess(subdomain);
+    const { access, success } = res?.data as {
+      access: Record<string, string[]>;
+      success: boolean;
+    };
+    if (success) {
+      setCurrentRole(access);
+      return { access };
+    }
+    return null;
+  }, [subdomain]);
 
-  const [roleAccessDetails, setRoleAccessDetails] = useState<IRoleAccess>();
+  const getCurrentUser = useCallback(async () => {
+    if (fetchingRef.current) return null;
+    fetchingRef.current = true;
+    try {
+      const res = await UserService.getCurrentUser(subdomain);
+      const { user, success } = res?.data as {
+        user: IUser;
+        success: boolean;
+      };
+      if (success) {
+        setCurrentUser(user);
+        await getCurrentRoleAccess();
+        return { user };
+      }
+      return null;
+    } finally {
+      fetchingRef.current = false;
+    }
+  }, [subdomain, getCurrentRoleAccess]);
 
   const getRoleAccess = useCallback(async () => {
-    const res = await RoleService.getRoleDetails(params?.subdomain as string);
+    const res = await RoleService.getRoleDetails(subdomain);
     const { role_access: roleAccess, success } = res?.data as {
       role_access: IRoleAccess;
       success: boolean;
@@ -67,44 +83,7 @@ function UserProvider({ children }: Readonly<UserProviderProps>) {
       return { roleAccess };
     }
     return null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const getCurrentRoleAccess = useCallback(async () => {
-    const res = await RoleService.getCurrentAccess(params?.subdomain as string);
-    const { access, success } = res?.data as {
-      access: Record<string, string[]>;
-      success: boolean;
-    };
-
-    if (success) {
-      setCurrentRole(access);
-      localStorage.setItem('currentRole', JSON.stringify(access)); // optional redundancy
-      return { access };
-    }
-    return null;
-  }, [params?.subdomain]);
-
-  const getCurrentUser = useCallback(async () => {
-    const res = await UserService.getCurrentUser(params?.subdomain as string);
-    const { user, success } = res?.data as {
-      user: IUser;
-      success: boolean;
-    };
-
-    if (success) {
-      setCurrentUser(user);
-      localStorage.setItem('currentUser', JSON.stringify(user)); // ✅ ADD
-
-      const roleRes = await getCurrentRoleAccess();
-      if (roleRes?.access) {
-        localStorage.setItem('currentRole', JSON.stringify(roleRes.access)); // ✅ ADD
-      }
-
-      return { user };
-    }
-    return null;
-  }, [params?.subdomain, getCurrentRoleAccess]);
+  }, [subdomain]);
 
   const value: UserContextProp = useMemo(
     () => ({
@@ -115,19 +94,8 @@ function UserProvider({ children }: Readonly<UserProviderProps>) {
       roleAccessDetails,
       getRoleAccess,
     }),
-    [
-      getCurrentUser,
-      currentUser,
-      currentRole,
-      getCurrentRoleAccess,
-      roleAccessDetails,
-      getRoleAccess,
-    ],
+    [getCurrentUser, currentUser, currentRole, getCurrentRoleAccess, roleAccessDetails, getRoleAccess],
   );
-
-  if (!isMounted) {
-    return null; // or a loader if you want
-  }
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }

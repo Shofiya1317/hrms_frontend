@@ -1,7 +1,4 @@
 /* eslint-disable max-len */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable no-unused-vars */
-
 'use client';
 
 import LoginImage from '@/assests/LoginImage.png';
@@ -12,7 +9,7 @@ import { AuthService } from '@/lib/service';
 import { signOut } from 'next-auth/react';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { ReactNode, useRef } from 'react';
+import { ReactNode } from 'react';
 import { Button } from '../Button/Button';
 import MultiStepProgressBar from '../MultiStepProgressBar/MultiStepProgressBar';
 import './AuthLayout.css';
@@ -28,8 +25,6 @@ export function AuthLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { isMobile } = useDeviceDetection();
-  const containerRef = useRef<HTMLDivElement>(null);
-
   const isSignIn = ['/sign_in', '/forgot_password', '/reset_password'].some(
     (path) => pathname.startsWith(path),
   );
@@ -134,7 +129,7 @@ export function AuthLayout({
                 alt="vendor management"
                 fill
                 sizes="50vw"
-                quality={100}
+                quality={85}
                 priority
               />
               <div
@@ -180,7 +175,6 @@ export function AuthLayout({
           {/* Right form panel */}
           <div className="col-12 col-lg-6 p-0 vh-100 overflow-auto right-panel-container position-relative">
             <div
-              ref={containerRef}
               className="position-relative w-100 h-100 d-flex justify-content-center align-items-center right-panel"
             >
               <div className="animated-element d-flex justify-content-center align-items-center px-2 pb-5 pb-md-0 w-100">
