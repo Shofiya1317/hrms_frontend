@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, Download, Upload, Mail, Phone, Building2, MapPin, Eye, Edit, Trash2, CheckCircle, XCircle, Clock } from 'lucide-react';
-import AddEmployeeModal, { CreatedEmployee } from '../AddEmployeeModal';
+import { useParams } from 'next/navigation';
+import AddEmployeeModal from '../AdminEmployees/AddEmployeeModal';
+import { deleteEmployee, getEmployees } from '@/lib/service/employee';
 
 interface Employee {
   id: string;
@@ -41,41 +43,106 @@ function getInitials(name: string): string {
 }
 
 export default function EmployeesPage() {
+  const params = useParams();
+  const tenantId = (params?.subdomain as string) || 'tenant-id-placeholder';
+
   const [activeTab, setActiveTab] = useState('Registry');
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('All Departments');
   const [statusFilter, setStatusFilter] = useState('All Status');
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // Map of user_id → manager name for display
-  const [managerNames, setManagerNames] = useState<Record<string, string>>({});
+
+  
 
   const fetchEmployees = useCallback(async () => {
     setLoading(true);
     setError(null);
+
     try {
-      const staticEmployees = [
-        { id: '1', name: 'Arjun Mehta', avatar: 'AM', role: 'Admin', department: 'Management', email: 'admin@impactree.in', phone: '', location: 'Bengaluru', manager: '', managerId: null, joinDate: 'Jan 2024', status: 'active' as const, employeeId: 'EMP-001' },
-        { id: '2', name: 'Rahul Sharma', avatar: 'RS', role: 'Manager', department: 'Operations', email: 'manager@impactree.in', phone: '', location: 'Mumbai', manager: 'Arjun Mehta', managerId: '1', joinDate: 'Mar 2024', status: 'active' as const, employeeId: 'EMP-002' },
-        { id: '3', name: 'Ananya Krishnan', avatar: 'AK', role: 'Employee', department: 'Engineering', email: 'employee@impactree.in', phone: '', location: 'Bengaluru', manager: 'Rahul Sharma', managerId: '2', joinDate: 'Jun 2024', status: 'active' as const, employeeId: 'EMP-003' },
-      ];
-      setManagerNames({ '1': 'Arjun Mehta', '2': 'Rahul Sharma', '3': 'Ananya Krishnan' });
-      setEmployees(staticEmployees);
+      const response = await getEmployees(tenantId);
+      console.log('Employee API response:', response);
+
+      let rawEmployees = [];
+
+      if (Array.isArray(response?.data?.employees)) {
+        rawEmployees = response.data.employees;
+      } else if (Array.isArray(response?.data?.data?.employees)) {
+        rawEmployees = response.data.data.employees;
+      } else if (Array.isArray(response?.data?.data)) {
+        rawEmployees = response.data.data;
+      } else if (Array.isArray(response?.data)) {
+        rawEmployees = response.data;
+      }
+
+      console.log('Mapped employee list:', rawEmployees);
+
+      if (rawEmployees.length > 0) {
+        setEmployees(rawEmployees.map((emp: any) => {
+          const fullName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.user?.email || 'Unknown Employee';
+          const departmentName = emp.department?.name || emp.department_name || 'Unassigned';
+          const roleLabel = emp.user?.role || emp.role || 'EMPLOYEE';
+          const statusValue = (emp.user?.status || emp.status || 'ACTIVE').toLowerCase();
+
+          return {
+            id: emp.id,
+            name: fullName,
+            avatar: getInitials(fullName),
+            role: roleLabel,
+            department: departmentName,
+            email: emp.user?.email || emp.work_email || emp.email || '',
+            phone: emp.personal_phone || emp.user?.phone_number || emp.work_phone || '',
+            location: emp.city || emp.country || emp.work_location?.name || '',
+            manager: emp.reporting_manager?.first_name || emp.reporting_manager?.name || emp.managerName || '',
+            managerId: emp.reporting_manager_id || emp.managerId || null,
+            joinDate: emp.date_of_joining
+              ? new Date(emp.date_of_joining).toLocaleString('default', { month: 'short', year: 'numeric' })
+              : emp.joinDate || '',
+            status: (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'on-leave')
+              ? statusValue
+              : 'active',
+            employeeId: emp.employee_code || emp.employee_id || emp.employeeId || `EMP-${String(emp.id || '').slice(0, 6)}`,
+          };
+        }));
+        return;
+      }
+
+      console.warn('No employee data returned from service.');
+      setEmployees([]);
     } catch (err: any) {
+      console.error('Failed to load employees:', err);
+      setEmployees([]);
       setError(err?.message || 'Failed to load employees');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [tenantId]);
 
   useEffect(() => {
     fetchEmployees();
   }, [fetchEmployees]);
 
-  const handleEmployeeCreated = (created: CreatedEmployee) => {
+  const handleEditEmployee = (employee: Employee) => {
+    setEditingEmployee(employee);
+    setShowAddModal(true);
+  };
+
+  const handleDeleteEmployee = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this employee?')) return;
+
+    try {
+      await deleteEmployee(id, tenantId);
+      await fetchEmployees();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to delete employee');
+    }
+  };
+
+  const handleEmployeeCreated = (created: any) => {
     const initials = getInitials(created.fullName);
     const joinMonth = new Date(created.joinDate).toLocaleString('default', { month: 'short', year: 'numeric' });
 
@@ -260,10 +327,16 @@ export default function EmployeesPage() {
                                 >
                                   <Eye size={14} />
                                 </button>
-                                <button className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                                <button
+                                  onClick={() => handleEditEmployee(emp)}
+                                  className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                >
                                   <Edit size={14} />
                                 </button>
-                                <button className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+                                <button
+                                  onClick={() => handleDeleteEmployee(emp.id)}
+                                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                >
                                   <Trash2 size={14} />
                                 </button>
                               </div>
@@ -289,7 +362,7 @@ export default function EmployeesPage() {
       )}
 
       {activeTab === 'Profile' && (
-        <EmployeeProfile employee={selectedEmployee || employees[0] || null} managerNames={managerNames} />
+        <EmployeeProfile employee={selectedEmployee || employees[0] || null} managerNames={{}} />
       )}
 
       {activeTab === 'ID Management' && <IDManagement employees={employees} />}
@@ -299,17 +372,28 @@ export default function EmployeesPage() {
       {/* Add Employee Modal */}
       {showAddModal && (
         <AddEmployeeModal
-          onClose={() => setShowAddModal(false)}
+          onClose={() => {
+            setShowAddModal(false);
+            setEditingEmployee(null);
+          }}
           onSuccess={(created) => {
+            if (editingEmployee) {
+              setShowAddModal(false);
+              setEditingEmployee(null);
+              fetchEmployees();
+              return;
+            }
             handleEmployeeCreated(created);
           }}
+          editingEmployee={editingEmployee || undefined}
+          isEditing={Boolean(editingEmployee)}
         />
       )}
     </div>
   );
 }
 
-function EmployeeProfile({ employee, managerNames }: { employee: Employee | null; managerNames: Record<string, string> }) {
+function EmployeeProfile({ employee, managerNames }: Readonly<{ employee: Employee | null; managerNames: Record<string, string> }>) {
   if (!employee) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
@@ -318,7 +402,9 @@ function EmployeeProfile({ employee, managerNames }: { employee: Employee | null
     );
   }
   const statusCfg = STATUS_CONFIG[employee.status];
-  const managerName = employee.managerId ? (managerNames[employee.managerId] || employee.manager || '—') : '—';
+  const managerName = employee.managerId
+    ? (managerNames[employee.managerId] || employee.manager || '—')
+    : '—';
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       {/* Left card */}
@@ -340,8 +426,8 @@ function EmployeeProfile({ employee, managerNames }: { employee: Employee | null
             { icon: Phone, label: employee.phone || '—' },
             { icon: Building2, label: employee.department || '—' },
             { icon: MapPin, label: employee.location || '—' },
-          ].map((item, i) => (
-            <div key={i} className="flex items-center gap-3">
+          ].map((item) => (
+            <div key={item.label} className="flex items-center gap-3">
               <div className="w-7 h-7 rounded-lg bg-[#e8f5ee] flex items-center justify-center">
                 <item.icon size={13} className="text-[#2D7A4F]" />
               </div>
@@ -418,7 +504,7 @@ function EmployeeProfile({ employee, managerNames }: { employee: Employee | null
   );
 }
 
-function IDManagement({ employees }: { employees: Employee[] }) {
+function IDManagement({ employees }: Readonly<{ employees: Employee[] }>) {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -470,7 +556,7 @@ function IDManagement({ employees }: { employees: Employee[] }) {
   );
 }
 
-function DocumentManagement() {
+function DocumentManagement(): JSX.Element {
   const docs = [
     { name: 'Offer Letter - New Employee.pdf', tag: 'HR', size: '245 KB', date: 'Mar 2026', expiry: null },
     { name: 'Aadhaar Card - Employee.pdf', tag: 'KYC', size: '1.2 MB', date: 'Jan 2026', expiry: 'Dec 2030' },
@@ -492,8 +578,8 @@ function DocumentManagement() {
         </button>
       </div>
       <div className="space-y-2">
-        {docs.map((doc, i) => (
-          <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors group">
+        {docs.map((doc) => (
+          <div key={doc.name} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors group">
             <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
               <span className="text-red-500 text-xs font-bold">PDF</span>
             </div>
@@ -516,7 +602,7 @@ function DocumentManagement() {
   );
 }
 
-function EmployeeLifecycle({ employees }: { employees: Employee[] }) {
+function EmployeeLifecycle({ employees }: Readonly<{ employees: Employee[] }>) {
   const recentEmployees = employees.slice(0, 5);
   const typeConfig: Record<string, string> = {
     active: 'bg-green-100 text-green-700',

@@ -5,8 +5,6 @@ import { useParams } from 'next/navigation';
 import {
   X,
   UserPlus,
-  Eye,
-  EyeOff,
   Loader2,
   CheckCircle,
   AlertCircle,
@@ -14,9 +12,10 @@ import {
 import {
   createEmployee,
   updateEmployee,
-  getEmployees,
+  getInviteMasterData,
   IEmployeePayload,
 } from '@/lib/service/employee';
+import { getShifts } from '@/lib/service/masters';
 
 interface AddEmployeeModalProps {
   onClose: () => void;
@@ -32,29 +31,31 @@ interface ManagerOption {
   jobTitle: string;
 }
 
-// These should be fetched from API in real implementation
-const DEPARTMENTS = [
-  { id: 'dept_eng', name: 'Engineering' },
-  { id: 'dept_hr', name: 'Human Resources' },
-  { id: 'dept_sales', name: 'Sales' },
-  { id: 'dept_finance', name: 'Finance' },
-  { id: 'dept_ops', name: 'Operations' },
-  { id: 'dept_qa', name: 'Quality Assurance' },
-  { id: 'dept_exec', name: 'Executive' },
+interface MasterOption {
+  id: string;
+  name: string;
+  code?: string;
+}
+
+interface InviteMasterData {
+  departments?: MasterOption[];
+  designations?: MasterOption[];
+  employment_types?: MasterOption[];
+  employees?: Array<{
+    id: string;
+    name?: string;
+    first_name?: string;
+    last_name?: string;
+    work_email?: string;
+  }>;
+}
+
+const ROLES: { value: 'EMPLOYEE' | 'HR_ADMIN'; label: string }[] = [
+  { value: 'EMPLOYEE', label: 'Employee' },
+  { value: 'HR_ADMIN', label: 'Hr Admin' },
 ];
 
-const EMPLOYMENT_TYPES = [
-  { id: 'emp_full', name: 'Full Time' },
-  { id: 'emp_part', name: 'Part Time' },
-  { id: 'emp_contract', name: 'Contract' },
-  { id: 'emp_intern', name: 'Intern' },
-  { id: 'emp_temp', name: 'Temporary' },
-];
-
-const ROLES: { value: 'employee' | 'manager'; label: string }[] = [
-  { value: 'employee', label: 'Employee' },
-  { value: 'manager', label: 'Manager' },
-];
+const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
 export default function AddEmployeeModal({
   onClose,
@@ -69,10 +70,11 @@ export default function AddEmployeeModal({
     firstName: '',
     lastName: '',
     email: '',
-    role: 'employee' as 'employee' | 'manager',
-    departmentId: '', // Changed from department to departmentId
-    designation: '',
-    employmentTypeId: '', // Changed from employmentType to employmentTypeId
+    role: 'EMPLOYEE' as 'EMPLOYEE' | 'HR_ADMIN',
+    departmentId: '',
+    designationId: '',
+    employmentTypeId: '',
+    shiftId: '',
     phone: '',
     managerId: '',
     joinDate: new Date().toISOString().split('T')[0],
@@ -80,17 +82,19 @@ export default function AddEmployeeModal({
     gender: '',
   });
   
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [createdEmployee, setCreatedEmployee] = useState<any>(null);
   const [managers, setManagers] = useState<ManagerOption[]>([]);
+  const [departments, setDepartments] = useState<MasterOption[]>([]);
+  const [designations, setDesignations] = useState<MasterOption[]>([]);
+  const [employmentTypes, setEmploymentTypes] = useState<MasterOption[]>([]);
+  const [shifts, setShifts] = useState<MasterOption[]>([]);
 
   useEffect(() => {
     if (subdomain) {
-      loadManagers();
+      loadInviteMasterData();
     }
   }, [subdomain]);
 
@@ -101,12 +105,15 @@ export default function AddEmployeeModal({
         firstName: nameParts[0] || '',
         lastName: nameParts.slice(1).join(' ') || '',
         email: editingEmployee.email || '',
-        role: editingEmployee.role?.toLowerCase() === 'manager' ? 'manager' : 'employee',
-        departmentId: editingEmployee.departmentId || editingEmployee.department || '',
-        designation: editingEmployee.designation || '',
-        employmentTypeId: editingEmployee.employmentTypeId || editingEmployee.employmentType || '',
+        role: editingEmployee.role?.toUpperCase() === 'HR_ADMIN' || editingEmployee.role?.toLowerCase() === 'manager'
+          ? 'HR_ADMIN'
+          : 'EMPLOYEE',
+        departmentId: editingEmployee.departmentId || editingEmployee.department_id || editingEmployee.department || '',
+        designationId: editingEmployee.designationId || editingEmployee.designation_id || editingEmployee.designation || '',
+        employmentTypeId: editingEmployee.employmentTypeId || editingEmployee.employment_type_id || editingEmployee.employmentType || '',
+        shiftId: editingEmployee.shiftId || editingEmployee.shift_id || '',
         phone: editingEmployee.phone || '',
-        managerId: editingEmployee.managerId || '',
+        managerId: editingEmployee.managerId || editingEmployee.reporting_manager_id || '',
         joinDate: editingEmployee.joinDate?.split('T')[0] || new Date().toISOString().split('T')[0],
         dateOfBirth: editingEmployee.dateOfBirth?.split('T')[0] || '',
         gender: editingEmployee.gender || '',
@@ -114,19 +121,29 @@ export default function AddEmployeeModal({
     }
   }, [editingEmployee, isEditing]);
 
-  const loadManagers = async () => {
+  const loadInviteMasterData = async () => {
     try {
-      const response = await getEmployees(subdomain, { role: 'manager' });
-      const managersData = response?.data?.data || [];
-      const transformedManagers = managersData.map((manager: any) => ({
-        id: manager.id,
-        fullName: `${manager.first_name || ''} ${manager.last_name || ''}`.trim(),
-        department: manager.department?.name || '',
-        jobTitle: manager.role || '',
-      }));
-      setManagers(transformedManagers);
+      const [inviteResponse, shiftsResponse] = await Promise.all([
+        getInviteMasterData(subdomain),
+        getShifts(subdomain),
+      ]);
+      const masterData = (inviteResponse?.data?.data || inviteResponse?.data || {}) as InviteMasterData;
+      const shiftList = (shiftsResponse?.data?.data || shiftsResponse?.data || []) as MasterOption[];
+
+      setDepartments(masterData.departments || []);
+      setDesignations(masterData.designations || []);
+      setEmploymentTypes(masterData.employment_types || []);
+      setShifts(shiftList);
+      setManagers(
+        (masterData.employees || []).map((employee) => ({
+          id: employee.id,
+          fullName: `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || employee.name || 'Employee',
+          department: '',
+          jobTitle: employee.work_email || '',
+        })),
+      );
     } catch (err) {
-      console.error('Failed to load managers', err);
+      console.error('Failed to load invite master data', err);
     }
   };
 
@@ -135,7 +152,7 @@ export default function AddEmployeeModal({
     setError(null);
   };
 
-  const selectedManager = managers.find((m) => m.id === form.managerId);
+  const selectedManager = managers.find((m) => m.id === form.managerId) ?? null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,23 +179,19 @@ export default function AddEmployeeModal({
     try {
       const payload: IEmployeePayload = {
         email: form.email.trim().toLowerCase(),
-        role: form.role === 'manager' ? 'manager' : 'employee',
+        role: form.role,
         first_name: form.firstName.trim(),
         last_name: form.lastName.trim(),
-        date_of_birth: form.dateOfBirth,
-        gender: form.gender,
-        personal_phone: form.phone,
-        department_id: form.departmentId, // Now sending ID
-        designation_id: form.designation, // Still string, but API might expect ID
-        employment_type_id: form.employmentTypeId, // Now sending ID
-        reporting_manager_id: form.managerId,
-        date_of_joining: form.joinDate,
+        date_of_birth: form.dateOfBirth || undefined,
+        gender: form.gender ? capitalize(form.gender) : undefined,
+        personal_phone: form.phone.trim() || undefined,
+        department_id: form.departmentId || undefined,
+        designation_id: form.designationId || undefined,
+        employment_type_id: form.employmentTypeId || undefined,
+        reporting_manager_id: form.managerId || undefined,
+        shift_id: form.shiftId || undefined,
+        date_of_joining: form.joinDate || undefined,
       };
-
-      // Add password to payload only for new employees and if provided
-      if (!isEditing && password) {
-        (payload as any).password = password;
-      }
 
       let response;
       if (isEditing && editingEmployee?.id) {
@@ -196,7 +209,7 @@ export default function AddEmployeeModal({
           managerName: selectedManager?.fullName || '',
           email: form.email.trim().toLowerCase(),
           role: form.role,
-          department: DEPARTMENTS.find(d => d.id === form.departmentId)?.name || '',
+          department: departments.find((d) => d.id === form.departmentId)?.name || '',
         });
         onSuccess(newEmployee);
       }
@@ -241,12 +254,6 @@ export default function AddEmployeeModal({
                 <span className="text-gray-500 font-medium">Email</span>
                 <span className="font-semibold text-gray-800">{createdEmployee.email}</span>
               </div>
-              {password && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 font-medium">Password</span>
-                  <span className="font-mono font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-lg">{password}</span>
-                </div>
-              )}
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 font-medium">Role</span>
                 <span className="font-semibold text-gray-800 capitalize">{createdEmployee.role}</span>
@@ -256,12 +263,6 @@ export default function AddEmployeeModal({
                 <span className="font-semibold text-gray-800">{createdEmployee.department}</span>
               </div>
             </div>
-
-            {password && (
-              <p className="text-xs text-amber-600 bg-amber-50 rounded-xl px-3 py-2 mb-4 border border-amber-100">
-                ⚠️ Save these credentials now. The password cannot be retrieved after closing this dialog.
-              </p>
-            )}
 
             <button
               onClick={onClose}
@@ -354,7 +355,7 @@ export default function AddEmployeeModal({
             </div>
 
             {/* Row 3: Password (for new employees only) */}
-            {!isEditing && (
+            {/* {!isEditing && (
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">
                   Password
@@ -379,7 +380,7 @@ export default function AddEmployeeModal({
                   Optional. If left empty, a system-generated password will be sent via email.
                 </p>
               </div>
-            )}
+            )} */}
 
             {/* Row 4: Role + Employment Type */}
             <div className="grid grid-cols-2 gap-4">
@@ -389,7 +390,7 @@ export default function AddEmployeeModal({
                 </label>
                 <select
                   value={form.role}
-                  onChange={(e) => handleChange('role', e.target.value)}
+                  onChange={(e) => handleChange('role', e.target.value as 'EMPLOYEE' | 'HR_ADMIN')}
                   className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
                 >
                   {ROLES.map((r) => (
@@ -410,9 +411,9 @@ export default function AddEmployeeModal({
                   required
                 >
                   <option value="">Select employment type</option>
-                  {EMPLOYMENT_TYPES.map((type) => (
+                  {employmentTypes.map((type) => (
                     <option key={type.id} value={type.id}>
-                      {type.name}
+                      {type.name}{type.code ? ` (${type.code})` : ''}
                     </option>
                   ))}
                 </select>
@@ -432,9 +433,9 @@ export default function AddEmployeeModal({
                   required
                 >
                   <option value="">Select department</option>
-                  {DEPARTMENTS.map((dept) => (
+                  {departments.map((dept) => (
                     <option key={dept.id} value={dept.id}>
-                      {dept.name}
+                      {dept.name}{dept.code ? ` (${dept.code})` : ''}
                     </option>
                   ))}
                 </select>
@@ -457,27 +458,51 @@ export default function AddEmployeeModal({
                     </option>
                   ))}
                 </select>
-                {selectedManager && (
+                {selectedManager ? (
                   <p className="text-xs text-[#2D7A4F] mt-1 font-medium">
-                    Reports to: {selectedManager.fullName}
+                    Reports to: {selectedManager.fullName || 'Selected manager'}
                     {selectedManager.department ? ` · ${selectedManager.department}` : ''}
                   </p>
-                )}
+                ) : null}
               </div>
             </div>
 
-            {/* Row 6: Designation */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                Designation
-              </label>
-              <input
-                type="text"
-                value={form.designation}
-                onChange={(e) => handleChange('designation', e.target.value)}
-                placeholder="e.g. Senior Engineer"
-                className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
-              />
+            {/* Row 6: Designation + Shift */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                  Designation
+                </label>
+                <select
+                  value={form.designationId}
+                  onChange={(e) => handleChange('designationId', e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
+                >
+                  <option value="">Select designation</option>
+                  {designations.map((designation) => (
+                    <option key={designation.id} value={designation.id}>
+                      {designation.name}{designation.code ? ` (${designation.code})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                  Shift
+                </label>
+                <select
+                  value={form.shiftId}
+                  onChange={(e) => handleChange('shiftId', e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
+                >
+                  <option value="">Select shift</option>
+                  {shifts.map((shift) => (
+                    <option key={shift.id} value={shift.id}>
+                      {shift.name}{shift.code ? ` (${shift.code})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Row 7: Date of Birth + Gender */}

@@ -4,18 +4,43 @@ import {
 import { Params } from '../utils';
 
 export interface IEmployeePayload {
-  email: string;
-  role: string;
-  first_name: string;
-  last_name: string;
-  date_of_birth: string;
-  gender: string;
-  personal_phone: string;
-  department_id: string;
-  designation_id: string;
-  employment_type_id: string;
-  reporting_manager_id: string;
-  date_of_joining: string;
+  email?: string;
+  role?: string;
+  first_name?: string;
+  middle_name?: string;
+  last_name?: string;
+  date_of_birth?: string;
+  gender?: string;
+  personal_phone?: string;
+  personal_email?: string;
+  blood_group?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postal_code?: string;
+  department_id?: string;
+  designation_id?: string;
+  employment_type_id?: string;
+  grade_id?: string;
+  shift_id?: string;
+  work_location_id?: string;
+  leave_policy_id?: string;
+  reporting_manager_id?: string;
+  work_email?: string;
+  pan_number?: string;
+  aadhaar_number?: string;
+  uan_number?: string;
+  esic_number?: string;
+  bank_name?: string;
+  bank_account_number?: string;
+  bank_ifsc_code?: string;
+  bank_branch?: string;
+  emergency_contact_name?: string;
+  emergency_contact_relationship?: string;
+  emergency_contact_phone?: string;
+  employment_status?: string;
+  date_of_joining?: string;
 }
 
 export const createEmployee = (
@@ -37,6 +62,16 @@ export const getEmployees = (
 ) => get(
   '/v1/employees',
   params,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const getInviteMasterData = (
+  tenantId: string,
+  token?: string,
+) => get(
+  '/v1/employees/invite/master-data',
+  undefined,
   tenantId,
   { bearerToken: token, isFetchToken: !token },
 );
@@ -76,3 +111,4 @@ export const deleteEmployee = (
   undefined,
   { bearerToken: token, isFetchToken: !token },
 );
+

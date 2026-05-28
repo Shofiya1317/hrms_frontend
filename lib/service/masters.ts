@@ -241,3 +241,62 @@ export const deleteShift = (
   undefined,
   { bearerToken: token, isFetchToken: !token },
 );
+// ── Employment type ────────────────────────────────────────────────────────
+
+export const createEmploymentType = (
+  body: { name: string; [key: string]: unknown },
+  tenantId: string,
+  token?: string,
+) => post(
+  '/v1/masters/employment-types',
+  body,
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const getEmploymentTypes = (
+  tenantId: string,
+  token?: string,
+) => get(
+  '/v1/masters/employment-types',
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const getEmploymentTypeById = (
+  id: string,
+  tenantId: string,
+  token?: string,
+) => get(
+  `/v1/masters/employment-types/${id}`,
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const updateEmploymentType = (
+  id: string,
+  body: { name: string; [key: string]: unknown },
+  tenantId: string,
+  token?: string,
+) => put(
+  `/v1/masters/employment-types/${id}`,
+  body,
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const deleteEmploymentType = (
+  id: string,
+  tenantId: string,
+  token?: string,
+) => deleteRequest(
+  `/v1/masters/employment-types/${id}`,
+  undefined,
+  tenantId,
+  undefined,
+  { bearerToken: token, isFetchToken: !token },
+);
