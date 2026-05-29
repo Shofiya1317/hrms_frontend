@@ -125,65 +125,79 @@ export function AuthLayout({
 
       {/* ── Auth Pages (Sign In / Sign Up) ── */}
       {(isSignUp || isSignIn) && (
-        <div className="row layout-containers position-relative d-flex vh-100 overflow-hidden hrms-auth-shell">
+  <div
+    className="row layout-containers position-relative d-flex hrms-auth-shell"
+    style={{ minHeight: '100vh', maxHeight: '100vh', overflow: 'hidden' }}
+  >
 
-          {/* Left image panel — desktop only */}
-          <div className="col-lg-6 d-none d-lg-block p-3 vh-100 position-sticky top-0">
-            <div className="position-relative w-100 h-100 ml-3 d-flex justify-content-center overflow-hidden hrms-auth-visual object-contain">
-              <Image
-                src={LoginImage}
-                alt="HRMS workspace"
-                fill
-                sizes="50vw"
-                quality={85}
-                priority
-              />
-              <div className="hrms-auth-overlay" />
-              <div className="position-absolute hrms-auth-copy">
-                <div className="mb-5">
-                  <Image
-                    src={rubicrDashboardLogo}
-                    alt="Rubicr"
-                    width={140}
-                    priority
-                  />
-                </div>
-                <p className="hrms-kicker text-white">Human Resource Management</p>
-                <h2>Run people operations with clarity.</h2>
-                <p>
-                  Track attendance, leaves, employees, documents, approvals, and workforce insights from one calm HR portal.
-                </p>
-                <div className="hrms-auth-metrics">
-                  <div>
-                    <strong>24</strong>
-                    <span>Pending approvals</span>
-                  </div>
-                  <div>
-                    <strong>96%</strong>
-                    <span>Attendance health</span>
-                  </div>
-                  <div>
-                    <strong>3</strong>
-                    <span>New joiners</span>
-                  </div>
-                </div>
-              </div>
+    {/* Left image panel — desktop only */}
+    <div
+      className="col-lg-6 d-none d-lg-block p-1 position-sticky top-0"
+      style={{ height: '100vh', overflow: 'hidden', flexShrink: 0 }}
+    >
+      <div className="position-relative w-100 h-100 ml-3 d-flex justify-content-center overflow-hidden hrms-auth-visual object-contain">
+        <Image
+          src={LoginImage}
+          alt="HRMS workspace"
+          fill
+          sizes="50vw"
+          quality={85}
+          priority
+        />
+        <div className="hrms-auth-overlay" />
+        <div className="position-absolute hrms-auth-copy">
+          <div className="mb-5">
+            <Image
+              src={rubicrDashboardLogo}
+              alt="Rubicr"
+              width={140}
+              priority
+            />
+          </div>
+          <p className="hrms-kicker text-white">Human Resource Management</p>
+          <h2>Run people operations with clarity.</h2>
+          <p>
+            Track attendance, leaves, employees, documents, approvals, and workforce insights from one calm HR portal.
+          </p>
+          <div className="hrms-auth-metrics">
+            <div>
+              <strong>24</strong>
+              <span>Pending approvals</span>
+            </div>
+            <div>
+              <strong>96%</strong>
+              <span>Attendance health</span>
+            </div>
+            <div>
+              <strong>3</strong>
+              <span>New joiners</span>
             </div>
           </div>
-
-          {/* Right form panel */}
-          <div className="col-12 col-lg-6 p-0 vh-100 overflow-auto right-panel-container position-relative">
-            <div
-              className="position-relative w-100 h-100 d-flex justify-content-center align-items-center right-panel"
-            >
-              <div className="animated-element d-flex justify-content-center align-items-center px-2 pb-5 pb-md-0 w-100">
-                {children}
-              </div>
-            </div>
-          </div>
-
         </div>
-      )}
+      </div>
+    </div>
+
+    {/* Right form panel */}
+    <div
+      className="col-12 col-lg-6 p-0 right-panel-container position-relative"
+      style={{ height: '100vh', overflowY: 'auto' }}
+    >
+      <div
+        className="position-relative w-100 d-flex justify-content-center right-panel"
+        style={{
+          minHeight: '100%',
+          alignItems: 'flex-start',
+          paddingTop: 'clamp(1.5rem, 5vh, 3rem)',
+        }}
+      >
+        <div className="animated-element d-flex justify-content-center align-items-center px-2 pb-5 pb-md-0 w-100">
+          {children}
+        </div>
+      </div>
+    </div>
+
+  </div>
+)}
     </main>
   );
 }
