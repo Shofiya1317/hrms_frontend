@@ -2,13 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import {
-  X,
-  UserPlus,
-  Loader2,
-  CheckCircle,
-  AlertCircle,
-} from 'lucide-react';
+import { X, UserPlus, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import {
   createEmployee,
   updateEmployee,
@@ -35,6 +29,8 @@ interface MasterOption {
   id: string;
   name: string;
   code?: string;
+  start_time_24hr?: string | null;
+  end_time_24hr?: string | null;
 }
 
 interface InviteMasterData {
@@ -70,10 +66,11 @@ interface EmployeeFormState {
 
 const ROLES: { value: EmployeeRole; label: string }[] = [
   { value: 'EMPLOYEE', label: 'Employee' },
-  { value: 'HR_ADMIN', label: 'Hr Admin' },
+  { value: 'HR_ADMIN', label: 'HR Admin' },
 ];
 
-const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
+const capitalize = (value: string) =>
+  value.charAt(0).toUpperCase() + value.slice(1);
 
 export default function AddEmployeeModal({
   onClose,
@@ -99,7 +96,7 @@ export default function AddEmployeeModal({
     dateOfBirth: '',
     gender: '',
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -123,16 +120,35 @@ export default function AddEmployeeModal({
         firstName: nameParts[0] || '',
         lastName: nameParts.slice(1).join(' ') || '',
         email: editingEmployee.email || '',
-        role: editingEmployee.role?.toUpperCase() === 'HR_ADMIN' || editingEmployee.role?.toLowerCase() === 'manager'
-          ? 'HR_ADMIN'
-          : 'EMPLOYEE',
-        departmentId: editingEmployee.departmentId || editingEmployee.department_id || editingEmployee.department || '',
-        designationId: editingEmployee.designationId || editingEmployee.designation_id || editingEmployee.designation || '',
-        employmentTypeId: editingEmployee.employmentTypeId || editingEmployee.employment_type_id || editingEmployee.employmentType || '',
+        role:
+          editingEmployee.role?.toUpperCase() === 'HR_ADMIN' ||
+          editingEmployee.role?.toLowerCase() === 'manager'
+            ? 'HR_ADMIN'
+            : 'EMPLOYEE',
+        departmentId:
+          editingEmployee.departmentId ||
+          editingEmployee.department_id ||
+          editingEmployee.department ||
+          '',
+        designationId:
+          editingEmployee.designationId ||
+          editingEmployee.designation_id ||
+          editingEmployee.designation ||
+          '',
+        employmentTypeId:
+          editingEmployee.employmentTypeId ||
+          editingEmployee.employment_type_id ||
+          editingEmployee.employmentType ||
+          '',
         shiftId: editingEmployee.shiftId || editingEmployee.shift_id || '',
         phone: editingEmployee.phone || '',
-        managerId: editingEmployee.managerId || editingEmployee.reporting_manager_id || '',
-        joinDate: editingEmployee.joinDate?.split('T')[0] || new Date().toISOString().split('T')[0],
+        managerId:
+          editingEmployee.managerId ||
+          editingEmployee.reporting_manager_id ||
+          '',
+        joinDate:
+          editingEmployee.joinDate?.split('T')[0] ||
+          new Date().toISOString().split('T')[0],
         dateOfBirth: editingEmployee.dateOfBirth?.split('T')[0] || '',
         gender: editingEmployee.gender || '',
       });
@@ -145,8 +161,12 @@ export default function AddEmployeeModal({
         getInviteMasterData(subdomain),
         getShifts(subdomain),
       ]);
-      const masterData = (inviteResponse?.data?.data || inviteResponse?.data || {}) as InviteMasterData;
-      const shiftList = (shiftsResponse?.data?.data || shiftsResponse?.data || []) as MasterOption[];
+      const masterData = (inviteResponse?.data?.data ||
+        inviteResponse?.data ||
+        {}) as InviteMasterData;
+      const shiftList = (shiftsResponse?.data?.data ||
+        shiftsResponse?.data ||
+        []) as MasterOption[];
 
       setDepartments(masterData.departments || []);
       setDesignations(masterData.designations || []);
@@ -155,10 +175,13 @@ export default function AddEmployeeModal({
       setManagers(
         (masterData.employees || []).map((employee) => ({
           id: employee.id,
-          fullName: `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || employee.name || 'Employee',
+          fullName:
+            `${employee.first_name || ''} ${employee.last_name || ''}`.trim() ||
+            employee.name ||
+            'Employee',
           department: '',
           jobTitle: employee.work_email || '',
-        })),
+        }))
       );
     } catch (err) {
       console.error('Failed to load invite master data', err);
@@ -213,7 +236,7 @@ export default function AddEmployeeModal({
         department_id: departmentId,
         designation_id: form.designationId || undefined,
         employment_type_id: employmentTypeId,
-        reporting_manager_id: form.managerId || undefined,
+        reporting_manager_id: form.managerId,
         shift_id: form.shiftId || undefined,
         date_of_joining: joinDate,
       };
@@ -221,11 +244,23 @@ export default function AddEmployeeModal({
       let response;
       if (isEditing && editingEmployee?.id) {
         response = await updateEmployee(editingEmployee.id, payload, subdomain);
+        const { success: ok, error: err } = response?.data as { success: boolean; error?: string | string[] };
+        if (!ok) {
+          const msg = Array.isArray(err) ? err[0] : (err ?? 'Failed to update employee');
+          setError(msg);
+          return;
+        }
         const updatedEmployee = response?.data?.data;
         setCreatedEmployee(updatedEmployee);
         onSuccess(updatedEmployee);
       } else {
         response = await createEmployee(payload, subdomain);
+        const { success: ok, error: err } = response?.data as { success: boolean; error?: string | string[] };
+        if (!ok) {
+          const msg = Array.isArray(err) ? err[0] : (err ?? 'Failed to create employee');
+          setError(msg);
+          return;
+        }
         const newEmployee = response?.data?.data;
         setCreatedEmployee({
           ...newEmployee,
@@ -234,7 +269,8 @@ export default function AddEmployeeModal({
           managerName: selectedManager?.fullName || '',
           email: form.email.trim().toLowerCase(),
           role: form.role,
-          department: departments.find((d) => d.id === form.departmentId)?.name || '',
+          department:
+            departments.find((d) => d.id === form.departmentId)?.name || '',
         });
         onSuccess(newEmployee);
       }
@@ -260,7 +296,9 @@ export default function AddEmployeeModal({
               <div className="w-14 h-14 rounded-2xl bg-green-100 flex items-center justify-center mx-auto mb-3">
                 <CheckCircle size={28} className="text-green-600" />
               </div>
-              <h2 className="text-lg font-bold text-[#0f1f2e]">Employee Created!</h2>
+              <h2 className="text-lg font-bold text-[#0f1f2e]">
+                Employee Created!
+              </h2>
               <p className="text-sm text-gray-500 mt-1">
                 Share these credentials with the employee.
               </p>
@@ -269,23 +307,33 @@ export default function AddEmployeeModal({
             <div className="bg-gray-50 rounded-xl p-4 space-y-2 mb-5 border border-gray-100">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 font-medium">Name</span>
-                <span className="font-semibold text-gray-800">{createdEmployee.fullName}</span>
+                <span className="font-semibold text-gray-800">
+                  {createdEmployee.fullName}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 font-medium">Employee ID</span>
-                <span className="font-mono font-semibold text-[#2D7A4F]">{createdEmployee.employeeId}</span>
+                <span className="font-mono font-semibold text-[#2D7A4F]">
+                  {createdEmployee.employeeId}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 font-medium">Email</span>
-                <span className="font-semibold text-gray-800">{createdEmployee.email}</span>
+                <span className="font-semibold text-gray-800">
+                  {createdEmployee.email}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 font-medium">Role</span>
-                <span className="font-semibold text-gray-800 capitalize">{createdEmployee.role}</span>
+                <span className="font-semibold text-gray-800 capitalize">
+                  {createdEmployee.role}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 font-medium">Department</span>
-                <span className="font-semibold text-gray-800">{createdEmployee.department}</span>
+                <span className="font-semibold text-gray-800">
+                  {createdEmployee.department}
+                </span>
               </div>
             </div>
 
@@ -319,7 +367,9 @@ export default function AddEmployeeModal({
                 {isEditing ? 'Edit Employee' : 'Add New Employee'}
               </h2>
               <p className="text-xs text-gray-400">
-                {isEditing ? 'Update employee information' : 'Fill in the details to add a new employee'}
+                {isEditing
+                  ? 'Update employee information'
+                  : 'Fill in the details to add a new employee'}
               </p>
             </div>
           </div>
@@ -337,7 +387,10 @@ export default function AddEmployeeModal({
             {/* Row 1: Full Name */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="firstName" className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label
+                  htmlFor="firstName"
+                  className="block text-xs font-semibold text-gray-600 mb-1.5"
+                >
                   First Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -351,7 +404,10 @@ export default function AddEmployeeModal({
                 />
               </div>
               <div>
-                <label htmlFor="lastName" className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label
+                  htmlFor="lastName"
+                  className="block text-xs font-semibold text-gray-600 mb-1.5"
+                >
                   Last Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -368,7 +424,10 @@ export default function AddEmployeeModal({
 
             {/* Row 2: Email */}
             <div>
-              <label htmlFor="email" className="block text-xs font-semibold text-gray-600 mb-1.5">
+              <label
+                htmlFor="email"
+                className="block text-xs font-semibold text-gray-600 mb-1.5"
+              >
                 Work Email <span className="text-red-500">*</span>
               </label>
               <input
@@ -385,7 +444,10 @@ export default function AddEmployeeModal({
             {/* Row 4: Role + Employment Type */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="role" className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label
+                  htmlFor="role"
+                  className="block text-xs font-semibold text-gray-600 mb-1.5"
+                >
                   Role <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -402,20 +464,26 @@ export default function AddEmployeeModal({
                 </select>
               </div>
               <div>
-                <label htmlFor="employmentTypeId" className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label
+                  htmlFor="employmentTypeId"
+                  className="block text-xs font-semibold text-gray-600 mb-1.5"
+                >
                   Employment Type <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="employmentTypeId"
                   value={form.employmentTypeId}
-                  onChange={(e) => handleChange('employmentTypeId', e.target.value)}
+                  onChange={(e) =>
+                    handleChange('employmentTypeId', e.target.value)
+                  }
                   className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
                   required
                 >
                   <option value="">Select employment type</option>
                   {employmentTypes.map((type) => (
                     <option key={type.id} value={type.id}>
-                      {type.name}{type.code ? ` (${type.code})` : ''}
+                      {type.name}
+                      {type.code ? ` (${type.code})` : ''}
                     </option>
                   ))}
                 </select>
@@ -425,7 +493,10 @@ export default function AddEmployeeModal({
             {/* Row 5: Department + Reporting Manager */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="departmentId" className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label
+                  htmlFor="departmentId"
+                  className="block text-xs font-semibold text-gray-600 mb-1.5"
+                >
                   Department <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -438,13 +509,17 @@ export default function AddEmployeeModal({
                   <option value="">Select department</option>
                   {departments.map((dept) => (
                     <option key={dept.id} value={dept.id}>
-                      {dept.name}{dept.code ? ` (${dept.code})` : ''}
+                      {dept.name}
+                      {dept.code ? ` (${dept.code})` : ''}
                     </option>
                   ))}
                 </select>
               </div>
               <div>
-                <label htmlFor="managerId" className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label
+                  htmlFor="managerId"
+                  className="block text-xs font-semibold text-gray-600 mb-1.5"
+                >
                   Reporting Manager
                 </label>
                 <select
@@ -465,7 +540,9 @@ export default function AddEmployeeModal({
                 {selectedManager ? (
                   <p className="text-xs text-[#2D7A4F] mt-1 font-medium">
                     Reports to: {selectedManager.fullName || 'Selected manager'}
-                    {selectedManager.department ? ` · ${selectedManager.department}` : ''}
+                    {selectedManager.department
+                      ? ` · ${selectedManager.department}`
+                      : ''}
                   </p>
                 ) : null}
               </div>
@@ -474,25 +551,34 @@ export default function AddEmployeeModal({
             {/* Row 6: Designation + Shift */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="designationId" className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label
+                  htmlFor="designationId"
+                  className="block text-xs font-semibold text-gray-600 mb-1.5"
+                >
                   Designation
                 </label>
                 <select
                   id="designationId"
                   value={form.designationId}
-                  onChange={(e) => handleChange('designationId', e.target.value)}
+                  onChange={(e) =>
+                    handleChange('designationId', e.target.value)
+                  }
                   className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
                 >
                   <option value="">Select designation</option>
                   {designations.map((designation) => (
                     <option key={designation.id} value={designation.id}>
-                      {designation.name}{designation.code ? ` (${designation.code})` : ''}
+                      {designation.name}
+                      {designation.code ? ` (${designation.code})` : ''}
                     </option>
                   ))}
                 </select>
               </div>
               <div>
-                <label htmlFor="shiftId" className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label
+                  htmlFor="shiftId"
+                  className="block text-xs font-semibold text-gray-600 mb-1.5"
+                >
                   Shift
                 </label>
                 <select
@@ -502,9 +588,12 @@ export default function AddEmployeeModal({
                   className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
                 >
                   <option value="">Select shift</option>
+
                   {shifts.map((shift) => (
                     <option key={shift.id} value={shift.id}>
-                      {shift.name}{shift.code ? ` (${shift.code})` : ''}
+                      {shift.name} ({shift.start_time_24hr} -{' '}
+                      {shift.end_time_24hr})
+                      {shift.code ? ` • ${shift.code}` : ''}
                     </option>
                   ))}
                 </select>
@@ -514,7 +603,10 @@ export default function AddEmployeeModal({
             {/* Row 7: Date of Birth + Gender */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="dateOfBirth" className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label
+                  htmlFor="dateOfBirth"
+                  className="block text-xs font-semibold text-gray-600 mb-1.5"
+                >
                   Date of Birth
                 </label>
                 <input
@@ -526,7 +618,10 @@ export default function AddEmployeeModal({
                 />
               </div>
               <div>
-                <label htmlFor="gender" className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label
+                  htmlFor="gender"
+                  className="block text-xs font-semibold text-gray-600 mb-1.5"
+                >
                   Gender
                 </label>
                 <select
@@ -546,7 +641,10 @@ export default function AddEmployeeModal({
             {/* Row 8: Personal Phone + Date of Joining */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="phone" className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label
+                  htmlFor="phone"
+                  className="block text-xs font-semibold text-gray-600 mb-1.5"
+                >
                   Personal Phone
                 </label>
                 <input
@@ -559,7 +657,10 @@ export default function AddEmployeeModal({
                 />
               </div>
               <div>
-                <label htmlFor="joinDate" className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label
+                  htmlFor="joinDate"
+                  className="block text-xs font-semibold text-gray-600 mb-1.5"
+                >
                   Date of Joining <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -576,7 +677,10 @@ export default function AddEmployeeModal({
             {/* Error Message */}
             {error && (
               <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-xl">
-                <AlertCircle size={15} className="text-red-500 mt-0.5 flex-shrink-0" />
+                <AlertCircle
+                  size={15}
+                  className="text-red-500 mt-0.5 flex-shrink-0"
+                />
                 <p className="text-xs text-red-600 font-medium">{error}</p>
               </div>
             )}

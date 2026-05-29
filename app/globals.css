@@ -154,9 +154,7 @@
     /* Background */
     --bg-background: #F5F7F6;
 }
-body {
-  padding-top: 72px; /* match your navbar's actual height */
-}
+
 html {
   height: 100%;
 }

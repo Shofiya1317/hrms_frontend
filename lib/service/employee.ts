@@ -14,7 +14,7 @@ export interface InviteEmployeeDto {
   department_id: string;
   designation_id?: string;
   employment_type_id: string;
-  reporting_manager_id?: string;
+  reporting_manager_id?: string | '';
   shift_id?: string;
   date_of_joining: string;
 }

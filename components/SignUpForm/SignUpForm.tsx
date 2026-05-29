@@ -64,17 +64,20 @@ export const handleSignUpSubmit = async (
 
 export default function SignUpForm() {
   const router = useRouter();
-  // const { isMobile } = useDeviceDetection();
   const { isMobileOnly } = useDeviceDetection();
 
   const [hideEyeIcon, setHideEyeIcon] = useState(false);
   const [isManual, setIsManual] = useState<boolean>(false);
-  const [details, setDetails] = useState({
-    email: '',
-    slug: '',
-  });
+  const [details, setDetails] = useState({ email: '', slug: '' });
   const [resendCooldown, setResendCooldown] = useState<number>(0);
   const [redirectTimer, setRedirectTimer] = useState<number>();
+
+  // Read window only on client to avoid SSR ReferenceError
+  const [domain, setDomain] = useState('');
+  useEffect(() => {
+    setDomain(getDomainFromSubdomain(window.location.hostname));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const resedInvitation = async () => {
     const response = await AuthService?.resendInvitationForSignUp({
@@ -105,9 +108,7 @@ export default function SignUpForm() {
       }, 1000);
     }
     return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
+      if (interval) clearInterval(interval);
     };
   }, [resendCooldown]);
 
@@ -121,9 +122,7 @@ export default function SignUpForm() {
       router.push('/sign_in');
     }
     return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
+      if (interval) clearInterval(interval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [redirectTimer]);
@@ -190,10 +189,7 @@ export default function SignUpForm() {
     setFieldError?: (field: string, message: string | undefined) => void,
   ) => {
     if (valueslug.length < 4) {
-      setError(
-        'Workspace URL must be between 4 and 20 characters',
-        setFieldError,
-      );
+      setError('Workspace URL must be between 4 and 20 characters', setFieldError);
       return;
     }
     let counter = 1;
@@ -202,9 +198,7 @@ export default function SignUpForm() {
     setError('', setFieldError);
     try {
       let res = await AuthService.slugVerify(generatedSlug);
-      let { success } = res?.data as {
-        success: boolean;
-      };
+      let { success } = res?.data as { success: boolean };
       if (success) {
         setError('', setFieldError);
         return;
@@ -214,7 +208,6 @@ export default function SignUpForm() {
         generatedSlug = `${baseSlug}${counter}`;
         res = await AuthService.slugVerify(generatedSlug);
         ({ success } = res?.data ?? {});
-
         if (success) {
           setError('', setFieldError);
           if (setFieldValue) {
@@ -224,14 +217,10 @@ export default function SignUpForm() {
         }
         counter += 1;
       }
-
       if (counter > 100) {
-        setError(
-          'Could not generate a unique slug after multiple attempts.',
-          setFieldError,
-        );
+        setError('Could not generate a unique slug after multiple attempts.', setFieldError);
       }
-    } catch (error) {
+    } catch {
       setError('An error occurred while verifying the slug.', setFieldError);
     }
   };
@@ -242,10 +231,8 @@ export default function SignUpForm() {
       .toLowerCase()
       .replace(/[^a-z0-9\s]/g, '');
 
-    const limitLength = (
-      text: string,
-      maxLength: number,
-    ) => (text.length > maxLength ? text.slice(0, maxLength) : text);
+    const limitLength = (text: string, maxLength: number) =>
+      (text.length > maxLength ? text.slice(0, maxLength) : text);
 
     const buildShortName = (words: string[], maxLength: number) => {
       let result = words[0] || '';
@@ -255,27 +242,15 @@ export default function SignUpForm() {
       return limitLength(result, maxLength);
     };
 
-    const createInitials = (words: string[], maxLength: number) => limitLength(words.map((word) => word.charAt(0)).join(''), maxLength);
+    const createInitials = (words: string[], maxLength: number) =>
+      limitLength(words.map((word) => word.charAt(0)).join(''), maxLength);
 
     const name = cleanName(inputName);
     const words = name.split(' ').filter(Boolean);
 
-    // Check for single-word names longer than 10 characters
-    if (!name.includes(' ') && name.length > 10) {
-      return limitLength(name, 10);
-    }
-
-    // Handle names with 1 to 3 words
-    if (words.length >= 1 && words.length <= 3) {
-      return buildShortName(words, 10);
-    }
-
-    // Handle names with more than 3 words
-    if (words.length > 3) {
-      return createInitials(words, 10);
-    }
-
-    // Fallback case: If none of the conditions match, return the cleaned name with a length limit
+    if (!name.includes(' ') && name.length > 10) return limitLength(name, 10);
+    if (words.length >= 1 && words.length <= 3) return buildShortName(words, 10);
+    if (words.length > 3) return createInitials(words, 10);
     return limitLength(name, 10);
   };
 
@@ -297,9 +272,7 @@ export default function SignUpForm() {
     setFieldError: (field: string, message: string | undefined) => void,
   ) => {
     let value = e?.target?.value;
-    if (value.startsWith(' ')) {
-      value = value.trimStart();
-    }
+    if (value.startsWith(' ')) value = value.trimStart();
 
     if (!isManual) {
       const formattedValue = formatSlugName(value);
@@ -385,14 +358,11 @@ export default function SignUpForm() {
                     type="text"
                     placeholder="Enter your Workspace URL"
                     rightIcon
-                    icon={<span className="fs-14">{`.${getDomainFromSubdomain(window.location.hostname)}`}</span>}
+                    icon={<span className="fs-14">{domain ? `.${domain}` : ''}</span>}
                     value={values.workspace_url}
                     onChange={(e: ChangeEvent<HTMLInputElement>) => {
                       setIsManual(true);
-                      const slugValue = e?.target?.value?.replace(
-                        /[^A-Za-z0-9]/g,
-                        '',
-                      );
+                      const slugValue = e?.target?.value?.replace(/[^A-Za-z0-9]/g, '');
                       setFieldValue('workspace_url', slugValue);
                       if (slugValue?.length > 3) {
                         verifySlug(slugValue, undefined, setFieldError);
@@ -432,8 +402,6 @@ export default function SignUpForm() {
                     label={(
                       <span className="agree-terms">
                         I agree to your terms and conditions
-                        {/* {' '}
-                          <Link href="#" className="textSecondary">Terms and Conditions</Link> */}
                       </span>
                     )}
                     type="checkbox"
@@ -466,12 +434,6 @@ export default function SignUpForm() {
             <div className="magic-link-text text-center text-uppercase">
               Check your mail for Magic link
             </div>
-            {/* <Button
-              type="button"
-              text="Check your mail for Magic link"
-              isSolid
-              className="w-100 mt-3"
-            /> */}
             <p className="mt-2 text-center fw-500 fs-14">
               Not Received Yet!
               {' '}
@@ -480,9 +442,7 @@ export default function SignUpForm() {
                 className="cursor-pointer text-decoration-underline fw-600"
                 onClick={() => (resendCooldown === 0 ? resedInvitation() : null)}
               >
-                {resendCooldown > 0
-                  ? `Resend ${resendCooldown}s`
-                  : 'Resend Link'}
+                {resendCooldown > 0 ? `Resend ${resendCooldown}s` : 'Resend Link'}
               </span>
             </p>
           </div>
