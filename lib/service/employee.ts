@@ -3,48 +3,24 @@ import {
 } from '../axiosInstance';
 import { Params } from '../utils';
 
-export interface IEmployeePayload {
-  email?: string;
-  role?: string;
-  first_name?: string;
-  middle_name?: string;
-  last_name?: string;
+export interface InviteEmployeeDto {
+  email: string;
+  role: 'EMPLOYEE' | 'HR_ADMIN';
+  first_name: string;
+  last_name: string;
   date_of_birth?: string;
   gender?: string;
   personal_phone?: string;
-  personal_email?: string;
-  blood_group?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  postal_code?: string;
-  department_id?: string;
+  department_id: string;
   designation_id?: string;
-  employment_type_id?: string;
-  grade_id?: string;
-  shift_id?: string;
-  work_location_id?: string;
-  leave_policy_id?: string;
+  employment_type_id: string;
   reporting_manager_id?: string;
-  work_email?: string;
-  pan_number?: string;
-  aadhaar_number?: string;
-  uan_number?: string;
-  esic_number?: string;
-  bank_name?: string;
-  bank_account_number?: string;
-  bank_ifsc_code?: string;
-  bank_branch?: string;
-  emergency_contact_name?: string;
-  emergency_contact_relationship?: string;
-  emergency_contact_phone?: string;
-  employment_status?: string;
-  date_of_joining?: string;
+  shift_id?: string;
+  date_of_joining: string;
 }
 
 export const createEmployee = (
-  body: IEmployeePayload,
+  body: InviteEmployeeDto,
   tenantId: string,
   token?: string,
 ) => post(
@@ -89,7 +65,7 @@ export const getEmployeeById = (
 
 export const updateEmployee = (
   id: string,
-  body: Partial<IEmployeePayload>,
+  body: Partial<InviteEmployeeDto>,
   tenantId: string,
   token?: string,
 ) => put(

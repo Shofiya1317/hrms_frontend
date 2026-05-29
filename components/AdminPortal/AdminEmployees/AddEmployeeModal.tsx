@@ -13,15 +13,15 @@ import {
   createEmployee,
   updateEmployee,
   getInviteMasterData,
-  IEmployeePayload,
+  InviteEmployeeDto,
 } from '@/lib/service/employee';
 import { getShifts } from '@/lib/service/masters';
 
 interface AddEmployeeModalProps {
-  onClose: () => void;
-  onSuccess: (employee: any) => void;
-  editingEmployee?: any;
-  isEditing?: boolean;
+  readonly onClose: () => void;
+  readonly onSuccess: (employee: any) => void;
+  readonly editingEmployee?: any;
+  readonly isEditing?: boolean;
 }
 
 interface ManagerOption {
@@ -50,7 +50,25 @@ interface InviteMasterData {
   }>;
 }
 
-const ROLES: { value: 'EMPLOYEE' | 'HR_ADMIN'; label: string }[] = [
+type EmployeeRole = 'EMPLOYEE' | 'HR_ADMIN';
+
+interface EmployeeFormState {
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: EmployeeRole;
+  departmentId: string;
+  designationId: string;
+  employmentTypeId: string;
+  shiftId: string;
+  phone: string;
+  managerId: string;
+  joinDate: string;
+  dateOfBirth: string;
+  gender: string;
+}
+
+const ROLES: { value: EmployeeRole; label: string }[] = [
   { value: 'EMPLOYEE', label: 'Employee' },
   { value: 'HR_ADMIN', label: 'Hr Admin' },
 ];
@@ -66,7 +84,7 @@ export default function AddEmployeeModal({
   const params = useParams();
   const subdomain = params?.subdomain as string;
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<EmployeeFormState>({
     firstName: '',
     lastName: '',
     email: '',
@@ -177,20 +195,27 @@ export default function AddEmployeeModal({
 
     setLoading(true);
     try {
-      const payload: IEmployeePayload = {
-        email: form.email.trim().toLowerCase(),
+      const email = form.email.trim().toLowerCase();
+      const firstName = form.firstName.trim();
+      const lastName = form.lastName.trim();
+      const departmentId = form.departmentId.trim();
+      const employmentTypeId = form.employmentTypeId.trim();
+      const joinDate = form.joinDate.trim();
+
+      const payload: InviteEmployeeDto = {
+        email,
         role: form.role,
-        first_name: form.firstName.trim(),
-        last_name: form.lastName.trim(),
+        first_name: firstName,
+        last_name: lastName,
         date_of_birth: form.dateOfBirth || undefined,
         gender: form.gender ? capitalize(form.gender) : undefined,
         personal_phone: form.phone.trim() || undefined,
-        department_id: form.departmentId || undefined,
+        department_id: departmentId,
         designation_id: form.designationId || undefined,
-        employment_type_id: form.employmentTypeId || undefined,
+        employment_type_id: employmentTypeId,
         reporting_manager_id: form.managerId || undefined,
         shift_id: form.shiftId || undefined,
-        date_of_joining: form.joinDate || undefined,
+        date_of_joining: joinDate,
       };
 
       let response;
@@ -312,10 +337,11 @@ export default function AddEmployeeModal({
             {/* Row 1: Full Name */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label htmlFor="firstName" className="block text-xs font-semibold text-gray-600 mb-1.5">
                   First Name <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="firstName"
                   type="text"
                   value={form.firstName}
                   onChange={(e) => handleChange('firstName', e.target.value)}
@@ -325,10 +351,11 @@ export default function AddEmployeeModal({
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label htmlFor="lastName" className="block text-xs font-semibold text-gray-600 mb-1.5">
                   Last Name <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="lastName"
                   type="text"
                   value={form.lastName}
                   onChange={(e) => handleChange('lastName', e.target.value)}
@@ -341,10 +368,11 @@ export default function AddEmployeeModal({
 
             {/* Row 2: Email */}
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+              <label htmlFor="email" className="block text-xs font-semibold text-gray-600 mb-1.5">
                 Work Email <span className="text-red-500">*</span>
               </label>
               <input
+                id="email"
                 type="email"
                 value={form.email}
                 onChange={(e) => handleChange('email', e.target.value)}
@@ -354,43 +382,16 @@ export default function AddEmployeeModal({
               />
             </div>
 
-            {/* Row 3: Password (for new employees only) */}
-            {/* {!isEditing && (
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter password (optional)"
-                    className="w-full px-3 py-2 pr-10 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
-                </div>
-                <p className="text-xs text-gray-400 mt-1">
-                  Optional. If left empty, a system-generated password will be sent via email.
-                </p>
-              </div>
-            )} */}
-
             {/* Row 4: Role + Employment Type */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label htmlFor="role" className="block text-xs font-semibold text-gray-600 mb-1.5">
                   Role <span className="text-red-500">*</span>
                 </label>
                 <select
+                  id="role"
                   value={form.role}
-                  onChange={(e) => handleChange('role', e.target.value as 'EMPLOYEE' | 'HR_ADMIN')}
+                  onChange={(e) => handleChange('role', e.target.value)}
                   className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
                 >
                   {ROLES.map((r) => (
@@ -401,10 +402,11 @@ export default function AddEmployeeModal({
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label htmlFor="employmentTypeId" className="block text-xs font-semibold text-gray-600 mb-1.5">
                   Employment Type <span className="text-red-500">*</span>
                 </label>
                 <select
+                  id="employmentTypeId"
                   value={form.employmentTypeId}
                   onChange={(e) => handleChange('employmentTypeId', e.target.value)}
                   className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
@@ -423,10 +425,11 @@ export default function AddEmployeeModal({
             {/* Row 5: Department + Reporting Manager */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label htmlFor="departmentId" className="block text-xs font-semibold text-gray-600 mb-1.5">
                   Department <span className="text-red-500">*</span>
                 </label>
                 <select
+                  id="departmentId"
                   value={form.departmentId}
                   onChange={(e) => handleChange('departmentId', e.target.value)}
                   className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
@@ -441,10 +444,11 @@ export default function AddEmployeeModal({
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label htmlFor="managerId" className="block text-xs font-semibold text-gray-600 mb-1.5">
                   Reporting Manager
                 </label>
                 <select
+                  id="managerId"
                   value={form.managerId}
                   onChange={(e) => handleChange('managerId', e.target.value)}
                   className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
@@ -470,10 +474,11 @@ export default function AddEmployeeModal({
             {/* Row 6: Designation + Shift */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label htmlFor="designationId" className="block text-xs font-semibold text-gray-600 mb-1.5">
                   Designation
                 </label>
                 <select
+                  id="designationId"
                   value={form.designationId}
                   onChange={(e) => handleChange('designationId', e.target.value)}
                   className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
@@ -487,10 +492,11 @@ export default function AddEmployeeModal({
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label htmlFor="shiftId" className="block text-xs font-semibold text-gray-600 mb-1.5">
                   Shift
                 </label>
                 <select
+                  id="shiftId"
                   value={form.shiftId}
                   onChange={(e) => handleChange('shiftId', e.target.value)}
                   className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
@@ -508,10 +514,11 @@ export default function AddEmployeeModal({
             {/* Row 7: Date of Birth + Gender */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label htmlFor="dateOfBirth" className="block text-xs font-semibold text-gray-600 mb-1.5">
                   Date of Birth
                 </label>
                 <input
+                  id="dateOfBirth"
                   type="date"
                   value={form.dateOfBirth}
                   onChange={(e) => handleChange('dateOfBirth', e.target.value)}
@@ -519,10 +526,11 @@ export default function AddEmployeeModal({
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label htmlFor="gender" className="block text-xs font-semibold text-gray-600 mb-1.5">
                   Gender
                 </label>
                 <select
+                  id="gender"
                   value={form.gender}
                   onChange={(e) => handleChange('gender', e.target.value)}
                   className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
@@ -538,10 +546,11 @@ export default function AddEmployeeModal({
             {/* Row 8: Personal Phone + Date of Joining */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label htmlFor="phone" className="block text-xs font-semibold text-gray-600 mb-1.5">
                   Personal Phone
                 </label>
                 <input
+                  id="phone"
                   type="tel"
                   value={form.phone}
                   onChange={(e) => handleChange('phone', e.target.value)}
@@ -550,10 +559,11 @@ export default function AddEmployeeModal({
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label htmlFor="joinDate" className="block text-xs font-semibold text-gray-600 mb-1.5">
                   Date of Joining <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="joinDate"
                   type="date"
                   value={form.joinDate}
                   onChange={(e) => handleChange('joinDate', e.target.value)}
