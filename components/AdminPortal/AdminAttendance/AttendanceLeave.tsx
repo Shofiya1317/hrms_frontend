@@ -1,16 +1,20 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus } from 'lucide-react';
-
-const LEAVE_TYPES = [
-  { type: 'Annual Leave', days: 18, carry: true, encash: true },
-  { type: 'Sick Leave', days: 12, carry: false, encash: false },
-  { type: 'Casual Leave', days: 6, carry: false, encash: false },
-  { type: 'Maternity Leave', days: 180, carry: false, encash: false },
-  { type: 'Paternity Leave', days: 15, carry: false, encash: false },
-  { type: 'Compensatory Off', days: 0, carry: true, encash: true },
-];
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import {
+  Plus,
+  X,
+  Loader2,
+  AlertCircle,
+  CheckCircle,
+} from 'lucide-react';
+import {
+  createLeavePolicyWithTypes,
+  getAssignedLeavePolicyWithTypes,
+  getLeaveTypes,
+  updateAssignedLeavePolicyWithTypes,
+} from '@/lib/service/leave';
 
 const LEAVE_REQUESTS = [
   { id: 1, name: 'Rohit Gupta', type: 'Annual Leave', from: '22 Mar', to: '24 Mar', days: 3, status: 'pending', reason: 'Family vacation' },
@@ -19,7 +23,237 @@ const LEAVE_REQUESTS = [
 ];
 
 export default function AttendanceLeave() {
+  const params = useParams();
+  const subdomain = params?.subdomain as string;
+
   const [subTab, setSubTab] = useState('Requests');
+  const [showPolicyModal, setShowPolicyModal] = useState(false);
+  const [editingPolicyId, setEditingPolicyId] = useState<string | null>(null);
+  const [policyName, setPolicyName] = useState('');
+  const [selectedLeaveTypeIds, setSelectedLeaveTypeIds] = useState<string[]>([]);
+  const [policyConfigs, setPolicyConfigs] = useState<Record<string, any>>({});
+  const [leaveTypes, setLeaveTypes] = useState<Array<{ id: string; name: string; code?: string }>>([]);
+  const [policies, setPolicies] = useState<Array<{ id: string; name: string; leave_types?: Array<{ leave_type_id?: string; leave_type?: { id?: string; name?: string; code?: string }; days_per_year?: number | null; accrual_type?: string | null; carry_forward_max_days?: number | null; is_carry_forward?: boolean; is_encashable?: boolean; min_days_per_application?: number | null; max_days_per_application?: number | null; }> }>>([]);
+  const [loadingLeaveTypes, setLoadingLeaveTypes] = useState(false);
+  const [loadingPolicy, setLoadingPolicy] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const normalizePolicy = (policy: any) => ({
+    id: policy?.id || 'assigned-policy',
+    name: policy?.name || 'Assigned Leave Policy',
+    leave_types: policy?.leave_types || [],
+  });
+
+  useEffect(() => {
+    if (!subdomain) return;
+
+    const loadLeaveTypes = async () => {
+      setLoadingLeaveTypes(true);
+      try {
+        const response = await getLeaveTypes(subdomain);
+        const data = (response?.data?.data || response?.data || []) as Array<{ id: string; name: string; code?: string }>;
+        setLeaveTypes(data);
+      } catch (err: any) {
+        console.error('Failed to load leave types', err);
+      } finally {
+        setLoadingLeaveTypes(false);
+      }
+    };
+
+    const loadAssignedPolicy = async () => {
+      setLoadingPolicy(true);
+      try {
+        const response = await getAssignedLeavePolicyWithTypes(subdomain);
+        const policyData = response?.data?.data || response?.data || null;
+        setPolicies(policyData ? [normalizePolicy(policyData)] : []);
+      } catch (err: any) {
+        console.error('Failed to load assigned leave policy', err);
+        setPolicies([]);
+      } finally {
+        setLoadingPolicy(false);
+      }
+    };
+
+    loadLeaveTypes();
+    loadAssignedPolicy();
+  }, [subdomain]);
+
+  const handleLeaveTypeSelection = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const options = Array.from(event.target.selectedOptions, (option) => option.value);
+    setSelectedLeaveTypeIds(options);
+    setPolicyConfigs((prev) => options.reduce((acc, id) => {
+      acc[id] = prev[id] || {
+        days_per_year: null,
+        accrual_type: '',
+        is_carry_forward: false,
+        carry_forward_max_days: null,
+        is_encashable: false,
+        min_days_per_application: null,
+        max_days_per_application: null,
+      };
+      return acc;
+    }, {} as Record<string, any>));
+    setError(null);
+  };
+
+  const updatePolicyConfig = (leaveTypeId: string, field: string, value: string | number | boolean | null) => {
+    setPolicyConfigs((prev) => ({
+      ...prev,
+      [leaveTypeId]: {
+        ...(prev[leaveTypeId] || {}),
+        [field]: value,
+      },
+    }));
+  };
+
+  const openCreateModal = () => {
+    setEditingPolicyId(null);
+    setPolicyName('');
+    setSelectedLeaveTypeIds([]);
+    setPolicyConfigs({});
+    setError(null);
+    setSuccessMessage(null);
+    setShowPolicyModal(true);
+  };
+
+  const openEditModal = async () => {
+    try {
+      const response = await getAssignedLeavePolicyWithTypes(subdomain);
+      const policyData = response?.data?.data || response?.data || null;
+
+      const selectedIds = (policyData?.leave_types || [])
+        .map((item: any) => item.leave_type_id || item.leave_type?.id || '')
+        .filter(Boolean);
+
+      setEditingPolicyId(policyData?.id || 'assigned-policy');
+      setPolicyName(policyData?.name || '');
+      setSelectedLeaveTypeIds(selectedIds);
+      setPolicyConfigs(selectedIds.reduce((acc: Record<string, any>, id: string) => {
+        const existing = (policyData?.leave_types || []).find((item: any) => (item.leave_type_id || item.leave_type?.id || '') === id);
+        acc[id] = {
+          days_per_year: existing?.days_per_year ?? null,
+          accrual_type: existing?.accrual_type ?? '',
+          is_carry_forward: existing?.is_carry_forward ?? false,
+          carry_forward_max_days: existing?.carry_forward_max_days ?? null,
+          is_encashable: existing?.is_encashable ?? false,
+          min_days_per_application: existing?.min_days_per_application ?? null,
+          max_days_per_application: existing?.max_days_per_application ?? null,
+        };
+        return acc;
+      }, {}));
+      setError(null);
+      setSuccessMessage(null);
+      setShowPolicyModal(true);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load policy details for editing.');
+    }
+  };
+
+  const syncPolicyToTable = (policy: { id: string; name: string; leave_types?: Array<{ leave_type_id?: string; leave_type?: { id?: string; name?: string } }> }) => {
+    setPolicies((prev) => {
+      const existing = prev.find((item) => item.id === policy.id);
+      if (existing) {
+        return prev.map((item) => (item.id === policy.id ? policy : item));
+      }
+      return [policy, ...prev];
+    });
+  };
+
+  const validatePolicyForm = () => {
+    if (!policyName.trim()) {
+      throw new Error('Policy name is required.');
+    }
+
+    if (selectedLeaveTypeIds.length === 0) {
+      throw new Error('Select at least one leave type.');
+    }
+  };
+
+  const buildLeaveTypeConfigs = (detail: any) => selectedLeaveTypeIds.map((leaveTypeId) => {
+    const existing = (detail?.leave_types || []).find((item: any) => (item.leave_type_id || item.leave_type?.id || '') === leaveTypeId);
+    const config = policyConfigs[leaveTypeId] || {};
+
+    return {
+      leave_type_id: leaveTypeId,
+      days_per_year: config.days_per_year ?? existing?.days_per_year ?? null,
+      accrual_type: config.accrual_type ?? existing?.accrual_type ?? null,
+      accrual_amount: existing?.accrual_amount ?? null,
+      is_carry_forward: config.is_carry_forward ?? existing?.is_carry_forward ?? false,
+      carry_forward_max_days: config.carry_forward_max_days ?? existing?.carry_forward_max_days ?? null,
+      carry_forward_expiry: existing?.carry_forward_expiry ?? null,
+      is_encashable: config.is_encashable ?? existing?.is_encashable ?? false,
+      max_encash_days: existing?.max_encash_days ?? null,
+      min_days_per_application: config.min_days_per_application ?? existing?.min_days_per_application ?? null,
+      max_days_per_application: config.max_days_per_application ?? existing?.max_days_per_application ?? null,
+      max_applications_per_year: existing?.max_applications_per_year ?? null,
+      sandwich_applicable: existing?.sandwich_applicable ?? false,
+      sandwich_count_as: existing?.sandwich_count_as ?? null,
+    };
+  });
+
+  const handleSubmitPolicy = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      validatePolicyForm();
+      setSubmitting(true);
+
+      if (editingPolicyId) {
+        const response = await getAssignedLeavePolicyWithTypes(subdomain);
+        const detail = response?.data?.data || response?.data || null;
+        const updateResponse = await updateAssignedLeavePolicyWithTypes(
+          { name: policyName.trim(), leave_type_configs: buildLeaveTypeConfigs(detail) },
+          subdomain,
+        );
+
+        if ((updateResponse?.data?.success ?? true) === false) {
+          throw new Error('Failed to update leave policy.');
+        }
+
+        setSuccessMessage('Leave policy updated successfully.');
+      } else {
+        const response = await createLeavePolicyWithTypes(
+          { name: policyName.trim(), leave_type_ids: selectedLeaveTypeIds },
+          subdomain,
+        );
+
+        const createdPolicy = (response?.data?.data || response?.data || null) as {
+          id?: string;
+          name?: string;
+          leave_types?: Array<{ leave_type_id?: string; leave_type?: { id?: string; name?: string } }>;
+        } | null;
+
+        if ((response?.data?.success ?? true) === false) {
+          const apiError = response?.data?.error;
+          const msg = Array.isArray(apiError) ? apiError[0] : apiError || 'Failed to create leave policy.';
+          throw new Error(typeof msg === 'string' ? msg : 'Failed to create leave policy.');
+        }
+
+        if (createdPolicy?.id) {
+          syncPolicyToTable({
+            id: createdPolicy.id,
+            name: createdPolicy.name || policyName.trim(),
+            leave_types: createdPolicy.leave_types || selectedLeaveTypeIds.map((leaveTypeId) => ({ leave_type_id: leaveTypeId })),
+          });
+        }
+
+        setSuccessMessage('Leave policy configured successfully.');
+      }
+
+      setPolicyName('');
+      setSelectedLeaveTypeIds([]);
+      setEditingPolicyId(null);
+      setShowPolicyModal(false);
+    } catch (err: any) {
+      setError(err?.message || 'Something went wrong while saving the leave policy.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="p-4 lg:p-6 space-y-5">
@@ -73,39 +307,191 @@ export default function AttendanceLeave() {
       {subTab === 'Leave Types' && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-[#0f1f2e]">Leave Types Configuration</h3>
-            <button className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors">
-              <Plus size={14} /> Add Type
+            <div>
+              <h3 className="text-sm font-bold text-[#0f1f2e]">Leave Types Configuration</h3>
+              <p className="text-xs text-gray-500 mt-0.5">Create a leave policy by selecting leave types.</p>
+            </div>
+            <button
+              type="button"
+              onClick={openCreateModal}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors"
+            >
+              <Plus size={14} /> Configure Policy
             </button>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/50">
-                  {['Leave Type', 'Days/Year', 'Carry Forward', 'Encashable'].map((h) => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {LEAVE_TYPES.map((lt) => (
-                  <tr key={lt.type} className="hover:bg-gray-50/50">
-                    <td className="px-4 py-3 text-sm font-semibold text-gray-800">{lt.type}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{lt.days === 0 ? 'As earned' : `${lt.days} days`}</td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${lt.carry ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                        {lt.carry ? 'Yes' : 'No'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${lt.encash ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                        {lt.encash ? 'Yes' : 'No'}
-                      </span>
-                    </td>
+            {loadingPolicy && <div className="p-4 text-sm text-gray-500">Loading configured leave policy…</div>}
+            {!loadingPolicy && policies.length === 0 && <div className="p-4 text-sm text-gray-500">No leave policies created yet. Use “Configure Policy” to add one.</div>}
+            {policies.length > 0 && (
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50/50">
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Policy Name</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Leave Types</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {policies.map((policy) => (
+                    <tr key={policy.id} className="hover:bg-gray-50/50">
+                      <td className="px-4 py-3 text-sm font-semibold text-gray-800">{policy.name}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {policy.leave_types?.length
+                          ? policy.leave_types.map((item) => `${item.leave_type?.name || item.leave_type_id} (${item.days_per_year ?? '—'} days${item.is_carry_forward ? ', carry-forward' : ''})`).join(', ')
+                          : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <button
+                          type="button"
+                          onClick={openEditModal}
+                          className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          Edit
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showPolicyModal && (
+        <div className="fixed inset-0 bg-black/10 z-50 flex items-center justify-center pt-5 mt-4 px-4 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl flex flex-col" style={{ maxHeight: 'calc(100vh - 8rem)' }}>
+            <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-gray-100 rounded-t-2xl bg-white z-10">
+              <div>
+                <h2 className="text-base font-bold text-[#0f1f2e]">{editingPolicyId ? 'Edit Leave Policy' : 'Configure Leave Policy'}</h2>
+                <p className="text-xs text-gray-400">{editingPolicyId ? 'Update the selected policy and leave type mapping' : 'Create a policy using available leave types'}</p>
+              </div>
+              <button
+                onClick={() => setShowPolicyModal(false)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                type="button"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto min-h-0 p-6">
+              <form onSubmit={handleSubmitPolicy} className="space-y-5">
+                <div>
+                  <label htmlFor="policyName" className="block text-xs font-semibold text-gray-600 mb-1.5">Policy Name <span className="text-red-500">*</span></label>
+                  <input
+                    id="policyName"
+                    type="text"
+                    value={policyName}
+                    onChange={(e) => {
+                      setPolicyName(e.target.value);
+                      setError(null);
+                    }}
+                    placeholder="TCS Leave Policy"
+                    className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="leaveTypeIds" className="block text-xs font-semibold text-gray-600 mb-1.5">Leave Types <span className="text-red-500">*</span></label>
+                  <select
+                    id="leaveTypeIds"
+                    multiple
+                    value={selectedLeaveTypeIds}
+                    onChange={handleLeaveTypeSelection}
+                    className="w-full min-h-[160px] px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
+                  >
+                    {loadingLeaveTypes && <option disabled>Loading leave types...</option>}
+                    {!loadingLeaveTypes && leaveTypes.length === 0 && <option disabled>No leave types available</option>}
+                    {!loadingLeaveTypes && leaveTypes.length > 0 && leaveTypes.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} {item.code ? `(${item.code})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-400 mt-1">Hold Ctrl/Cmd to select multiple leave types.</p>
+                </div>
+
+                {selectedLeaveTypeIds.length > 0 && (
+                  <div className="space-y-3 rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                    <div>
+                      <h3 className="text-xs font-semibold text-gray-700">Leave Type Settings</h3>
+                      <p className="text-xs text-gray-400 mt-1">Adjust the days and carry-forward/encashment rules for each selected leave type.</p>
+                    </div>
+                    {selectedLeaveTypeIds.map((leaveTypeId) => {
+                      const leaveType = leaveTypes.find((item) => item.id === leaveTypeId);
+                      const config = policyConfigs[leaveTypeId] || {};
+
+                      return (
+                        <div key={leaveTypeId} className="rounded-xl border border-gray-200 bg-white p-3 space-y-3">
+                          <div className="text-sm font-semibold text-gray-800">{leaveType?.name || leaveTypeId}</div>
+                          <div className="grid grid-cols-2 gap-3 text-xs text-gray-600">
+                            <label className="space-y-1">
+                              <span>Days / year</span>
+                              <input type="number" min="0" value={config.days_per_year ?? ''} onChange={(e) => updatePolicyConfig(leaveTypeId, 'days_per_year', e.target.value === '' ? null : Number(e.target.value))} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm" />
+                            </label>
+                            <label className="space-y-1">
+                              <span>Accrual type</span>
+                              <input type="text" value={config.accrual_type ?? ''} onChange={(e) => updatePolicyConfig(leaveTypeId, 'accrual_type', e.target.value)} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm" placeholder="Monthly" />
+                            </label>
+                            <label className="space-y-1">
+                              <span>Carry forward max days</span>
+                              <input type="number" min="0" value={config.carry_forward_max_days ?? ''} onChange={(e) => updatePolicyConfig(leaveTypeId, 'carry_forward_max_days', e.target.value === '' ? null : Number(e.target.value))} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm" />
+                            </label>
+                            <label className="space-y-1">
+                              <span>Min days / application</span>
+                              <input type="number" min="0" value={config.min_days_per_application ?? ''} onChange={(e) => updatePolicyConfig(leaveTypeId, 'min_days_per_application', e.target.value === '' ? null : Number(e.target.value))} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm" />
+                            </label>
+                            <label className="space-y-1">
+                              <span>Max days / application</span>
+                              <input type="number" min="0" value={config.max_days_per_application ?? ''} onChange={(e) => updatePolicyConfig(leaveTypeId, 'max_days_per_application', e.target.value === '' ? null : Number(e.target.value))} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm" />
+                            </label>
+                          </div>
+                          <div className="flex flex-wrap gap-4 text-xs text-gray-600">
+                            <label className="inline-flex items-center gap-2"><input type="checkbox" checked={Boolean(config.is_carry_forward)} onChange={(e) => updatePolicyConfig(leaveTypeId, 'is_carry_forward', e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-[#2D7A4F] focus:ring-[#2D7A4F]" /> Carry forward</label>
+                            <label className="inline-flex items-center gap-2"><input type="checkbox" checked={Boolean(config.is_encashable)} onChange={(e) => updatePolicyConfig(leaveTypeId, 'is_encashable', e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-[#2D7A4F] focus:ring-[#2D7A4F]" /> Encashable</label>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {error && (
+                  <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    <AlertCircle size={16} className="mt-0.5" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                {successMessage && (
+                  <div className="flex items-start gap-2 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+                    <CheckCircle size={16} className="mt-0.5" />
+                    <span>{successMessage}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPolicyModal(false)}
+                    className="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] disabled:opacity-60 transition-colors"
+                  >
+                    {submitting ? <Loader2 size={14} className="animate-spin" /> : null}
+                    {submitting && (editingPolicyId ? 'Updating...' : 'Creating...')}
+                    {!submitting && (editingPolicyId ? 'Update Policy' : 'Create Policy')}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

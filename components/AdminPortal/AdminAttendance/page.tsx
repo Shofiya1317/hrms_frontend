@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Clock, AlertTriangle, CheckCircle, Upload, Download, Plus, Filter, Calendar, Settings, Wifi } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import { Clock, AlertTriangle, CheckCircle, Upload, Download, Plus, Filter, Settings, Wifi, X, Loader2, AlertCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { createLeavePolicyWithTypes, getLeaveTypes } from '@/lib/service/leave';
 
 const TABS = [
   'Dashboard', 'Logs', 'Processing', 'Exceptions',
@@ -320,7 +322,85 @@ function ShiftsTab() {
 }
 
 function LeaveTab() {
+  const params = useParams();
+  const subdomain = params?.subdomain as string;
+
   const [leaveSubTab, setLeaveSubTab] = useState('Requests');
+  const [showPolicyModal, setShowPolicyModal] = useState(false);
+  const [policyName, setPolicyName] = useState('');
+  const [selectedLeaveTypeIds, setSelectedLeaveTypeIds] = useState<string[]>([]);
+  const [leaveTypes, setLeaveTypes] = useState<Array<{ id: string; name: string; code?: string }>>([]);
+  const [loadingLeaveTypes, setLoadingLeaveTypes] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!subdomain) return;
+
+    const loadLeaveTypes = async () => {
+      setLoadingLeaveTypes(true);
+      try {
+        const response = await getLeaveTypes(subdomain);
+        const data = (response?.data?.data || response?.data || []) as Array<{ id: string; name: string; code?: string }>;
+        setLeaveTypes(data);
+      } catch (err: any) {
+        console.error('Failed to load leave types', err);
+      } finally {
+        setLoadingLeaveTypes(false);
+      }
+    };
+
+    loadLeaveTypes();
+  }, [subdomain]);
+
+  const handleLeaveTypeSelection = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const options = Array.from(event.target.selectedOptions, (option) => option.value);
+    setSelectedLeaveTypeIds(options);
+    setError(null);
+  };
+
+  const handleCreatePolicy = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError(null);
+    setSuccessMessage(null);
+
+    if (!policyName.trim()) {
+      setError('Policy name is required.');
+      return;
+    }
+
+    if (selectedLeaveTypeIds.length === 0) {
+      setError('Select at least one leave type.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await createLeavePolicyWithTypes(
+        { name: policyName.trim(), leave_type_ids: selectedLeaveTypeIds },
+        subdomain,
+      );
+
+      const ok = (response?.data?.success ?? true) !== false;
+      if (!ok) {
+        const apiError = response?.data?.error;
+        const msg = Array.isArray(apiError) ? apiError[0] : apiError || 'Failed to create leave policy.';
+        setError(typeof msg === 'string' ? msg : 'Failed to create leave policy.');
+        return;
+      }
+
+      setSuccessMessage('Leave policy configured successfully.');
+      setPolicyName('');
+      setSelectedLeaveTypeIds([]);
+      setShowPolicyModal(false);
+    } catch (err: any) {
+      setError(err?.message || 'Something went wrong while creating the leave policy.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
@@ -368,9 +448,19 @@ function LeaveTab() {
       {leaveSubTab === 'Leave Types' && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-[#0f1f2e]">Leave Types Configuration</h3>
-            <button className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors">
-              <Plus size={14} /> Add Type
+            <div>
+              <h3 className="text-sm font-bold text-[#0f1f2e]">Leave Types Configuration</h3>
+              <p className="text-xs text-gray-500 mt-0.5">Create a leave policy by selecting leave types.</p>
+            </div>
+            <button
+              onClick={() => {
+                setError(null);
+                setSuccessMessage(null);
+                setShowPolicyModal(true);
+              }}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors"
+            >
+              <Plus size={14} /> Configure Policy
             </button>
           </div>
           <div className="overflow-x-auto">
@@ -382,7 +472,7 @@ function LeaveTab() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              {/* <tbody className="divide-y divide-gray-50">
                 {LEAVE_TYPES.map((lt) => (
                   <tr key={lt.type} className="hover:bg-gray-50/50">
                     <td className="px-4 py-3 text-sm font-semibold text-gray-800">{lt.type}</td>
@@ -399,8 +489,99 @@ function LeaveTab() {
                     </td>
                   </tr>
                 ))}
-              </tbody>
+              </tbody> */}
             </table>
+          </div>
+        </div>
+      )}
+
+      {showPolicyModal && (
+        <div className="fixed inset-0 bg-black/10 z-50 flex items-center justify-center pt-5 mt-4 px-4 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl flex flex-col" style={{ maxHeight: 'calc(100vh - 8rem)' }}>
+            <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-gray-100 rounded-t-2xl bg-white z-10">
+              <div>
+                <h2 className="text-base font-bold text-[#0f1f2e]">Configure Leave Policy</h2>
+                <p className="text-xs text-gray-400">Create a policy using available leave types</p>
+              </div>
+              <button
+                onClick={() => setShowPolicyModal(false)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto min-h-0 p-6">
+              <form onSubmit={handleCreatePolicy} className="space-y-5">
+                <div>
+                  <label htmlFor="policyName" className="block text-xs font-semibold text-gray-600 mb-1.5">Policy Name <span className="text-red-500">*</span></label>
+                  <input
+                    id="policyName"
+                    type="text"
+                    value={policyName}
+                    onChange={(e) => {
+                      setPolicyName(e.target.value);
+                      setError(null);
+                    }}
+                    placeholder="TCS Leave Policy"
+                    className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="leaveTypeIds" className="block text-xs font-semibold text-gray-600 mb-1.5">Leave Types <span className="text-red-500">*</span></label>
+                  <select
+                    id="leaveTypeIds"
+                    multiple
+                    value={selectedLeaveTypeIds}
+                    onChange={handleLeaveTypeSelection}
+                    className="w-full min-h-[160px] px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
+                  >
+                    {loadingLeaveTypes && <option disabled>Loading leave types...</option>}
+                    {!loadingLeaveTypes && leaveTypes.length === 0 && <option disabled>No leave types available</option>}
+                    {!loadingLeaveTypes && leaveTypes.length > 0 && leaveTypes.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} {item.code ? `(${item.code})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-400 mt-1">Hold Ctrl/Cmd to select multiple leave types.</p>
+                </div>
+
+                {error && (
+                  <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    <AlertCircle size={16} className="mt-0.5" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                {successMessage && (
+                  <div className="flex items-start gap-2 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+                    <CheckCircle size={16} className="mt-0.5" />
+                    <span>{successMessage}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPolicyModal(false)}
+                    className="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] disabled:opacity-60 transition-colors"
+                  >
+                    {submitting ? <Loader2 size={14} className="animate-spin" /> : null}
+                    {submitting ? 'Creating...' : 'Create Policy'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

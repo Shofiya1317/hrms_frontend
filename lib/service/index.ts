@@ -6,4 +6,5 @@ export * as UserService from './user';
 export * as ChatbotService from './chatbot';
 export * as MastersService from './masters';
 export * as EmployeeService from './employee';
+export * as LeaveService from './leave';
 export * as AttendanceService from './attendance';
