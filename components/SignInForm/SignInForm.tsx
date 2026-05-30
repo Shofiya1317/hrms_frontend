@@ -46,10 +46,9 @@ export const handleSignInSubmit = async (
   const currentStage = (session as any)?.user?.account?.current_onboarding_stage ?? -1;
   const userRole = (session as any)?.user?.role;
 
-  // Redirect VENDOR role to task list
-  if (userRole === 'VENDOR') {
+  if (userRole === 'EMPLOYEE') {
     toast.success('Signed In');
-    router.push('/dashboard');
+    router.push('/employee/dashboard');
     router.refresh();
     setSubmitting(false);
     return;

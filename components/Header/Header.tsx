@@ -6,9 +6,7 @@ import { signOut, useSession } from 'next-auth/react';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import React, {
-  ReactNode, useEffect, useRef, useState,
-} from 'react';
+import React, { ReactNode, useEffect, useRef, useState } from 'react';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import toast from 'react-hot-toast';
@@ -18,7 +16,9 @@ import { TiWarning } from 'react-icons/ti';
 import {
   BarChart3,
   CalendarClock,
+  CalendarDays,
   ClipboardCheck,
+  FileText,
   LayoutDashboard,
   Shield,
   UserRoundCheck,
@@ -119,17 +119,44 @@ export const employeeMenuItems: IMenuItem[] = [
     path: '/employee/dashboard',
     icon: <UserRoundCheck size={16} />,
   },
+
   {
     label: 'Attendance',
     path: '',
     icon: <ClipboardCheck size={16} />,
     menuItems: [
       { label: 'Overview', path: '/employee/attendance/overview' },
-      { label: 'Check-in/Check-out', path: '/employee/attendance/check-in-out' },
+      {
+        label: 'Check-in/Check-out',
+        path: '/employee/attendance/check-in-out',
+      },
       { label: 'Monthly View', path: '/employee/attendance/monthly-view' },
+    ],
+  },
+
+  {
+    label: 'Leave Management',
+    path: '',
+    icon: <CalendarDays size={16} />,
+    menuItems: [
       { label: 'Apply Leave', path: '/employee/attendance/apply-leave' },
-      { label: 'Regularization', path: '/employee/attendance/regularization' },
       { label: 'Comp Off', path: '/employee/attendance/comp-off' },
+    ],
+  },
+
+  {
+    label: 'Requests',
+    path: '',
+    icon: <FileText size={16} />,
+    menuItems: [
+      {
+        label: 'Regularization',
+        path: '/employee/attendance/regularization',
+      },
+      {
+        label: 'Work From Home',
+        path: '/employee/attendance/work-from-home',
+      },
     ],
   },
 ];
@@ -148,10 +175,11 @@ export const getMenuItemsByRole = (role: string): IMenuItem[] => {
 
 // ── Active helpers ────────────────────────────────────────────────
 const isMenuItemActive = (item: IMenuItem, pathname: string): boolean => {
-  if (item.path && item.path !== '' && pathname.startsWith(item.path)) return true;
+  if (item.path && item.path !== '' && pathname.startsWith(item.path))
+    return true;
   if (item.menuItems) {
     return item.menuItems.some(
-      (sub) => sub.path && pathname.startsWith(sub.path),
+      (sub) => sub.path && pathname.startsWith(sub.path)
     );
   }
   return false;
@@ -247,7 +275,8 @@ function NavbarItem({
         style={{ cursor: 'pointer' }}
         onClick={handleClick}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') handleClick(e as unknown as React.MouseEvent);
+          if (e.key === 'Enter' || e.key === ' ')
+            handleClick(e as unknown as React.MouseEvent);
         }}
       >
         <div className="flex items-center relative">
@@ -363,9 +392,7 @@ function Profile({
 
 // ── Main Header ───────────────────────────────────────────────────
 function Header(props: HeaderProps) {
-  const {
-    menuItems, pathname, profileMenu, user,
-  } = props;
+  const { menuItems, pathname, profileMenu, user } = props;
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -385,8 +412,8 @@ function Header(props: HeaderProps) {
         setOpenMenu(null);
       }
       if (
-        profileRef.current
-        && !profileRef.current.contains(e.target as Node)
+        profileRef.current &&
+        !profileRef.current.contains(e.target as Node)
       ) {
         setShowProfileMenu(false);
       }
@@ -423,8 +450,8 @@ function Header(props: HeaderProps) {
   }, [session]);
 
   return (
-<div className="fixed-top container-fluid p-0" style={{ zIndex: 1030 }}>
-        <Navbar expand="lg" className="header_bg p-4">
+    <div className="fixed-top container-fluid p-0" style={{ zIndex: 1030 }}>
+      <Navbar expand="lg" className="header_bg p-4">
         {/* Logo */}
         <Navbar.Brand href="/dashboard" className="p-0">
           <div className="flex items-center font-semibold">
@@ -528,7 +555,11 @@ function Header(props: HeaderProps) {
 
               {/* Right side: bell + avatar */}
               <div className="flex items-center gap-3">
-                <button className="hrms-header-icon-btn" type="button" aria-label="Notifications">
+                <button
+                  className="hrms-header-icon-btn"
+                  type="button"
+                  aria-label="Notifications"
+                >
                   <FaRegBell size={18} />
                 </button>
                 <div
@@ -543,14 +574,9 @@ function Header(props: HeaderProps) {
                     }
                   }}
                 >
-                  <div
-                    className="flex items-center gap-3"
-                    title={user?.name}
-                  >
+                  <div className="flex items-center gap-3" title={user?.name}>
                     <Avatar
-                      name={
-                        user?.name?.charAt(0)?.toLocaleUpperCase() || ''
-                      }
+                      name={user?.name?.charAt(0)?.toLocaleUpperCase() || ''}
                       size="40px"
                       className="rounded-circle"
                       avator={user?.avatar_url || ''}
