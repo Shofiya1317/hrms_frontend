@@ -46,6 +46,12 @@ export default function AttendanceLeave() {
     leave_types: policy?.leave_types || [],
   });
 
+  const parseNullableNumber = (value: any): number | null => {
+    if (value === null || value === undefined || value === '') return null;
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? null : parsed;
+  };
+
   useEffect(() => {
     if (!subdomain) return;
 
@@ -80,21 +86,39 @@ export default function AttendanceLeave() {
     loadAssignedPolicy();
   }, [subdomain]);
 
-  const handleLeaveTypeSelection = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const options = Array.from(event.target.selectedOptions, (option) => option.value);
-    setSelectedLeaveTypeIds(options);
-    setPolicyConfigs((prev) => options.reduce((acc, id) => {
-      acc[id] = prev[id] || {
-        days_per_year: null,
-        accrual_type: '',
-        is_carry_forward: false,
-        carry_forward_max_days: null,
-        is_encashable: false,
-        min_days_per_application: null,
-        max_days_per_application: null,
-      };
-      return acc;
-    }, {} as Record<string, any>));
+  const toggleLeaveTypeSelection = (leaveTypeId: string) => {
+    setSelectedLeaveTypeIds((prev) => {
+      const next = prev.includes(leaveTypeId)
+        ? prev.filter((id) => id !== leaveTypeId)
+        : [...prev, leaveTypeId];
+
+      setPolicyConfigs((prevConfigs) => {
+        const nextConfigs = { ...prevConfigs };
+
+        if (next.includes(leaveTypeId) && !nextConfigs[leaveTypeId]) {
+          nextConfigs[leaveTypeId] = {
+            days_per_year: null,
+            accrual_type: '',
+            is_carry_forward: false,
+            carry_forward_max_days: null,
+            is_encashable: false,
+            min_days_per_application: null,
+            max_days_per_application: null,
+          };
+        }
+
+        if (!next.includes(leaveTypeId)) {
+          return Object.fromEntries(
+            Object.entries(nextConfigs).filter(([key]) => key !== leaveTypeId),
+          ) as Record<string, any>;
+        }
+
+        return nextConfigs;
+      });
+
+      return next;
+    });
+
     setError(null);
   };
 
@@ -133,13 +157,13 @@ export default function AttendanceLeave() {
       setPolicyConfigs(selectedIds.reduce((acc: Record<string, any>, id: string) => {
         const existing = (policyData?.leave_types || []).find((item: any) => (item.leave_type_id || item.leave_type?.id || '') === id);
         acc[id] = {
-          days_per_year: existing?.days_per_year ?? null,
+          days_per_year: parseNullableNumber(existing?.days_per_year),
           accrual_type: existing?.accrual_type ?? '',
           is_carry_forward: existing?.is_carry_forward ?? false,
-          carry_forward_max_days: existing?.carry_forward_max_days ?? null,
+          carry_forward_max_days: parseNullableNumber(existing?.carry_forward_max_days),
           is_encashable: existing?.is_encashable ?? false,
-          min_days_per_application: existing?.min_days_per_application ?? null,
-          max_days_per_application: existing?.max_days_per_application ?? null,
+          min_days_per_application: parseNullableNumber(existing?.min_days_per_application),
+          max_days_per_application: parseNullableNumber(existing?.max_days_per_application),
         };
         return acc;
       }, {}));
@@ -217,7 +241,29 @@ export default function AttendanceLeave() {
         setSuccessMessage('Leave policy updated successfully.');
       } else {
         const response = await createLeavePolicyWithTypes(
-          { name: policyName.trim(), leave_type_ids: selectedLeaveTypeIds },
+          {
+            name: policyName.trim(),
+            leave_type_ids: selectedLeaveTypeIds,
+            leave_type_configs: selectedLeaveTypeIds.map((leaveTypeId) => {
+              const config = policyConfigs[leaveTypeId] || {};
+              return {
+                leave_type_id: leaveTypeId,
+                days_per_year: parseNullableNumber(config.days_per_year),
+                accrual_type: config.accrual_type ?? null,
+                accrual_amount: null,
+                is_carry_forward: config.is_carry_forward ?? false,
+                carry_forward_max_days: parseNullableNumber(config.carry_forward_max_days),
+                carry_forward_expiry: null,
+                is_encashable: config.is_encashable ?? false,
+                max_encash_days: null,
+                min_days_per_application: parseNullableNumber(config.min_days_per_application),
+                max_days_per_application: parseNullableNumber(config.max_days_per_application),
+                max_applications_per_year: null,
+                sandwich_applicable: false,
+                sandwich_count_as: null,
+              };
+            }),
+          },
           subdomain,
         );
 
@@ -394,23 +440,28 @@ export default function AttendanceLeave() {
                 </div>
 
                 <div>
-                  <label htmlFor="leaveTypeIds" className="block text-xs font-semibold text-gray-600 mb-1.5">Leave Types <span className="text-red-500">*</span></label>
-                  <select
-                    id="leaveTypeIds"
-                    multiple
-                    value={selectedLeaveTypeIds}
-                    onChange={handleLeaveTypeSelection}
-                    className="w-full min-h-[160px] px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
-                  >
-                    {loadingLeaveTypes && <option disabled>Loading leave types...</option>}
-                    {!loadingLeaveTypes && leaveTypes.length === 0 && <option disabled>No leave types available</option>}
-                    {!loadingLeaveTypes && leaveTypes.length > 0 && leaveTypes.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name} {item.code ? `(${item.code})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-gray-400 mt-1">Hold Ctrl/Cmd to select multiple leave types.</p>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Leave Types <span className="text-red-500">*</span></label>
+                  <div className="min-h-[160px] max-h-56 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-3">
+                    {loadingLeaveTypes && <div className="text-sm text-gray-500">Loading leave types...</div>}
+                    {!loadingLeaveTypes && leaveTypes.length === 0 && <div className="text-sm text-gray-500">No leave types available</div>}
+                    {!loadingLeaveTypes && leaveTypes.length > 0 && leaveTypes.map((item) => {
+                      const checked = selectedLeaveTypeIds.includes(item.id);
+                      return (
+                        <label key={item.id} className="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 mb-2 cursor-pointer hover:bg-gray-100 transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleLeaveTypeSelection(item.id)}
+                            className="mt-1 h-4 w-4 rounded border-gray-300 text-[#2D7A4F] focus:ring-[#2D7A4F]"
+                          />
+                          <span className="text-sm text-gray-700">
+                            {item.name} {item.code ? `(${item.code})` : ''}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">Select one or more leave types for this policy.</p>
                 </div>
 
                 {selectedLeaveTypeIds.length > 0 && (
