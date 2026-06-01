@@ -30,11 +30,11 @@ export default function PageHeaderWrapper({
   isDataEntry,
 }: PageWrapperProps) {
   return (
-    <div>
+    <div className="w-full min-w-0">
       <div
-        className={`pb-4 ${iswhite ? 'page-header-white' : 'page-header-container'} ${extraClassName}`}
+        className={`w-full min-w-0 pb-4 ${iswhite ? 'page-header-white' : 'page-header-container'} ${extraClassName || ''}`}
       >
-        <div className="bread-crumb-wrapper">
+        <div className="bread-crumb-wrapper max-w-full overflow-x-auto">
           {breadCrumbMenu && breadCrumbMenu.length > 0 ? (
             <BreadCrumb breadCrumb={breadCrumbMenu} />
           ) : (
@@ -44,26 +44,22 @@ export default function PageHeaderWrapper({
         {/* {breadCrumbMenu && (
           <BreadCrumb breadCrumb={breadCrumbMenu} />
         )} */}
-        <div className="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {title && (
-            <div className="d-flex  align-items-center flex-wrap">
+            <div className="flex min-w-0 items-center">
               <h5
-                className={`mb-0 fw-semibold ${isDataEntry ? 'fs-14' : ''}`}
-                style={{
-                  fontSize: '22px',
-                  letterSpacing: '1.2px',
-                }}
+                className={`m-0 break-words font-semibold text-[#0f1f2e] ${isDataEntry ? 'text-sm' : 'text-xl sm:text-[22px]'}`}
               >
                 {title}
               </h5>
             </div>
           )}
-          <div className="d-flex flex-row-reverse flex-grow-1 ">
+          <div className="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
             {stackComponent}
           </div>
         </div>
       </div>
-      <div className="d-flex flex-column">{children}</div>
+      <div className="flex min-w-0 flex-col">{children}</div>
     </div>
   );
 }

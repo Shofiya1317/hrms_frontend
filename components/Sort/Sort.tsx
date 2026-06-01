@@ -45,9 +45,9 @@ export default function Sort({
   const [show, setShow] = useState<boolean>(false);
 
   return (
-    <div className="min-width-select">
+    <div className="w-full sm:w-52">
       <Select
-        className="w-100"
+        className="w-full"
         name=""
         onChange={(e) => {
           setShow(!show);

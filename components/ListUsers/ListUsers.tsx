@@ -135,7 +135,7 @@ const ActionCell = ({
   }
 
   return (
-    <div className="ms-2" data-testid="action">
+    <div className="ml-2" data-testid="action">
       <Dropdown>
         <Dropdown.Toggle className="dropdownTitle" data-testid="action">
           <BsThreeDotsVertical color="var(--textdark)" fontSize={22} />
@@ -148,10 +148,10 @@ const ActionCell = ({
               setActionType('Edit');
               setCurrentUser(row);
             }}
-            className="d-flex align-items-center gap-2"
+            className="flex items-center gap-2"
           >
             <FiEdit size={20} color="#FBA900" />
-            <span className="fs-12 fw-500">Edit</span>
+            <span className="text-xs font-medium">Edit</span>
           </Dropdown.Item>
           )}
           {row?.id !== currentUser?.id && hasAccess('DELETE') && (
@@ -161,10 +161,10 @@ const ActionCell = ({
               setActionType('Delete');
               setCurrentUser(row);
             }}
-            className="d-flex align-items-center gap-2"
+            className="flex items-center gap-2"
           >
             <RiDeleteBinLine size={20} color="#FBA900" />
-            <span className="fs-12 fw-500">Delete</span>
+            <span className="text-xs font-medium">Delete</span>
           </Dropdown.Item>
           )}
           {row?.status === 'ACTIVE'
@@ -176,10 +176,10 @@ const ActionCell = ({
                   setActionType('Block');
                   setCurrentUser(row);
                 }}
-                className="d-flex align-items-center gap-2"
+                className="flex items-center gap-2"
               >
                 <MdBlock size={20} color="#FBA900" />
-                <span className="fs-12 fw-500">Block</span>
+                <span className="text-xs font-medium">Block</span>
               </Dropdown.Item>
           )}
           {row?.status === 'BLOCKED' && hasAccess('BLOCK/UNBLOCK') && (
@@ -295,9 +295,9 @@ export default function ListUsers({
 
   const columns: TableColumn<IUser>[] = [
     {
-      name: <div className="fs-13 font-semibold letter-spacing">Name</div>,
+      name: <div className="text-[13px] font-semibold">Name</div>,
       cell: (row) => (
-        <div className="fs-12 font-semibold letter-spacing text-capitalize">
+        <div className="break-words text-xs font-semibold capitalize">
           {row.name || '-'}
         </div>
       ),
@@ -305,25 +305,25 @@ export default function ListUsers({
       minWidth: '200px',
     },
     {
-      name: <div className="fs-13 font-semibold letter-spacing">Mail ID</div>,
-      cell: (row) => row.email,
+      name: <div className="text-[13px] font-semibold">Mail ID</div>,
+      cell: (row) => <span className="break-all text-xs sm:text-sm">{row.email}</span>,
       sortable: true,
       minWidth: '200px',
     },
     {
-      name: <div className="fs-13 font-semibold letter-spacing">Role</div>,
-      cell: (row) => convertToPascalCase(row.role?.replaceAll('_', ' ')),
+      name: <div className="text-[13px] font-semibold">Role</div>,
+      cell: (row) => <span className="text-xs sm:text-sm">{convertToPascalCase(row.role?.replaceAll('_', ' '))}</span>,
       sortable: true,
       minWidth: '200px',
     },
     {
-      name: <div className="fs-13 font-semibold letter-spacing">Created At</div>,
-      cell: (row) => new Date(row?.createdAt).toLocaleDateString('en-GB'),
+      name: <div className="text-[13px] font-semibold">Created At</div>,
+      cell: (row) => <span className="text-xs sm:text-sm">{new Date(row?.createdAt).toLocaleDateString('en-GB')}</span>,
       sortable: true,
       minWidth: '200px',
     },
     {
-      name: <div className="fs-13 font-semibold letter-spacing">Status</div>,
+      name: <div className="text-[13px] font-semibold">Status</div>,
       cell: (row) => <Pill pillText={row?.status} />,
       sortable: true,
       minWidth: '200px',
@@ -331,7 +331,7 @@ export default function ListUsers({
     },
 
     {
-      name: <div className="fs-13 font-semibold letter-spacing">Actions</div>,
+      name: <div className="text-[13px] font-semibold">Actions</div>,
       cell: (row: IUser) => (
         <ActionCell
           row={row}
@@ -347,35 +347,35 @@ export default function ListUsers({
   ];
 
   return (
-    <div className=" bg-white">
+    <div className="min-w-0 bg-white">
       <PageHeaderWrapper
         extraClassName="my-1 px-4 pt-1 pb-0 mb-0"
         iswhite
         title={`Users (${meta?.totalCount || 0})`}
         stackComponent={(
-          <div className="flex gap-3 flex-grow justify-end flex-wrap md:flex-nowrap">
-            <div className="">
+          <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end lg:flex-nowrap">
+            <div className="w-full sm:w-auto">
               <Search
                 params={params as unknown as Params}
                 placeholder="Search User"
               />
             </div>
-            <div>
+            <div className="w-full sm:w-auto">
               <Sort params={params as unknown as Params} />
             </div>
-            <div>
+            <div className="w-full sm:w-auto">
               <Filter>
                 <UserFilter params={params} />
               </Filter>
             </div>
             {context?.currentRole?.USERS?.includes('INVITE') && (
-              <div>
+              <div className="w-full sm:w-auto">
                 <Button
                   text="Invite Users"
                   onClick={() => {
                     setActionType('Invite');
                   }}
-                  className="reset-default px-2"
+                  className="reset-default w-full px-2 sm:w-auto"
                   prefixIconChildren={
                     // <UsersRound size={24} color="var(--icon-color)" />
                     <FaUserGroup size={20} color="var(--icon-color)" className="mr-2" />

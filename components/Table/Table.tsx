@@ -7,7 +7,7 @@ import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.share
 import Image from 'next/image';
 import { ReadonlyURLSearchParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
-import DataTable, { TableColumn } from 'react-data-table-component';
+import DataTable, { TableColumn, TableStyles } from 'react-data-table-component';
 import './Table.css';
 
 interface TableProps<T> {
@@ -52,37 +52,83 @@ export const handleRowsPerPageChange = (
 };
 
 function Table<T>({ data, columns, meta }: Readonly<TableProps<T>>) {
-  const [currentPage, setCurrentPage] = useState(Number(meta?.currentPage));
-  const [rowsPerPage, setRowsPerPage] = useState(Number(meta?.currentLimit));
+  const [currentPage, setCurrentPage] = useState(Number(meta?.currentPage) || 1);
+  const [rowsPerPage, setRowsPerPage] = useState(Number(meta?.currentLimit) || 10);
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const tableStyles: TableStyles = {
+    table: {
+      style: {
+        minWidth: '760px',
+      },
+    },
+    headRow: {
+      style: {
+        minHeight: '52px',
+      },
+    },
+    headCells: {
+      style: {
+        paddingLeft: '16px',
+        paddingRight: '16px',
+      },
+    },
+    cells: {
+      style: {
+        paddingLeft: '16px',
+        paddingRight: '16px',
+        minHeight: '60px',
+      },
+    },
+    pagination: {
+      style: {
+        flexWrap: 'wrap',
+        gap: '8px',
+        minHeight: 'auto',
+        padding: '12px 16px',
+      },
+      pageButtonsStyle: {
+        minWidth: '32px',
+        height: '32px',
+      },
+    },
+  };
+
   return (
-    <DataTable
-      columns={columns}
-      className="clm-data-table"
-      data={data}
-      pagination={!!meta}
-      paginationServer
-      paginationTotalRows={meta?.totalCount || meta?.totalcount}
-      paginationDefaultPage={currentPage}
-      paginationPerPage={rowsPerPage}
-      paginationRowsPerPageOptions={[10, 15, 20, 25, 30, 50]}
-      onChangePage={(page: number) => handlePageChange(page, setCurrentPage, searchParams, router)}
-      onChangeRowsPerPage={(row: number) => handleRowsPerPageChange(
-        row,
-        setRowsPerPage,
-        setCurrentPage,
-        searchParams,
-        router,
-      )}
-      noDataComponent={(
-        <div className="text-center my-4">
-          <Image src={NoDataImg} alt="No data available" height={450} />
-          <p className="mt-3">No data available</p>
-        </div>
-      )}
-    />
+    <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-gray-100 bg-white">
+      <DataTable
+        columns={columns}
+        className="clm-data-table"
+        customStyles={tableStyles}
+        data={data}
+        pagination={!!meta}
+        paginationServer
+        paginationTotalRows={meta?.totalCount || meta?.totalcount}
+        paginationDefaultPage={currentPage}
+        paginationPerPage={rowsPerPage}
+        paginationRowsPerPageOptions={[10, 15, 20, 25, 30, 50]}
+        responsive={false}
+        onChangePage={(page: number) => handlePageChange(page, setCurrentPage, searchParams, router)}
+        onChangeRowsPerPage={(row: number) => handleRowsPerPageChange(
+          row,
+          setRowsPerPage,
+          setCurrentPage,
+          searchParams,
+          router,
+        )}
+        noDataComponent={(
+          <div className="my-8 flex flex-col items-center px-4 text-center">
+            <Image
+              src={NoDataImg}
+              alt="No data available"
+              className="h-auto w-full max-w-[280px] sm:max-w-[360px]"
+            />
+            <p className="mt-3 text-sm font-medium text-gray-500">No data available</p>
+          </div>
+        )}
+      />
+    </div>
   );
 }
 

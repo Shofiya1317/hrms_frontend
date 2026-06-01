@@ -14,7 +14,7 @@ const Filter = ({
     <Dropdown className="relative" data-testid="Filter Content">
       <Dropdown.Toggle
         variant=""
-        className={`${pathname?.startsWith('/users') ? 'dropdown-toggle-color border text-center border' : 'border text-center border'}`}
+        className={`${pathname?.startsWith('/users') ? 'bg-white' : 'bg-transparent'} flex h-10 w-full items-center justify-center rounded-lg border border-gray-200 text-center text-gray-600 transition hover:bg-gray-50 sm:w-11`}
       >
         <IoFilterSharp fontSize={24} />
       </Dropdown.Toggle>

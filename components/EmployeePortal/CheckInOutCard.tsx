@@ -137,11 +137,13 @@ export default function CheckInOutCard({
   const timerS = elapsed % 60;
   const timerStr = `${pad(timerH)}:${pad(timerM)}:${pad(timerS)}`;
   const hoursStr = `${timerH}h ${timerM}m`;
+  const pct = Math.min((elapsed / (8 * 3600)) * 100, 100);
 
   const hour = currentTime ? currentTime.getHours() : 12;
   const greeting =
     hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   const GreetIcon = hour < 12 ? Sun : hour < 17 ? Zap : Moon;
+  const firstName = fullName.split(' ')[0];
 
   /* ── Toast helper ── */
   const showToast = (msg: string, type: 'success' | 'info' | 'error') => {
@@ -190,24 +192,15 @@ export default function CheckInOutCard({
           }),
         };
 
-        // Pass either apiKey or slug based on what's available
-        const response = await checkIn(
-          payload, 
-          apiKey || '', 
-          token,
-          
-        );
-        
-        // Check if response indicates success
+        const response = await checkIn(payload, apiKey || '', token);
+
         if (!response || response.data.success === false) {
-          // Handle failed response
           const errorMsg = response?.data.error[0]?.join(', ') || 'Check-in failed. Please try again.';
           throw new Error(errorMsg);
         }
-        
-        // Only update state if API call was successful
+
         const recordId = response?.data?.id;
-        
+
         if (!recordId) {
           throw new Error('No attendance record ID received from server');
         }
@@ -217,7 +210,7 @@ export default function CheckInOutCard({
         setCheckInEpoch(now.getTime());
         setElapsed(0);
         showToast(`Checked in at ${fmtTime(now)}`, 'success');
-        setShowModal(false); // Close modal on success
+        setShowModal(false);
 
       } else {
         // ── CHECK OUT ─────────────────────────────
@@ -238,8 +231,7 @@ export default function CheckInOutCard({
         };
 
         const response = await checkOut(attendanceId, payload, apiKey, token);
-        
-        // Check if response indicates success
+
         if (!response || response.data.success === false) {
           const errorMsg = response?.data.error[0]?.join(', ') || 'Check-out failed. Please try again.';
           throw new Error(errorMsg);
@@ -250,39 +242,33 @@ export default function CheckInOutCard({
         setAttendanceId(null);
         setCheckInEpoch(null);
         showToast(`Checked out. Total: ${hoursStr}. Great work!`, 'info');
-        setShowModal(false); // Close modal on success
+        setShowModal(false);
       }
     } catch (err: any) {
       console.error('Attendance API Error:', err);
-      
-      // Handle specific error cases
+
       let msg = 'Something went wrong. Please try again.';
-      
+
       if (err?.response?.data?.message) {
         msg = err.response.data.message;
       } else if (err?.response?.data?.error) {
-        msg = Array.isArray(err.response.data.error) 
-          ? err.response.data.error.join(', ') 
+        msg = Array.isArray(err.response.data.error)
+          ? err.response.data.error.join(', ')
           : err.response.data.error;
       } else if (err?.message) {
         msg = err.message;
       }
-      
-      // Check for specific error types
+
       if (msg.includes('API KEY') || msg.includes('SLUG')) {
         msg = 'Invalid or missing API credentials. Please contact administrator.';
       } else if (msg.includes('Internal Server Error') || msg.includes('500')) {
         msg = 'Server error. Please try again later or contact support.';
       }
-      
+
       showToast(msg, 'error');
-      // DO NOT update state on error - stay in current state
-      
     } finally {
       setIsLoading(false);
       setLocationData(null);
-      // Only close modal on success, keep open on error so user can retry
-      // Modal will be closed in success cases above
     }
   };
 
@@ -290,232 +276,188 @@ export default function CheckInOutCard({
     <>
       {/* ── Toast ── */}
       {toast && (
-        <div
-          className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold border shadow-md animate-fade-in ${
-            toast.type === 'success'
-              ? 'bg-[#e8f5ee] border-[#bbddc9] text-[#1a5c38]'
-              : toast.type === 'error'
-              ? 'bg-red-50 border-red-200 text-red-700'
-              : 'bg-[#eff6ff] border-[#bfdbfe] text-[#1e3a8a]'
-          }`}
-        >
-          {toast.type === 'error' ? <XCircle size={15} /> : <CheckCircle2 size={15} />}
+        <div className={`fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-auto z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm font-semibold shadow-lg border ${
+          toast.type === 'success' ? 'bg-green-50 border-green-200 text-green-800'
+          : toast.type === 'error' ? 'bg-red-50 border-red-200 text-red-700'
+          : 'bg-blue-50 border-blue-200 text-blue-800'}`}>
+          {toast.type === 'error' ? <XCircle size={15}/> : <CheckCircle2 size={15}/>}
           {toast.msg}
         </div>
       )}
 
-      {/* ── Hero dark card ── */}
-      <div className="w-full bg-gradient-to-br from-[#0f1f2e] via-[#1a3347] to-[#0f2d1e] rounded-2xl p-4 relative overflow-hidden mb-6">
-        {/* Ambient glow blobs */}
-        <div className="absolute inset-0 opacity-5 pointer-events-none">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#2D7A4F] rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#4a9e6e] rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
-        </div>
+      {/* ── Hero Card ── */}
+      <div className="relative mb-5 rounded-2xl overflow-hidden bg-slate-900">
+        {/* grid texture */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{backgroundImage:'repeating-linear-gradient(0deg,#fff 0,#fff 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,#fff 0,#fff 1px,transparent 1px,transparent 40px)'}}/>
+        {/* accent glow */}
+        <div className={`absolute top-0 right-0 w-80 h-80 rounded-full blur-3xl opacity-20 transition-colors duration-700 pointer-events-none ${isCheckedIn ? 'bg-emerald-400' : 'bg-slate-600'}`}/>
 
-        <div className="relative z-10">
-          {/* Row 1: Name + Clock */}
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <GreetIcon size={14} className="text-[#4a9e6e]" />
-                <span className="text-[#4a9e6e] text-sm font-medium">
-                  {greeting}
-                </span>
+        <div className="relative z-10 p-4 sm:p-5 lg:p-6">
+
+          {/* ── MOBILE layout (< lg) ── */}
+          <div className="lg:hidden">
+            {/* Row 1: greeting + live clock */}
+            <div className="flex items-start justify-between mb-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <GreetIcon size={12} className="text-slate-400 flex-shrink-0"/>
+                  <span className="text-xs text-slate-400 font-medium">{greeting}</span>
+                </div>
+                <h1 className="text-lg font-bold text-white leading-tight truncate pr-2">{firstName}</h1>
+                <p className="text-xs text-slate-500 truncate">{employeeId}{designation ? ` · ${designation}` : ''}</p>
               </div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-white">
-                {fullName}
-              </h1>
-              <p className="text-white/60 text-xs mt-0.5">
-                {employeeId} · {designation}
-              </p>
+              {/* Live clock — top right on mobile */}
+              <div className="text-right flex-shrink-0">
+                <p className="font-mono text-2xl font-bold tabular-nums text-white tracking-tight leading-none">
+                  {currentTime?.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                </p>
+                <p className="text-[10px] text-slate-500 mt-0.5">
+                  {currentTime?.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+                </p>
+              </div>
             </div>
 
-            <div className="text-right shrink-0">
-              <p className="text-white text-2xl lg:text-3xl font-bold tabular-nums font-mono">
-                {currentTime?.toLocaleTimeString('en-IN', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </p>
-              <p className="text-white/40 text-xs">
-                {currentTime?.toLocaleDateString('en-IN', {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </p>
-            </div>
-          </div>
-
-          {/* Row 2: Timer + Action Button */}
-          <div className="flex items-center justify-between gap-4 mb-2">
-            <div className="flex-1">
-              <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1">
-                Today's work
-              </p>
-              <p className="font-mono text-white text-4xl lg:text-5xl font-semibold tracking-tight tabular-nums">
+            {/* Row 2: big timer centered */}
+            <div className="text-center py-4 border-y border-slate-800 my-3">
+              <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Time worked today</p>
+              <p className="font-mono text-4xl font-bold tabular-nums text-white tracking-tight">
                 {isCheckedIn ? timerStr : '00:00:00'}
               </p>
-              <p className="text-white/30 text-xs mt-1">
-                {isCheckedIn && checkInEpoch
-                  ? `Since ${fmtTime(new Date(checkInEpoch))}`
-                  : 'Ready to start'}
-              </p>
+              {/* Progress bar */}
+              <div className="mt-3 mx-auto w-48 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div className={`h-full rounded-full transition-all duration-1000 ${isCheckedIn ? 'bg-emerald-500' : 'bg-slate-700'}`} style={{width:`${pct}%`}}/>
+              </div>
+              <p className="text-[10px] text-slate-600 mt-1.5">{isCheckedIn ? `${Math.round(pct)}% of 8h shift` : 'Ready to start'}</p>
             </div>
 
-            <div className="shrink-0">
-              {isCheckedIn ? (
-                <button
-                  onClick={handleOpenModal}
-                  disabled={isLoading}
-                  className="flex items-center gap-2 bg-red-500 hover:bg-red-600 disabled:opacity-60 text-white font-semibold px-6 py-2.5 rounded-xl transition-all text-sm shadow-lg shadow-red-500/20"
-                >
-                  <LogOut size={16} />
-                  Check Out
-                </button>
-              ) : (
-                <button
-                  onClick={handleOpenModal}
-                  disabled={isLoading}
-                  className="flex items-center gap-2 bg-[#2D7A4F] hover:bg-[#23663f] disabled:opacity-60 text-white font-semibold px-6 py-2.5 rounded-xl transition-all text-sm shadow-lg shadow-[#2D7A4F]/30"
-                >
-                  <LogIn size={16} />
-                  Check In
-                </button>
-              )}
+            {/* Row 3: status pill */}
+            <div className="flex justify-center mb-3">
+              <span className={`flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border ${
+                isCheckedIn ? 'bg-emerald-950 border-emerald-800 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
+                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isCheckedIn ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`}/>
+                {isCheckedIn && checkInEpoch ? `Checked in at ${fmtTime(new Date(checkInEpoch))}` : 'Not checked in yet'}
+              </span>
+            </div>
+
+            {/* Row 4: full-width action button */}
+            <button onClick={handleOpenModal} disabled={isLoading}
+              className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all active:scale-[0.98] disabled:opacity-50 ${
+                isCheckedIn
+                  ? 'bg-rose-500 hover:bg-rose-400 text-white shadow-lg shadow-rose-500/20'
+                  : 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-lg shadow-emerald-500/20'}`}>
+              {isCheckedIn ? <><LogOut size={15}/> Check Out</> : <><LogIn size={15}/> Check In</>}
+            </button>
+
+            {/* Row 5: bottom meta */}
+            <div className="mt-3 pt-3 border-t border-slate-800 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-500">
+              <span className="flex items-center gap-1 min-w-0"><MapPin size={10} className="flex-shrink-0"/><span className="truncate max-w-[180px]">{locationData?.address ?? defaultLocation}</span></span>
+              <span className="flex items-center gap-1 ml-auto flex-shrink-0 text-amber-500"><AlertCircle size={10}/> 1 pending</span>
             </div>
           </div>
 
-          {/* Status Pills */}
-          <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/10 mt-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <div
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${
-                  isCheckedIn
-                    ? 'bg-[#2D7A4F]/30 text-[#4a9e6e] border border-[#2D7A4F]/40'
-                    : 'bg-white/10 text-white/90 border border-white/20'
-                }`}
-              >
-                <span
-                  className={`w-2 h-2 rounded-full ${isCheckedIn ? 'bg-[#4a9e6e] animate-pulse' : 'bg-white/50'}`}
-                />
-                {isCheckedIn && checkInEpoch
-                  ? `Checked in at ${fmtTime(new Date(checkInEpoch))}`
-                  : 'Not checked in'}
+          {/* ── DESKTOP layout (≥ lg) ── */}
+          <div className="hidden lg:flex lg:items-center lg:gap-8">
+            {/* Left: name block */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <GreetIcon size={13} className="text-slate-400"/>
+                <span className="text-xs text-slate-400 font-medium">{greeting}</span>
               </div>
-
-              {isCheckedIn && (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-white/10 text-white/80 border border-white/10">
-                  <Timer size={12} />
-                  {hoursStr} worked today
-                </div>
-              )}
-
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/20">
-                <AlertCircle size={12} />1 pending approval
-              </div>
-            </div>
-
-            {/* Live location display */}
-            <div className="flex items-center gap-2 text-xs text-white/40">
-              <span className="flex items-center gap-1 max-w-[180px] truncate">
-                <MapPin size={12} className="shrink-0" />
-                <span className="truncate">
-                  {locationData ? locationData.address : defaultLocation}
+              <h1 className="text-2xl font-bold text-white truncate">
+                {firstName} <span className="text-slate-400 font-normal">{fullName.slice(firstName.length)}</span>
+              </h1>
+              <p className="text-xs text-slate-500 mt-0.5">{employeeId}{designation ? ` · ${designation}` : ''}</p>
+              <div className="mt-3">
+                <span className={`inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border ${
+                  isCheckedIn ? 'bg-emerald-950 border-emerald-800 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${isCheckedIn ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`}/>
+                  {isCheckedIn && checkInEpoch ? `In since ${fmtTime(new Date(checkInEpoch))}` : 'Not checked in'}
                 </span>
-              </span>
-              <span className="w-1 h-1 rounded-full bg-white/20" />
-              <span className="flex items-center gap-1">
-                <Wifi size={12} /> Secure
-              </span>
+              </div>
             </div>
+
+            {/* Center: live clock */}
+            <div className="text-center">
+              <p className="font-mono text-4xl font-bold tabular-nums text-white tracking-tight">
+                {currentTime?.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {currentTime?.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' })}
+              </p>
+            </div>
+
+            {/* Right: timer + button */}
+            <div className="flex flex-col items-end gap-3">
+              <div className="text-right">
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-0.5">Today</p>
+                <p className="font-mono text-3xl font-bold tabular-nums text-white">{isCheckedIn ? timerStr : '00:00:00'}</p>
+                <div className="mt-1.5 w-36 h-1 bg-slate-800 rounded-full overflow-hidden ml-auto">
+                  <div className="h-full bg-emerald-500 rounded-full transition-all duration-1000" style={{width:`${pct}%`}}/>
+                </div>
+              </div>
+              <button onClick={handleOpenModal} disabled={isLoading}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-50 ${
+                  isCheckedIn
+                    ? 'bg-rose-500 hover:bg-rose-400 text-white shadow-lg shadow-rose-500/20'
+                    : 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-lg shadow-emerald-500/20'}`}>
+                {isCheckedIn ? <><LogOut size={15}/> Check Out</> : <><LogIn size={15}/> Check In</>}
+              </button>
+            </div>
+          </div>
+
+          {/* Desktop bottom bar */}
+          <div className="hidden lg:flex mt-4 pt-3.5 border-t border-slate-800 items-center flex-wrap gap-x-4 gap-y-1.5 text-xs text-slate-500">
+            <span className="flex items-center gap-1"><MapPin size={11}/><span className="truncate max-w-xs">{locationData?.address ?? defaultLocation}</span></span>
+            <span className="flex items-center gap-1"><Wifi size={11}/> Secure</span>
+            {isCheckedIn && <span className="flex items-center gap-1 text-emerald-500"><Timer size={11}/> {hoursStr} worked</span>}
+            <span className="ml-auto flex items-center gap-1 text-amber-500"><AlertCircle size={11}/> 1 pending approval</span>
           </div>
         </div>
       </div>
 
-      {/* ── Confirm Modal ── */}
+      {/* ── Modal — slides up on mobile ── */}
       {showModal && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => !isLoading && setShowModal(false)}
-        >
-          <div
-            className="bg-white rounded-2xl max-w-sm w-full p-7 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal icon */}
-            <div
-              className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
-                isCheckedIn ? 'bg-red-50' : 'bg-[#e8f5ee]'
-              }`}
-            >
-              {isCheckedIn ? (
-                <LogOut size={22} className="text-red-600" />
-              ) : (
-                <LogIn size={22} className="text-[#2D7A4F]" />
-              )}
-            </div>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50" onClick={() => !isLoading && setShowModal(false)}>
+          <div className="w-full sm:max-w-sm bg-white rounded-t-3xl sm:rounded-2xl p-6 sm:p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            {/* drag handle on mobile */}
+            <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-5 sm:hidden"/>
 
-            <h3 className="text-xl font-bold text-gray-800 mb-2">
-              {isCheckedIn ? 'Check Out?' : 'Check In?'}
-            </h3>
-            <p className="text-gray-500 mb-4 leading-relaxed text-sm">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${isCheckedIn ? 'bg-rose-50' : 'bg-emerald-50'}`}>
+              {isCheckedIn ? <LogOut size={18} className="text-rose-600"/> : <LogIn size={18} className="text-emerald-600"/>}
+            </div>
+            <h3 className="text-lg font-bold text-slate-800 mb-1">{isCheckedIn ? 'Check Out?' : 'Check In?'}</h3>
+            <p className="text-sm text-slate-500 mb-4 leading-relaxed">
               {isCheckedIn
-                ? `You checked in at ${checkInEpoch ? fmtTime(new Date(checkInEpoch)) : ''}. Total worked: ${hoursStr}. Ready to check out?`
-                : `Checking in at ${currentTime ? fmtTime(currentTime) : ''}. Ready to start your workday?`}
+                ? `You've been in since ${checkInEpoch ? fmtTime(new Date(checkInEpoch)) : ''} — ${hoursStr} worked. Ready to wrap up?`
+                : `Checking in at ${currentTime ? fmtTime(currentTime) : ''}. Ready to start your day?`}
             </p>
 
-            {/* Location preview */}
-            <div className="flex items-start gap-2 bg-gray-50 rounded-xl px-3 py-2.5 mb-6">
-              <MapPin size={14} className="text-gray-400 mt-0.5 shrink-0" />
+            {/* Location block */}
+            <div className="flex items-start gap-2 bg-slate-50 rounded-xl px-3 py-2.5 mb-5 border border-slate-100">
+              <MapPin size={13} className="text-slate-400 mt-0.5 shrink-0"/>
               {isFetchingLocation ? (
-                <span className="text-xs text-gray-400 flex items-center gap-1.5">
-                  <Loader2 size={12} className="animate-spin" />
-                  Fetching your location…
-                </span>
+                <span className="text-xs text-slate-400 flex items-center gap-1.5"><Loader2 size={11} className="animate-spin"/> Fetching location…</span>
               ) : locationData ? (
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-700 font-medium leading-snug line-clamp-2">
-                    {locationData.address}
-                  </p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">
-                    {locationData.lat.toFixed(5)}, {locationData.lng.toFixed(5)}
-                  </p>
+                <div className="min-w-0">
+                  <p className="text-xs text-slate-700 font-medium line-clamp-2">{locationData.address}</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">{locationData.lat.toFixed(5)}, {locationData.lng.toFixed(5)}</p>
                 </div>
               ) : (
-                <span className="text-xs text-gray-400">
-                  Location unavailable — will proceed without it
-                </span>
+                <span className="text-xs text-slate-400">Location unavailable — will proceed without it</span>
               )}
             </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowModal(false)}
-                disabled={isLoading}
-                className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-gray-600 font-semibold text-sm hover:bg-gray-50 disabled:opacity-50 transition-colors"
-              >
+            <div className="flex gap-2.5">
+              <button onClick={() => setShowModal(false)} disabled={isLoading}
+                className="flex-1 py-3 border border-slate-200 rounded-xl text-slate-600 text-sm font-semibold hover:bg-slate-50 disabled:opacity-50 transition-colors">
                 Cancel
               </button>
-              <button
-                onClick={handleConfirm}
-                disabled={isLoading}
-                className={`flex-1 px-4 py-3 rounded-xl text-white font-bold text-sm transition-colors flex items-center justify-center gap-2 ${
-                  isCheckedIn
-                    ? 'bg-red-600 hover:bg-red-700 disabled:opacity-60'
-                    : 'bg-[#2D7A4F] hover:bg-[#23663f] disabled:opacity-60'
-                }`}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 size={15} className="animate-spin" />
-                    {isCheckedIn ? 'Checking out…' : 'Checking in…'}
-                  </>
-                ) : isCheckedIn ? (
-                  'Check Out'
-                ) : (
-                  'Check In'
-                )}
+              <button onClick={handleConfirm} disabled={isLoading}
+                className={`flex-1 py-3 rounded-xl text-white text-sm font-bold flex items-center justify-center gap-2 transition-colors ${
+                  isCheckedIn ? 'bg-rose-500 hover:bg-rose-600 disabled:opacity-60' : 'bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60'}`}>
+                {isLoading
+                  ? <><Loader2 size={14} className="animate-spin"/>{isCheckedIn ? 'Checking out…' : 'Checking in…'}</>
+                  : isCheckedIn ? 'Check Out' : 'Confirm Check In'}
               </button>
             </div>
           </div>

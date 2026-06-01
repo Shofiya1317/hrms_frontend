@@ -22,22 +22,22 @@ const STATUS_STYLE: Record<string, string> = {
 
 export default function AttendanceLogs() {
   return (
-    <div className="p-4 lg:p-6 space-y-5">
+    <div className="space-y-5 p-3 sm:p-4 lg:p-6">
       <div>
         <h1 className="text-xl font-bold text-[#0f1f2e]">Attendance Logs</h1>
         <p className="text-sm text-gray-500 mt-0.5">Daily punch-in & punch-out records</p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-gray-100 flex flex-wrap gap-3">
-          <input type="date" defaultValue="2026-03-20" className="px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F]" />
-          <input type="text" placeholder="Search employee..." className="flex-1 min-w-40 px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F]" />
-          <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors">
+      <div className="overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-gray-100 p-3 sm:flex-row sm:flex-wrap sm:p-4">
+          <input type="date" defaultValue="2026-03-20" className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#2D7A4F] focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 sm:w-auto" />
+          <input type="text" placeholder="Search employee..." className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#2D7A4F] focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 sm:min-w-40" />
+          <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 sm:w-auto">
             <Filter size={14} /> Filter
           </button>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[720px]">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/50">
                 {['Employee', 'Date', 'Punch In', 'Punch Out', 'Hours', 'Status'].map((h) => (

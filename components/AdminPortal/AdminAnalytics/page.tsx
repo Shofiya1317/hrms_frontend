@@ -7,7 +7,7 @@ import {
   LineChart, Line, PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
 
-const TABS = ['Workforce', 'Attendance', 'Talent', 'Payroll', 'Custom Reports'];
+const TABS = ['Workforce', 'Attendance'];
 
 const headcountData = [
   { month: 'Oct', count: 228 },
@@ -63,23 +63,22 @@ export default function AnalyticsPage() {
           <h1 className="text-xl font-bold text-[#0f1f2e]">Analytics</h1>
           <p className="text-sm text-gray-500 mt-0.5">Cross-module intelligence · Data-driven decisions</p>
         </div>
-        <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
-          <Download size={14} /> Export Report
-        </button>
       </div>
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl overflow-x-auto">
-        {TABS?.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-all ${
-              activeTab === tab ? 'bg-white text-[#0f1f2e] shadow-sm' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
+     <div className="inline-flex gap-1 bg-gray-100 p-1 rounded-xl">
+  {TABS?.map((tab) => (
+    <button
+      key={tab}
+      onClick={() => setActiveTab(tab)}
+      className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-all ${
+        activeTab === tab
+          ? 'bg-white text-[#0f1f2e] shadow-sm'
+          : 'text-gray-500 hover:text-gray-700'
+      }`}
+    >
+      {tab}
+    </button>
+  ))}
+</div>
       {activeTab === 'Workforce' && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

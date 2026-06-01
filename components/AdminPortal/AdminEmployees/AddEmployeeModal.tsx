@@ -10,6 +10,8 @@ import {
   InviteEmployeeDto,
 } from '@/lib/service/employee';
 import { getShifts } from '@/lib/service/masters';
+import Select from 'react-select';
+import customStyles from '@/components/CustomStyles/CustomStyles';
 
 interface AddEmployeeModalProps {
   readonly onClose: () => void;
@@ -450,18 +452,13 @@ export default function AddEmployeeModal({
                 >
                   Role <span className="text-red-500">*</span>
                 </label>
-                <select
-                  id="role"
-                  value={form.role}
-                  onChange={(e) => handleChange('role', e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
-                >
-                  {ROLES.map((r) => (
-                    <option key={r.value} value={r.value}>
-                      {r.label}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  inputId="role"
+                  options={ROLES}
+                  value={ROLES.find((r) => r.value === form.role) ?? null}
+                  onChange={(opt) => handleChange('role', opt?.value ?? '')}
+                  styles={customStyles()}
+                />
               </div>
               <div>
                 <label
@@ -470,23 +467,14 @@ export default function AddEmployeeModal({
                 >
                   Employment Type <span className="text-red-500">*</span>
                 </label>
-                <select
-                  id="employmentTypeId"
-                  value={form.employmentTypeId}
-                  onChange={(e) =>
-                    handleChange('employmentTypeId', e.target.value)
-                  }
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
-                  required
-                >
-                  <option value="">Select employment type</option>
-                  {employmentTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.name}
-                      {type.code ? ` (${type.code})` : ''}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  inputId="employmentTypeId"
+                  options={employmentTypes.map((t) => ({ value: t.id, label: `${t.name}${t.code ? ` (${t.code})` : ''}` }))}
+                  value={employmentTypes.map((t) => ({ value: t.id, label: `${t.name}${t.code ? ` (${t.code})` : ''}` })).find((o) => o.value === form.employmentTypeId) ?? null}
+                  onChange={(opt) => handleChange('employmentTypeId', opt?.value ?? '')}
+                  placeholder="Select employment type"
+                  styles={customStyles()}
+                />
               </div>
             </div>
 
@@ -499,21 +487,14 @@ export default function AddEmployeeModal({
                 >
                   Department <span className="text-red-500">*</span>
                 </label>
-                <select
-                  id="departmentId"
-                  value={form.departmentId}
-                  onChange={(e) => handleChange('departmentId', e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
-                  required
-                >
-                  <option value="">Select department</option>
-                  {departments.map((dept) => (
-                    <option key={dept.id} value={dept.id}>
-                      {dept.name}
-                      {dept.code ? ` (${dept.code})` : ''}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  inputId="departmentId"
+                  options={departments.map((d) => ({ value: d.id, label: `${d.name}${d.code ? ` (${d.code})` : ''}` }))}
+                  value={departments.map((d) => ({ value: d.id, label: `${d.name}${d.code ? ` (${d.code})` : ''}` })).find((o) => o.value === form.departmentId) ?? null}
+                  onChange={(opt) => handleChange('departmentId', opt?.value ?? '')}
+                  placeholder="Select department"
+                  styles={customStyles()}
+                />
               </div>
               <div>
                 <label
@@ -522,21 +503,15 @@ export default function AddEmployeeModal({
                 >
                   Reporting Manager
                 </label>
-                <select
-                  id="managerId"
-                  value={form.managerId}
-                  onChange={(e) => handleChange('managerId', e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
-                >
-                  <option value="">No manager / Top-level</option>
-                  {managers.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.fullName}
-                      {m.jobTitle ? ` — ${m.jobTitle}` : ''}
-                      {m.department ? ` (${m.department})` : ''}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  inputId="managerId"
+                  options={managers.map((m) => ({ value: m.id, label: `${m.fullName}${m.jobTitle ? ` — ${m.jobTitle}` : ''}${m.department ? ` (${m.department})` : ''}` }))}
+                  value={managers.map((m) => ({ value: m.id, label: m.fullName })).find((o) => o.value === form.managerId) ?? null}
+                  onChange={(opt) => handleChange('managerId', opt?.value ?? '')}
+                  placeholder="No manager / Top-level"
+                  isClearable
+                  styles={customStyles()}
+                />
                 {selectedManager ? (
                   <p className="text-xs text-[#2D7A4F] mt-1 font-medium">
                     Reports to: {selectedManager.fullName || 'Selected manager'}
@@ -557,22 +532,14 @@ export default function AddEmployeeModal({
                 >
                   Designation
                 </label>
-                <select
-                  id="designationId"
-                  value={form.designationId}
-                  onChange={(e) =>
-                    handleChange('designationId', e.target.value)
-                  }
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
-                >
-                  <option value="">Select designation</option>
-                  {designations.map((designation) => (
-                    <option key={designation.id} value={designation.id}>
-                      {designation.name}
-                      {designation.code ? ` (${designation.code})` : ''}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  inputId="designationId"
+                  options={designations.map((d) => ({ value: d.id, label: `${d.name}${d.code ? ` (${d.code})` : ''}` }))}
+                  value={designations.map((d) => ({ value: d.id, label: `${d.name}${d.code ? ` (${d.code})` : ''}` })).find((o) => o.value === form.designationId) ?? null}
+                  onChange={(opt) => handleChange('designationId', opt?.value ?? '')}
+                  placeholder="Select designation"
+                  styles={customStyles()}
+                />
               </div>
               <div>
                 <label
@@ -581,22 +548,14 @@ export default function AddEmployeeModal({
                 >
                   Shift
                 </label>
-                <select
-                  id="shiftId"
-                  value={form.shiftId}
-                  onChange={(e) => handleChange('shiftId', e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
-                >
-                  <option value="">Select shift</option>
-
-                  {shifts.map((shift) => (
-                    <option key={shift.id} value={shift.id}>
-                      {shift.name} ({shift.start_time_24hr} -{' '}
-                      {shift.end_time_24hr})
-                      {shift.code ? ` • ${shift.code}` : ''}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  inputId="shiftId"
+                  options={shifts.map((s) => ({ value: s.id, label: `${s.name} (${s.start_time_24hr} - ${s.end_time_24hr})${s.code ? ` • ${s.code}` : ''}` }))}
+                  value={shifts.map((s) => ({ value: s.id, label: `${s.name} (${s.start_time_24hr} - ${s.end_time_24hr})${s.code ? ` • ${s.code}` : ''}` })).find((o) => o.value === form.shiftId) ?? null}
+                  onChange={(opt) => handleChange('shiftId', opt?.value ?? '')}
+                  placeholder="Select shift"
+                  styles={customStyles()}
+                />
               </div>
             </div>
 
@@ -624,17 +583,18 @@ export default function AddEmployeeModal({
                 >
                   Gender
                 </label>
-                <select
-                  id="gender"
-                  value={form.gender}
-                  onChange={(e) => handleChange('gender', e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] text-gray-700"
-                >
-                  <option value="">Select gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
+                <Select
+                  inputId="gender"
+                  options={[
+                    { value: 'male', label: 'Male' },
+                    { value: 'female', label: 'Female' },
+                    { value: 'other', label: 'Other' },
+                  ]}
+                  value={form.gender ? { value: form.gender, label: capitalize(form.gender) } : null}
+                  onChange={(opt) => handleChange('gender', opt?.value ?? '')}
+                  placeholder="Select gender"
+                  styles={customStyles()}
+                />
               </div>
             </div>
 

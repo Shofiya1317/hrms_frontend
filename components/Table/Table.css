@@ -1,11 +1,11 @@
 .rdt_Table {
   background: transparent !important;
-  min-height: 26vh !important;
+  min-height: 220px !important;
 }
 
 .rdt_TableBody {
-  min-height: 56vh !important;
-  overflow: hidden;
+  min-height: 220px !important;
+  overflow: visible;
   background-color: var(--white);
 }
 
@@ -28,25 +28,27 @@
 
 .rdt_TableCol {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
-  text-align: center;
-  padding-left: 25px !important;
-  padding-right: 25px !important;
+  text-align: left;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
   border-right: 2px solid #ffffff;
   vertical-align: top !important;
 }
 
 .rdt_TableCell {
-  padding: 10px 25px !important;
+  padding: 10px 16px !important;
   border-right: 2px solid var(--border);
   border-bottom: 1px solid var(--border);
-  height: 66px;
+  min-height: 60px;
   font-weight: 500;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
-  text-align: center;
+  text-align: left;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .rdt_TableCell:last-child {
@@ -134,6 +136,12 @@
 /* Responsive Design */
 
 @media (max-width: 768px) {
+  .rdt_Table {
+    min-height: 180px !important;
+  }
+  .rdt_TableBody {
+    min-height: 180px !important;
+  }
   .filter-header {
     min-width: 100px;
   }
@@ -147,11 +155,11 @@
     font-size: 12px;
   }
   .rdt_TableCol {
-    padding-left: 15px !important;
-    padding-right: 15px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
   }
   .rdt_TableCell {
-    padding: 8px 15px !important;
+    padding: 8px 12px !important;
   }
 }
 

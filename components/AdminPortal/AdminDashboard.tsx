@@ -4,9 +4,12 @@ import React, { useEffect, useState } from 'react';
 import {
   Users, UserCheck, UserX, Clock, AlertTriangle,
   CheckCircle, TrendingUp, TrendingDown, Plus, ThumbsUp,
-  Building2, Calendar, ArrowRight, Activity, RefreshCw
+  Building2, Calendar, ArrowRight, Activity, RefreshCw,
+  BarChart2, Zap,
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+} from 'recharts';
 
 interface DashboardStats {
   totalEmployees: number;
@@ -21,17 +24,29 @@ interface DashboardStats {
   recentActivity: { id: string; action: string; name: string; dept: string; time: string; type: string }[];
 }
 
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+/* ── Custom chart tooltip ── */
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs shadow-xl">
+      <p className="text-slate-400 uppercase tracking-widest text-[10px] font-semibold mb-1.5">{label}</p>
+      {payload.map((p: any) => (
+        <p key={p.dataKey} className="font-semibold my-0.5" style={{ color: p.color }}>
+          <span className="text-slate-400 font-normal">{p.name}: </span>{p.value}
+        </p>
+      ))}
+    </div>
+  );
+};
 
-function timeAgo(ts: string): string {
-  const diff = Date.now() - new Date(ts).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins} min ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs} hr ago`;
-  return `${Math.floor(hrs / 24)} day ago`;
-}
+/* ── Skeleton card ── */
+const SkeletonCard = () => (
+  <div className="bg-white border border-slate-200 rounded-2xl p-5 animate-pulse">
+    <div className="w-10 h-10 rounded-xl bg-slate-100 mb-4" />
+    <div className="h-7 w-14 bg-slate-100 rounded-md mb-2" />
+    <div className="h-3 w-24 bg-slate-100 rounded" />
+  </div>
+);
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -42,7 +57,9 @@ export default function AdminDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const weeklyTrend = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((day) => ({
+      await new Promise(r => setTimeout(r, 600));
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const weeklyTrend = days.map(day => ({
         day,
         present: Math.floor(Math.random() * 3),
         absent: Math.floor(Math.random() * 2),
@@ -58,13 +75,13 @@ export default function AdminDashboard() {
         weeklyTrend,
         deptAttendance: [
           { dept: 'Engineering', rate: 100 },
-          { dept: 'Operations', rate: 100 },
-          { dept: 'Management', rate: 100 },
+          { dept: 'Operations', rate: 85 },
+          { dept: 'Management', rate: 92 },
         ],
         recentActivity: [
-          { id: '1', action: 'Admin added', name: 'Arjun Mehta', dept: 'Management', time: 'just now', type: 'add' },
-          { id: '2', action: 'New employee added', name: 'Rahul Sharma', dept: 'Operations', time: '1 day ago', type: 'add' },
-          { id: '3', action: 'New employee added', name: 'Ananya Krishnan', dept: 'Engineering', time: '2 days ago', type: 'add' },
+          { id: '1', action: 'Admin role granted', name: 'Arjun Mehta', dept: 'Management', time: 'just now', type: 'add' },
+          { id: '2', action: 'Employee onboarded', name: 'Rahul Sharma', dept: 'Operations', time: '1 day ago', type: 'add' },
+          { id: '3', action: 'Account created', name: 'Ananya Krishnan', dept: 'Engineering', time: '2 days ago', type: 'add' },
         ],
       });
     } catch (err: any) {
@@ -74,54 +91,44 @@ export default function AdminDashboard() {
     }
   };
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  useEffect(() => { fetchDashboardData(); }, []);
 
   const today = new Date().toLocaleDateString('en-IN', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
 
+  /* ── Loading state ── */
   if (loading) {
     return (
-      <div className="p-4 lg:p-6 space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8 space-y-5">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-xl font-bold text-[#0f1f2e]">Dashboard</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{today} · Workforce at a glance</p>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Dashboard</h1>
+            <p className="text-sm text-slate-400 mt-0.5">{today}</p>
           </div>
-          <span className="flex items-center gap-1.5 text-xs font-medium text-[#2D7A4F] bg-[#e8f5ee] px-3 py-1.5 rounded-full">
-            <Activity size={12} />
+          <span className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3.5 py-1.5 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             Loading…
           </span>
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm animate-pulse">
-              <div className="w-10 h-10 rounded-xl bg-gray-100 mb-3" />
-              <div className="h-7 w-16 bg-gray-100 rounded mb-1" />
-              <div className="h-3 w-24 bg-gray-100 rounded" />
-            </div>
-          ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-5 shadow-sm animate-pulse h-64" />
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm animate-pulse h-64" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {[1, 2, 3, 4].map(i => <SkeletonCard key={i} />)}
         </div>
       </div>
     );
   }
 
+  /* ── Error state ── */
   if (error) {
     return (
-      <div className="p-4 lg:p-6">
-        <div className="bg-red-50 border border-red-100 rounded-2xl p-6 flex flex-col items-center gap-3">
-          <AlertTriangle size={32} className="text-red-400" />
-          <p className="text-sm font-semibold text-red-700">Failed to load dashboard</p>
-          <p className="text-xs text-red-500">{error}</p>
+      <div className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8 flex items-center justify-center">
+        <div className="bg-white border border-slate-200 rounded-2xl p-10 flex flex-col items-center gap-3 shadow-sm max-w-sm w-full text-center">
+          <AlertTriangle size={36} className="text-red-500 mb-1" />
+          <p className="font-bold text-slate-900">Failed to load dashboard</p>
+          <p className="text-sm text-slate-400">{error}</p>
           <button
             onClick={fetchDashboardData}
-            className="flex items-center gap-2 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl transition-colors"
+            className="flex items-center gap-2 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 active:scale-95 px-5 py-2 rounded-xl transition-all mt-2"
           >
             <RefreshCw size={13} /> Retry
           </button>
@@ -131,187 +138,323 @@ export default function AdminDashboard() {
   }
 
   const s = stats!;
-
   const attendanceRate = s.totalEmployees > 0
-    ? ((s.activeToday / s.totalEmployees) * 100).toFixed(1)
-    : '0.0';
-
+    ? Math.round((s.activeToday / s.totalEmployees) * 100)
+    : 0;
   const leaveRate = s.totalEmployees > 0
-    ? ((s.onLeave / s.totalEmployees) * 100).toFixed(1)
-    : '0.0';
+    ? Math.round((s.onLeave / s.totalEmployees) * 100)
+    : 0;
+  const totalAlerts = s.missingCheckout + s.pendingRegularizations + s.lateToday + s.overtimeFlagged;
 
   const STAT_CARDS = [
-    { label: 'Total Employees', value: String(s.totalEmployees), change: 'All active staff', up: true, icon: Users, color: 'from-[#2D7A4F] to-[#4a9e6e]', bg: 'bg-[#e8f5ee]', iconColor: 'text-[#2D7A4F]' },
-    { label: 'Active Today', value: String(s.activeToday), change: `${attendanceRate}% attendance`, up: true, icon: UserCheck, color: 'from-blue-500 to-blue-400', bg: 'bg-blue-50', iconColor: 'text-blue-600' },
-    { label: 'On Leave', value: String(s.onLeave), change: `${leaveRate}% of workforce`, up: false, icon: UserX, color: 'from-amber-500 to-amber-400', bg: 'bg-amber-50', iconColor: 'text-amber-600' },
-    { label: 'Late Arrivals', value: String(s.lateToday), change: 'Today', up: s.lateToday === 0, icon: Clock, color: 'from-red-500 to-red-400', bg: 'bg-red-50', iconColor: 'text-red-500' },
+    {
+      label: 'Total Employees',
+      value: s.totalEmployees,
+      sub: 'All active staff',
+      icon: Users,
+      iconCls: 'text-indigo-500',
+      bgCls: 'bg-indigo-50',
+      trend: null,
+    },
+    {
+      label: 'Active Today',
+      value: s.activeToday,
+      sub: `${attendanceRate}% attendance`,
+      icon: UserCheck,
+      iconCls: 'text-emerald-500',
+      bgCls: 'bg-emerald-50',
+      trend: 'up' as const,
+    },
+    {
+      label: 'On Leave',
+      value: s.onLeave,
+      sub: `${leaveRate}% of workforce`,
+      icon: UserX,
+      iconCls: 'text-amber-500',
+      bgCls: 'bg-amber-50',
+      trend: s.onLeave > 0 ? 'down' as const : null,
+    },
+    {
+      label: 'Late Arrivals',
+      value: s.lateToday,
+      sub: 'Today',
+      icon: Clock,
+      iconCls: 'text-red-500',
+      bgCls: 'bg-red-50',
+      trend: s.lateToday > 0 ? 'down' as const : null,
+    },
   ];
 
   const ALERTS = [
-    { id: 1, type: 'missing', icon: AlertTriangle, color: 'text-amber-600 bg-amber-50', label: 'Missing punch-out', count: s.missingCheckout, sub: 'Today' },
-    { id: 2, type: 'pending', icon: Clock, color: 'text-blue-600 bg-blue-50', label: 'Regularization pending', count: s.pendingRegularizations, sub: 'Awaiting action' },
-    { id: 3, type: 'late', icon: TrendingDown, color: 'text-red-500 bg-red-50', label: 'Late arrivals today', count: s.lateToday, sub: 'Before shift start' },
-    { id: 4, type: 'overtime', icon: TrendingUp, color: 'text-purple-600 bg-purple-50', label: 'Overtime flagged', count: s.overtimeFlagged, sub: 'This week' },
+    { id: 1, icon: AlertTriangle, iconCls: 'text-amber-500', bgCls: 'bg-amber-50', label: 'Missing punch-out', count: s.missingCheckout, sub: 'Needs attention' },
+    { id: 2, icon: Clock, iconCls: 'text-indigo-500', bgCls: 'bg-indigo-50', label: 'Regularization pending', count: s.pendingRegularizations, sub: 'Awaiting action' },
+    { id: 3, icon: TrendingDown, iconCls: 'text-red-500', bgCls: 'bg-red-50', label: 'Late arrivals today', count: s.lateToday, sub: 'Before shift start' },
+    { id: 4, icon: TrendingUp, iconCls: 'text-violet-500', bgCls: 'bg-violet-50', label: 'Overtime flagged', count: s.overtimeFlagged, sub: 'This week' },
   ];
 
-  const totalAlerts = ALERTS.reduce((a, b) => a + b.count, 0);
+  const QUICK_ACTIONS = [
+    { label: 'Add Employee', icon: Users, href: '/admin/employees', iconCls: 'text-indigo-500', bgCls: 'bg-indigo-50' },
+    { label: 'Approve Leave', icon: CheckCircle, href: '/admin/attendance', iconCls: 'text-emerald-500', bgCls: 'bg-emerald-50' },
+    { label: 'Run Payroll', icon: Calendar, href: '/admin/payroll', iconCls: 'text-violet-500', bgCls: 'bg-violet-50' },
+    { label: 'View Reports', icon: BarChart2, href: '/admin/analytics', iconCls: 'text-amber-500', bgCls: 'bg-amber-50' },
+  ];
+
+  const getDeptClasses = (rate: number) => {
+    if (rate >= 90) return { bar: 'bg-emerald-500', badge: 'bg-emerald-50 text-emerald-700' };
+    if (rate >= 75) return { bar: 'bg-amber-500', badge: 'bg-amber-50 text-amber-700' };
+    return { bar: 'bg-red-500', badge: 'bg-red-50 text-red-700' };
+  };
 
   return (
-    <div className="p-4 lg:p-6 space-y-6">
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-[#0f1f2e]">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{today} · Workforce at a glance</p>
+    <div className="min-h-screen p-2 space-y-4 sm:space-y-5">
+
+      {/* ── Header ── */}
+      <div className="flex items-start sm:items-center justify-between flex-wrap gap-3 pb-1">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-tight">
+            Dashboard
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-400 mt-0.5 font-medium truncate">
+            {today} · Workforce overview
+          </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={fetchDashboardData}
-            className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 px-3 py-1.5 rounded-full transition-colors"
+            className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-full transition-all active:scale-95 cursor-pointer"
           >
             <RefreshCw size={12} />
-            Refresh
+            <span className="hidden xs:inline">Refresh</span>
           </button>
-          <span className="flex items-center gap-1.5 text-xs font-medium text-[#2D7A4F] bg-[#e8f5ee] px-3 py-1.5 rounded-full">
-            <Activity size={12} />
+          <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" style={{ boxShadow: '0 0 0 2px #a7f3d0' }} />
             Live
           </span>
         </div>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-        {STAT_CARDS?.map((card) => (
-          <div key={card?.label} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-start justify-between mb-3">
-              <div className={`w-10 h-10 rounded-xl ${card?.bg} flex items-center justify-center`}>
-                <card.icon size={18} className={card?.iconColor} />
+      {/* ── Stat Cards ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {STAT_CARDS.map(card => (
+          <div
+            key={card.label}
+            className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow"
+          >
+            {/* Icon + trend row */}
+            <div className="flex items-start justify-between mb-4">
+              <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl ${card.bgCls} flex items-center justify-center flex-shrink-0`}>
+                <card.icon size={18} className={card.iconCls} />
               </div>
-              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${card?.up ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'}`}>
-                {card?.change}
-              </span>
+              {card.trend ? (
+                <span className={`flex items-center gap-1 text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${
+                  card.trend === 'up'
+                    ? 'bg-emerald-50 text-emerald-600'
+                    : 'bg-red-50 text-red-500'
+                }`}>
+                  {card.trend === 'up' ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+                  <span className="hidden sm:inline">{card.trend === 'up' ? 'Good' : 'Flag'}</span>
+                </span>
+              ) : (
+                <div className="w-5" /> /* spacer so icon stays left-aligned */
+              )}
             </div>
-            <p className="text-2xl font-black text-[#0f1f2e]">{card?.value}</p>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">{card?.label}</p>
+            {/* Value */}
+            <p className="text-3xl sm:text-4xl font-black text-slate-900 leading-none tracking-tight">
+              {card.value}
+            </p>
+            {/* Label */}
+            <p className="text-xs sm:text-sm font-semibold text-slate-700 mt-1.5 leading-tight">
+              {card.label}
+            </p>
+            {/* Sub */}
+            <p className="text-[10px] sm:text-xs text-slate-400 font-medium mt-0.5">
+              {card.sub}
+            </p>
           </div>
         ))}
       </div>
 
-      {/* Charts row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Attendance trend */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-sm font-bold text-[#0f1f2e]">Weekly Attendance Trend</h3>
-              <p className="text-xs text-gray-400 mt-0.5">Present vs Absent this week</p>
+      {/* ── Charts Row ── */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+
+        {/* Weekly Attendance Chart */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm xl:col-span-2">
+          {/* Card header */}
+          <div className="flex items-start justify-between mb-4 gap-3 flex-wrap">
+            <div className="min-w-0">
+              <p className="text-sm sm:text-[15px] font-bold text-slate-900 leading-tight">Weekly Attendance</p>
+              <p className="text-xs text-slate-400 mt-0.5 font-medium">Present vs Absent · This week</p>
+            </div>
+            {/* Legend */}
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <span className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                <span className="w-2.5 h-2.5 rounded-sm bg-indigo-500 flex-shrink-0" />
+                Present
+              </span>
+              <span className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                <span className="w-2.5 h-2.5 rounded-sm bg-amber-400 flex-shrink-0" />
+                Absent
+              </span>
             </div>
           </div>
-          {s.weeklyTrend.every((d) => d.present === 0 && d.absent === 0) ? (
-            <div className="flex flex-col items-center justify-center h-44 text-gray-400">
-              <Activity size={28} className="mb-2 opacity-40" />
-              <p className="text-xs font-medium">No attendance data this week</p>
+
+          {s.weeklyTrend.every(d => d.present === 0 && d.absent === 0) ? (
+            <div className="flex flex-col items-center justify-center h-44 text-slate-300">
+              <Activity size={28} className="mb-2" />
+              <p className="text-sm font-medium text-slate-400">No attendance data this week</p>
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={s.weeklyTrend} barSize={20} barGap={4}>
-                <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', fontSize: 12 }}
-                />
-                <Bar dataKey="present" fill="#2D7A4F" radius={[4, 4, 0, 0]} name="Present" />
-                <Bar dataKey="absent" fill="#fde68a" radius={[4, 4, 0, 0]} name="Absent" />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="h-44 sm:h-52 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={s.weeklyTrend} barSize={20} barGap={3} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis
+                    dataKey="day"
+                    tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 500 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 10, fill: '#94a3b8' }}
+                    axisLine={false}
+                    tickLine={false}
+                    allowDecimals={false}
+                  />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99,102,241,0.05)' }} />
+                  <Bar dataKey="present" fill="#6366f1" radius={[5, 5, 0, 0]} name="Present" />
+                  <Bar dataKey="absent" fill="#fbbf24" radius={[5, 5, 0, 0]} name="Absent" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           )}
         </div>
 
-        {/* Dept attendance */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-          <h3 className="text-sm font-bold text-[#0f1f2e] mb-1">Dept. Attendance Rate</h3>
-          <p className="text-xs text-gray-400 mb-4">Today's snapshot</p>
+        {/* Dept Attendance */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm">
+          <div className="flex items-start justify-between mb-5">
+            <div>
+              <p className="text-sm sm:text-[15px] font-bold text-slate-900 leading-tight">By Department</p>
+              <p className="text-xs text-slate-400 mt-0.5 font-medium">Attendance rate today</p>
+            </div>
+            <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+              <Building2 size={15} className="text-slate-500" />
+            </div>
+          </div>
+
           {s.deptAttendance.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-32 text-gray-400">
-              <Building2 size={24} className="mb-2 opacity-40" />
-              <p className="text-xs font-medium">No department data</p>
+            <div className="flex flex-col items-center justify-center h-32 text-slate-300">
+              <Building2 size={24} className="mb-2" />
+              <p className="text-sm text-slate-400">No department data</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {s.deptAttendance?.map((d) => (
-                <div key={d?.dept}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-gray-700">{d?.dept}</span>
-                    <span className="text-xs font-bold text-[#0f1f2e]">{d?.rate}%</span>
+            <div className="space-y-4">
+              {s.deptAttendance.map(d => {
+                const c = getDeptClasses(d.rate);
+                return (
+                  <div key={d.dept}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs sm:text-sm font-semibold text-slate-800 truncate mr-2">{d.dept}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${c.badge}`}>
+                        {d.rate}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-700 ${c.bar}`}
+                        style={{ width: `${d.rate}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-[#2D7A4F] to-[#4a9e6e]"
-                      style={{ width: `${d?.rate}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       </div>
 
-      {/* Alerts + Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* ── Alerts + Activity ── */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+
         {/* Alerts */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-[#0f1f2e]">Alerts & Exceptions</h3>
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm">
+          <div className="flex items-start justify-between mb-4 gap-3">
+            <div>
+              <p className="text-sm sm:text-[15px] font-bold text-slate-900 leading-tight">Alerts & Exceptions</p>
+              <p className="text-xs text-slate-400 mt-0.5 font-medium">Items requiring attention</p>
+            </div>
             {totalAlerts > 0 && (
-              <span className="text-xs font-semibold text-white bg-red-500 rounded-full px-2 py-0.5">
+              <span className="flex-shrink-0 text-[10px] font-bold text-white bg-red-500 px-2 py-0.5 rounded-full">
                 {totalAlerts}
               </span>
             )}
           </div>
-          <div className="space-y-2.5">
-            {ALERTS?.map((alert) => (
-              <div key={alert?.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer group">
-                <div className={`w-9 h-9 rounded-xl ${alert?.color} flex items-center justify-center flex-shrink-0`}>
-                  <alert.icon size={16} />
+          <div className="space-y-2">
+            {ALERTS.map(alert => (
+              <div
+                key={alert.id}
+                className="flex items-center gap-3 p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors cursor-pointer group"
+              >
+                <div className={`w-9 h-9 rounded-xl ${alert.bgCls} flex items-center justify-center flex-shrink-0`}>
+                  <alert.icon size={15} className={alert.iconCls} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800">{alert?.label}</p>
-                  <p className="text-xs text-gray-400">{alert?.sub}</p>
+                  <p className="text-xs sm:text-sm font-semibold text-slate-800 leading-tight">{alert.label}</p>
+                  <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5">{alert.sub}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-black text-[#0f1f2e]">{alert?.count}</span>
-                  <ArrowRight size={14} className="text-gray-300 group-hover:text-gray-500 transition-colors" />
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className={`text-lg sm:text-xl font-black leading-none ${alert.count > 0 ? alert.iconCls : 'text-slate-200'}`}>
+                    {alert.count}
+                  </span>
+                  <ArrowRight size={13} className="text-slate-300 group-hover:text-slate-400 transition-colors" />
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Recent activity */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-          <h3 className="text-sm font-bold text-[#0f1f2e] mb-4">Recent Activity</h3>
+        {/* Recent Activity */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm">
+          <div className="flex items-start justify-between mb-4 gap-3">
+            <div>
+              <p className="text-sm sm:text-[15px] font-bold text-slate-900 leading-tight">Recent Activity</p>
+              <p className="text-xs text-slate-400 mt-0.5 font-medium">Latest system events</p>
+            </div>
+            <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+              <Zap size={15} className="text-slate-500" />
+            </div>
+          </div>
+
           {s.recentActivity.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-32 text-gray-400">
-              <Activity size={24} className="mb-2 opacity-40" />
-              <p className="text-xs font-medium">No recent activity</p>
+            <div className="flex flex-col items-center justify-center h-32 text-slate-300">
+              <Activity size={24} className="mb-2" />
+              <p className="text-sm text-slate-400">No recent activity</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {s.recentActivity?.map((item) => (
-                <div key={item?.id} className="flex items-start gap-3">
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                    item?.type === 'add' ? 'bg-green-50' : item?.type === 'approve' ? 'bg-blue-50' : 'bg-amber-50'
+            <div className="divide-y divide-slate-100">
+              {s.recentActivity.map(item => (
+                <div key={item.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+                  <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                    item.type === 'add' ? 'bg-emerald-50' :
+                    item.type === 'approve' ? 'bg-blue-50' : 'bg-amber-50'
                   }`}>
-                    {item?.type === 'add' ? <Plus size={13} className="text-green-600" /> :
-                     item?.type === 'approve' ? <ThumbsUp size={13} className="text-blue-600" /> :
-                     <CheckCircle size={13} className="text-amber-600" />}
+                    {item.type === 'add'
+                      ? <Plus size={13} className="text-emerald-500" />
+                      : item.type === 'approve'
+                      ? <ThumbsUp size={13} className="text-blue-500" />
+                      : <CheckCircle size={13} className="text-amber-500" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-gray-800">{item?.action}</p>
-                    <p className="text-xs text-gray-500">{item?.name} · <span className="text-gray-400">{item?.dept}</span></p>
+                    <p className="text-xs sm:text-sm font-semibold text-slate-800 leading-tight">{item.action}</p>
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                      <span className="text-xs text-slate-500">{item.name}</span>
+                      <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full font-medium">
+                        {item.dept}
+                      </span>
+                    </div>
                   </div>
-                  <span className="text-[10px] text-gray-400 font-medium flex-shrink-0">{item?.time}</span>
+                  <span className="text-[10px] text-slate-400 font-medium flex-shrink-0 whitespace-nowrap pt-0.5">
+                    {item.time}
+                  </span>
                 </div>
               ))}
             </div>
@@ -319,29 +462,31 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-        <h3 className="text-sm font-bold text-[#0f1f2e] mb-4">Quick Actions</h3>
+      {/* ── Quick Actions ── */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm">
+        <div className="mb-4">
+          <p className="text-sm sm:text-[15px] font-bold text-slate-900 leading-tight">Quick Actions</p>
+          <p className="text-xs text-slate-400 mt-0.5 font-medium">Common tasks at a glance</p>
+        </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { label: 'Add Employee', icon: Users, href: '/admin/employees', color: 'bg-[#e8f5ee] text-[#2D7A4F]' },
-            { label: 'Approve Leave', icon: CheckCircle, href: '/admin/attendance', color: 'bg-blue-50 text-blue-600' },
-            { label: 'Run Payroll', icon: Calendar, href: '/admin/payroll', color: 'bg-purple-50 text-purple-600' },
-            { label: 'View Reports', icon: Building2, href: '/admin/analytics', color: 'bg-amber-50 text-amber-600' },
-          ]?.map((action) => (
+          {QUICK_ACTIONS.map(action => (
             <a
-              key={action?.label}
-              href={action?.href}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all cursor-pointer group"
+              key={action.label}
+              href={action.href}
+              className="flex flex-col items-center gap-2.5 p-4 sm:p-5 rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-sm hover:-translate-y-0.5 active:scale-95 transition-all cursor-pointer group no-underline"
             >
-              <div className={`w-10 h-10 rounded-xl ${action?.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                <action.icon size={18} />
+              <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl ${action.bgCls} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                <action.icon size={20} className={action.iconCls} />
               </div>
-              <span className="text-xs font-semibold text-gray-700 text-center">{action?.label}</span>
+              <span className="text-xs sm:text-sm font-semibold text-slate-800 text-center leading-tight">
+                {action.label}
+              </span>
+              <span className="text-[10px] text-slate-400">Go to module</span>
             </a>
           ))}
         </div>
       </div>
+
     </div>
   );
 }

@@ -43,15 +43,15 @@ export default function LandingLayout({
   );
 
   return (
-    <div>
+    <div className="min-h-screen bg-[#f5f7f6]">
       <Header
         user={context?.currentUser}
         profileMenu={profileMenu}
         pathname={pathname}
         menuItems={menuItems}
       />
-      <main className="flex-1 w-full min-h-screen" style={{ background: '#f5f7f6', paddingTop: '70px' }}>
-        <div className="transition-all duration-base p-2 p-lg-2">
+      <main className="min-h-screen w-full bg-[#f5f7f6] pt-16 sm:pt-20">
+        <div className="mx-auto w-full max-w-[1600px] px-3 py-3 transition-all duration-base sm:px-4 lg:px-5 xl:px-6">
           {children}
         </div>
       </main>

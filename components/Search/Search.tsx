@@ -5,7 +5,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { ChangeEvent, useState } from 'react';
 import { IoSearch } from 'react-icons/io5';
 import { ISearchProps } from '../types';
-import './Search.css';
 
 // Update the interface to include paramName
 interface UpdatedSearchProps extends ISearchProps {
@@ -44,20 +43,20 @@ export default function Search({
 
   return (
     <div
-      className={` relative search_Input ${className} `}
+      className={`relative w-full ${className || ''}`}
       style={{ cursor: 'pointer' }}
     >
       <input
         type="text"
         name="searchInput"
         placeholder={placeholder || 'Search'}
-        className="w-full"
+        className="h-10 w-full rounded-lg border border-gray-200 bg-white py-2 pl-3 pr-10 text-sm text-gray-800 outline-none transition focus:border-[#2D7A4F] focus:ring-2 focus:ring-[#2D7A4F]/20 placeholder:text-gray-400"
         maxLength={50}
         onChange={searchOnchange}
         value={search as string}
       />
       <span
-        className=" search_icon "
+        className="absolute right-3 top-1/2 -translate-y-1/2"
         aria-hidden="true"
         onClick={() => onSearch()}
       >

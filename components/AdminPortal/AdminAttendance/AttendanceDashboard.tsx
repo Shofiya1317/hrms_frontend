@@ -14,8 +14,8 @@ const weeklyData = [
 
 export default function AttendanceDashboard() {
   return (
-    <div className="p-4 lg:p-6 space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5 p-3 sm:p-4 lg:p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold text-[#0f1f2e]">Attendance Overview</h1>
           <p className="text-sm text-gray-500 mt-0.5">Live tracking & management</p>
@@ -25,14 +25,14 @@ export default function AttendanceDashboard() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         {[
           { label: 'Present Today', value: '213', sub: '85.9%', color: 'text-green-600' },
           { label: 'Absent', value: '18', sub: '7.3%', color: 'text-red-500' },
           { label: 'Late Arrivals', value: '9', sub: 'Before 10 AM', color: 'text-amber-600' },
           { label: 'On Leave', value: '8', sub: 'Approved', color: 'text-blue-600' },
         ].map((s) => (
-          <div key={s.label} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+          <div key={s.label} className="bg-white rounded-lg border border-gray-100 p-4 shadow-sm">
             <div className={`text-2xl font-black ${s.color}`}>{s.value}</div>
             <p className="text-xs font-semibold text-gray-700 mt-1">{s.label}</p>
             <p className="text-[10px] text-gray-400 mt-0.5">{s.sub}</p>
@@ -40,7 +40,7 @@ export default function AttendanceDashboard() {
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+      <div className="bg-white rounded-lg border border-gray-100 p-4 shadow-sm sm:p-5">
         <h3 className="text-sm font-bold text-[#0f1f2e] mb-4">Weekly Attendance Trend</h3>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={weeklyData} barSize={18} barGap={3}>

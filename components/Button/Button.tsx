@@ -74,7 +74,7 @@ export function Button({
         style={style}
         data-testid={`button-${text}`}
       >
-        <h6 className="m-0 fw-300 flex items-center justify-center">
+        <h6 className="m-0 flex items-center justify-center text-sm font-medium">
           {prefixIconChildren}
           {isLoading ? (
             <span>
