@@ -1,17 +1,50 @@
 import ChangeAvatar from '@/components/ChangeAvatar/ChangeAvatar';
-import PageHeaderWrapper from '@/components/PageHeaderWrapper/PageHeaderWrapper';
 import { SettingsNavBar } from '@/components/SettingsNavBar/SettingsNavBar';
+import SettingsMobileView from '@/components/SettingsNavBar/SettingsMobileView';
 import { auth } from '@/lib/auth';
 import { IUser } from '@/lib/interface/IUser.interface';
-import { RoleService, UserService } from '@/lib/service';
+import { UserService } from '@/lib/service';
 import { convertToPascalCase } from '@/lib/utils';
 import { redirect } from 'next/navigation';
 import { ReactNode } from 'react';
-import { Col, Row } from 'react-bootstrap';
 import { FaRegUserCircle } from 'react-icons/fa';
-import { MdAddBusiness } from 'react-icons/md';
-import { RiBarChart2Line, RiLockPasswordLine } from 'react-icons/ri';
-import { DataViewAlt } from '@carbon/icons-react';
+import { RiLockPasswordLine } from 'react-icons/ri';
+import { MdAddBusiness, MdOutlineBusinessCenter } from 'react-icons/md';
+import { HiOutlineUserAdd } from 'react-icons/hi';
+
+const accountMenu = [
+  {
+    text: 'Profile',
+    subText: 'Personal details',
+    settingIcon: <FaRegUserCircle size={20} />,
+  },
+  {
+    text: 'Change Password',
+    subText: 'Security',
+    settingIcon: <RiLockPasswordLine size={20} />,
+  },
+];
+
+const orgMenu = [
+  {
+    text: 'Organisation Setup',
+    subText: 'Departments & units',
+    settingIcon: <MdAddBusiness size={20} />,
+    roles: ['ADMIN', 'HR'],
+  },
+  {
+    text: 'Invite Users',
+    subText: 'Onboard employees',
+    settingIcon: <HiOutlineUserAdd size={20} />,
+    roles: ['ADMIN', 'HR'],
+  },
+  {
+    text: 'Company Profile',
+    subText: 'Organisation details',
+    settingIcon: <MdOutlineBusinessCenter size={20} />,
+    roles: ['ADMIN'],
+  },
+];
 
 export default async function layout({
   children,
@@ -21,116 +54,109 @@ export default async function layout({
   params: { slug: string };
 }) {
   const session = await auth();
-  if (!session) {
-    return redirect('/sign_in');
-  }
+  if (!session) return redirect('/sign_in');
+
   const apiKey = (session?.user as unknown as { apiKey: string })?.apiKey;
-  const accessToken = (session?.user as unknown as { accessToken: string })
-    ?.accessToken;
+  const accessToken = (session?.user as unknown as { accessToken: string })?.accessToken;
+
   const userRes = await UserService.getCurrentUser(apiKey, accessToken);
-  const res = await RoleService.getCurrentAccess(apiKey, accessToken);
-  const { access } = res?.data as {
-    access: Record<string, string[]>;
-  };
+  const { user, success } = userRes?.data as { user: IUser; success: boolean };
 
-  const { user, success } = userRes?.data as {
-    user: IUser;
-    success: boolean;
-  };
+  if (!success) return redirect('/sign_in');
 
-  if (!success) {
-    return redirect('/sign_in');
-  }
+  const role = user?.role;
+  const visibleOrgMenu = orgMenu.filter((item) => item.roles.includes(role));
+  const activeMenu = convertToPascalCase(params?.slug?.replaceAll('_', ' ') ?? '');
+  const allMenuItems = [...accountMenu, ...visibleOrgMenu];
 
-  // Remove standard_regulations redirect - only keep company_information and invite_user
-  if (session !== null) {
-    switch (user?.account?.current_onboarding_stage) {
-      case 1:
-        return redirect('/company_profile/invite_user'); // Changed from standard_regulations to invite_user
-      case 0:
-        return redirect('/company_profile/company_information');
-      default:
-        break;
-    }
-  }
-
-  const menu = [
-    {
-      text: 'Profile',
-      subText: 'Personal details',
-      settingIcon: <FaRegUserCircle size={24} />,
-    },
-    {
-      text: 'Change Password',
-      subText: 'Password details',
-      settingIcon: <RiLockPasswordLine size={24} />,
-    },
-  ];
-
-  const additionalMenu = [
-    {
-      text: 'Company Profile',
-      subText: 'Company details',
-      settingIcon: <RiBarChart2Line size={24} />,
-    },
-    {
-      text: 'Organisation Setup',
-      subText: 'Organisation setup details',
-      settingIcon: <MdAddBusiness size={24} />,
-    },
-    {
-      text: 'File Repository',
-      subText: 'Data logs',
-      settingIcon: <DataViewAlt size={24} />,
-    },
-  ].filter((item) => {
-    if (user?.role === 'EMPLOYEE') {
-      return item.text !== 'Company Profile' && item.text !== 'Organisation Setup';
-    }
-    return true;
-  });
-
-  const hasAccess = (feature: string) => access?.SETTINGS?.includes(feature);
-
-  const filteredItems = additionalMenu.filter((item) => hasAccess(item.text?.toLocaleUpperCase()?.replaceAll(' ', '_')));
+  // Shape the items for SettingsMobileNav (url derived the same way as SettingsNavBar uses it)
+  const mobileNavItems = allMenuItems.map((item) => ({
+    text: item.text,
+    subText: item.subText,
+    settingIcon: item.settingIcon,
+    url: item.text.toLowerCase().replaceAll(' ', '_'),
+  }));
 
   return (
-    <PageHeaderWrapper title="Settings">
-      <Row className="settings-card-container m-0">
-        <Col className="col-12 col-lg-3 border-end p-0 ">
-          <div className=" p-4">
-            <span className="settings-subtitle">Choose a setting</span>
+    <div className="min-h-screen bg-gray-50">
+      {/* Page header */}
+      <div className="bg-white border-b border-gray-200 px-4 py-4 lg:px-8">
+        <h1 className="text-xl font-semibold text-gray-900">Settings</h1>
+        <p className="text-sm text-gray-500 mt-0.5">Manage your account and organisation</p>
+      </div>
+
+      <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-73px)]">
+
+        {/* ── MOBILE: bottom-sheet nav trigger ── */}
+        <div className="lg:hidden">
+          <SettingsMobileView items={mobileNavItems} activeMenu={activeMenu} />
+        </div>
+
+        {/* ── DESKTOP: fixed left sidebar — avatar pinned, nav scrolls ── */}
+        <aside className="hidden lg:flex flex-col w-96 bg-white border-r border-gray-200 shrink-0 h-full">
+
+          {/* Avatar — pinned, never scrolls */}
+          <div className="shrink-0 px-5 py-3 border-b border-gray-100">
+            <ChangeAvatar
+              user={user}
+              apiKey={apiKey}
+              isUser={params?.slug !== 'company_profile'}
+            />
           </div>
-          <ChangeAvatar
-            user={user}
-            apiKey={apiKey}
-            isUser={params?.slug !== 'company_profile'}
-          />
-          <div
-            className="d-flex flex-column p-4 mt-3 overflow-y-scroll"
-            style={{ height: '35vh' }}
-          >
-            {[
-              ...menu,
-              ...(user?.role === 'ADMIN' ? additionalMenu : filteredItems),
-            ]?.map((item) => (
-              <div key={item?.text}>
+
+          {/* Nav items — scrollable independently */}
+          <div className="flex-1 overflow-y-auto px-3 py-4">
+
+            {/* My account */}
+            <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+              My account
+            </p>
+            <div className="flex flex-col gap-0.5 mb-2">
+              {accountMenu.map((item) => (
                 <SettingsNavBar
-                  url={item?.text?.toLowerCase()?.replaceAll(' ', '_')}
-                  text={item?.text}
-                  subText={item?.subText}
+                  key={item.text}
+                  url={item.text.toLowerCase().replaceAll(' ', '_')}
+                  text={item.text}
+                  subText={item.subText}
                   isRadius
-                  settingIcon={item?.settingIcon}
-                  menu={convertToPascalCase(
-                    params?.slug?.replaceAll('_', ' ') ?? '',
-                  )}
+                  settingIcon={item.settingIcon}
+                  menu={activeMenu}
                 />
-              </div>
-            ))}
+              ))}
+            </div>
+
+            {/* Company — hidden for EMPLOYEE */}
+            {visibleOrgMenu.length > 0 && (
+              <>
+                <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+                  Company
+                </p>
+                <div className="flex flex-col gap-0.5">
+                  {visibleOrgMenu.map((item) => (
+                    <SettingsNavBar
+                      key={item.text}
+                      url={item.text.toLowerCase().replaceAll(' ', '_')}
+                      text={item.text}
+                      subText={item.subText}
+                      isRadius
+                      settingIcon={item.settingIcon}
+                      menu={activeMenu}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
-        </Col>
-        <Col className="col-12 col-lg-9">{children}</Col>
-      </Row>
-    </PageHeaderWrapper>
+        </aside>
+
+        {/* ── Main content area ── */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-full mx-auto px-6 py-8 lg:px-10 lg:py-10">
+            {children}
+          </div>
+        </main>
+
+      </div>
+    </div>
   );
 }

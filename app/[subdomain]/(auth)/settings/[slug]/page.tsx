@@ -1,169 +1,131 @@
 import AccessWrapper from '@/components/AccessWrapper/AccessWrapper';
 import AddorEditUser from '@/components/AddorEditUser/AddorEditUser';
-import BusinessUnitList from '@/components/BusinessUnitList/BusinessUnitList';
-import FileRepository from '@/components/FileRepository/FileRepository';
+import OrganisationSetupForm from '@/components/OrganisationSetupForm/OrganisationSetupForm';
 import ChangePassword from '@/components/ChangePassword/ChangePassword';
 import CompanyInformationForm from '@/components/CompanyInformationForm/CompanyInformationForm';
-// import EmissionDatabaseForm from '@/components/EmissionDatabase/EmissionDatabaseForm';
+import UserInviteForm from '@/components/UserInviteForm/UserInviteForm';
 import PageNotFound from '@/components/PageNotFound/PageNotFound';
-import RolesAndAccess from '@/components/RolesAndAccess/RolesAndAccess';
 import { auth } from '@/lib/auth';
 import { IUser } from '@/lib/interface/IUser.interface';
-import { RoleService, UserService } from '@/lib/service';
+import { UserService } from '@/lib/service';
 import { redirect } from 'next/navigation';
 import './SettingsLayout.css';
+
+// Slugs that each role is allowed to access.
+// ADMIN can access everything. HR gets org slugs except company_profile.
+// EMPLOYEE only gets personal slugs.
+const ROLE_ALLOWED_SLUGS: Record<string, string[]> = {
+  ADMIN: [
+    'profile',
+    'change_password',
+    'company_profile',
+    'organisation_setup',
+    'invite_users',
+  ],
+  HR: ['profile', 'change_password', 'organisation_setup', 'invite_users'],
+  EMPLOYEE: ['profile', 'change_password'],
+};
 
 export default async function page({ params }: { params: { slug?: string } }) {
   const session = await auth();
   if (!session) {
     return redirect('/sign_in');
   }
+
   const apiKey = (session?.user as unknown as { apiKey: string })?.apiKey;
   const accessToken = (session?.user as unknown as { accessToken: string })
     ?.accessToken;
   const id = (session?.user as IUser)?.id;
-  const userRes = await UserService.getCurrentUser(apiKey, accessToken);
 
-  const { user } = userRes?.data as {
-    user: IUser;
-    success: boolean;
+  const userRes = await UserService.getCurrentUser(apiKey, accessToken);
+  const { user } = userRes?.data as { user: IUser; success: boolean };
+
+  const role = user?.role as 'ADMIN' | 'HR' | 'EMPLOYEE';
+  const slug = params.slug ?? '';
+
+  // Guard: redirect to profile if role has no access to requested slug
+  const allowedSlugs = ROLE_ALLOWED_SLUGS[role] ?? [];
+  if (slug && !allowedSlugs.includes(slug)) {
+    return redirect('/settings/profile');
+  }
+
+  type PageConfig = {
+    title: string;
+    subTitle: string;
+    component: React.ReactNode;
   };
 
-  const ReRender = async () => {
-    switch (params.slug) {
+  const getPageConfig = (): PageConfig => {
+    switch (slug) {
       case 'profile':
         return {
-          title: 'My Profile',
-          subTitle: 'Edit your Profile here',
-          components: (
+          title: 'My profile',
+          subTitle: 'Edit your personal information',
+          component: (
             <AddorEditUser apiKey={apiKey} isCurrentUser user={user} id={id} />
           ),
         };
+
       case 'change_password':
         return {
-          title: 'Change Password',
-          subTitle: 'Change your Password',
-          components: <ChangePassword slug={apiKey} />,
+          title: 'Change password',
+          subTitle: 'Update your login credentials',
+          component: <ChangePassword slug={apiKey} />,
         };
+
       case 'company_profile':
         return {
-          title: 'Company Details',
-          subTitle: 'Edit your Company details here',
-          components: (
+          title: 'Company profile',
+          subTitle: 'Edit your company details',
+          component: (
             <AccessWrapper module="ORGANIZATION" feature="READ">
               <CompanyInformationForm slug={apiKey} account={user?.account} />
             </AccessWrapper>
           ),
         };
-      case 'business_unit':
+
+      case 'organisation_setup':
         return {
-          title: `Business Unit (${user?.account?.business_unit.length})`,
-          subTitle: 'Add / edit your Business units',
-          components: (
-            <AccessWrapper module="BUSINESS_UNIT" feature="READ">
-              <BusinessUnitList
-                slug={apiKey}
-                businessUnits={user?.account?.business_unit}
-              />
+          title: 'Organisation setup',
+          subTitle: 'Manage departments, business units & policies',
+          component: (
+            <AccessWrapper module="SETTINGS" feature="ORGANISATION_SETUP">
+              <OrganisationSetupForm slug={apiKey} />
             </AccessWrapper>
           ),
         };
-      // case 'emissions_database':
-      //   return {
-      //     title: 'Emissions Database',
-      //     subTitle: 'Select your Emissions Database here',
-      //     components: <EmissionDatabaseForm />,
-      //   };
-      case 'roles': {
-        const resp = await RoleService.getRoleConfig(apiKey, accessToken);
+
+      case 'invite_users':
         return {
-          title: 'Roles And Access',
-          subTitle: 'Edit Roles and Access here',
-          components: (
-            <AccessWrapper module="SETTINGS" feature="ROLES">
-              <RolesAndAccess roleAccess={resp?.data} slug={apiKey} />
+          title: 'Invite users',
+          subTitle: 'Onboard new employees into the system',
+          component: (
+            <AccessWrapper module="SETTINGS" feature="INVITE_USERS">
+              <UserInviteForm slug={apiKey} />
             </AccessWrapper>
           ),
         };
-      }
-      // case 'activity_log': {
-      //   const activityLogData = await DataCube.getActivityLog(apiKey, {}, accessToken);
-      //   return {
-      //     title: 'Activity Log',
-      //     subTitle: 'Settings',
-      //     components: (
-      //       <ActivityLog
-      //         apiKey={apiKey}
-      //         accessToken={accessToken}
-      //         initialData={activityLogData?.data}
-      //       />
-      //     ),
-      //   };
-      // }
-      case 'file_repository': {
-        return {
-          title: 'File Repository',
-          subTitle: 'See all Data logs',
-          components: (
-            <FileRepository apiKey={apiKey} accessToken={accessToken} />
-          ),
-        };
-      }
+
       default:
         return {
           title: '',
-          components: <PageNotFound isAccessDenied />,
+          subTitle: '',
+          component: <PageNotFound isAccessDenied />,
         };
     }
   };
 
-  const getComponent = async (role: string, slug: string) => {
-    const component = (await ReRender())?.components;
-
-    if (role === 'ADMIN') {
-      return component;
-    }
-
-    if (['company_profile', 'business_unit', 'roles'].includes(slug)) {
-      return (
-        <AccessWrapper module="SETTINGS" feature={slug.toUpperCase()}>
-          {component}
-        </AccessWrapper>
-      );
-    }
-
-    return component;
-  };
+  const { title, subTitle, component } = getPageConfig();
 
   return (
-    <div className="p-3 p-md-4">
-      {params?.slug !== 'roles' && params?.slug !== 'activity_log' && params?.slug !== 'file_repository' && (
-        <div className=" pb-5">
-          <span className="settings-subtitle">
-            {(await ReRender())?.subTitle}
-          </span>
-          <h4 className="fw-700 mb-0">{(await ReRender())?.title}</h4>
+    <div className="p-1 p-md-4">
+      {title && (
+        <div className="pb-4">
+          <span className="settings-subtitle">{subTitle}</span>
+          <h4 className="fw-700 mb-0">{title}</h4>
         </div>
       )}
-      {params?.slug === 'activity_log' && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr auto',
-          alignItems: 'center',
-          gap: '1rem',
-          paddingBottom: '1rem',
-        }}
-        >
-          <div>
-            <span className="settings-subtitle">
-              {(await ReRender())?.subTitle}
-            </span>
-            <h4 className="fw-700 mb-0">{(await ReRender())?.title}</h4>
-          </div>
-          <div>{/* Filters will be rendered here by ActivityLog component */}</div>
-        </div>
-      )}
-      {await getComponent(user?.role, params?.slug as string)}
+      {component}
     </div>
   );
 }

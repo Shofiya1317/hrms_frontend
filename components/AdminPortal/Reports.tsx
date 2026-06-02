@@ -16,6 +16,17 @@ import {
   LogIn,
   LogOut,
   Timer,
+  BarChart3,
+  Calendar,
+  Star,
+  DollarSign,
+  Activity,
+  Umbrella,
+  CheckCircle,
+  User,
+  AlertTriangle,
+  XCircle,
+  Clock,
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -610,7 +621,6 @@ function SelectFilter({
 }
 
 // ─── Summary Cards ──────────────────────────────────────────────────────────────
-
 function SummaryCards({
   tab,
   data,
@@ -630,13 +640,15 @@ function SummaryCards({
         label: 'Avg Attendance',
         value: `${avgPct}%`,
         sub: 'across all employees',
-        color: 'text-indigo-600',
-        bg: 'bg-indigo-50',
+        icon: BarChart3,
+        color: 'text-teal-600',
+        bg: 'bg-teal-50',
       },
       {
         label: 'Total Absent Days',
         value: totalAbsent,
         sub: 'across the month',
+        icon: CalendarDays,
         color: 'text-rose-500',
         bg: 'bg-rose-50',
       },
@@ -644,6 +656,7 @@ function SummaryCards({
         label: 'Perfect Attendance',
         value: perfect,
         sub: 'employees, 0 absences',
+        icon: Star,
         color: 'text-emerald-600',
         bg: 'bg-emerald-50',
       },
@@ -651,17 +664,32 @@ function SummaryCards({
         label: 'Total Employees',
         value: d.length,
         sub: 'in this report',
+        icon: Users,
         color: 'text-slate-600',
         bg: 'bg-slate-100',
       },
     ];
     return (
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {cards.map((c) => (
-          <div key={c.label} className={`${c.bg} rounded-lg p-4`}>
-            <p className="text-xs text-slate-500 font-medium mb-1">{c.label}</p>
-            <p className={`text-2xl font-bold ${c.color}`}>{c.value}</p>
-            <p className="text-xs text-slate-400 mt-0.5">{c.sub}</p>
+          <div
+            key={c.label}
+            className="bg-white border border-slate-200 rounded-xl p-3 hover:shadow-md transition-all"
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium text-slate-500 mb-1">
+                  {c.label}
+                </p>
+                <p className={`text-2xl font-bold ${c.color}`}>{c.value}</p>
+                <p className="text-[10px] text-slate-400 mt-1">{c.sub}</p>
+              </div>
+              <div
+                className={`w-8 h-8 rounded-lg ${c.bg} flex items-center justify-center flex-shrink-0`}
+              >
+                <c.icon size={16} className={c.color} />
+              </div>
+            </div>
           </div>
         ))}
       </div>
@@ -679,6 +707,7 @@ function SummaryCards({
         label: 'LOP Days',
         value: totalLOP,
         sub: 'loss of pay leaves',
+        icon: DollarSign,
         color: 'text-rose-500',
         bg: 'bg-rose-50',
       },
@@ -686,6 +715,7 @@ function SummaryCards({
         label: 'Sick Leaves',
         value: totalSick,
         sub: 'medical absences',
+        icon: Activity,
         color: 'text-amber-600',
         bg: 'bg-amber-50',
       },
@@ -693,6 +723,7 @@ function SummaryCards({
         label: 'Casual Leaves',
         value: totalCasual,
         sub: 'personal leaves',
+        icon: Umbrella,
         color: 'text-sky-600',
         bg: 'bg-sky-50',
       },
@@ -700,17 +731,32 @@ function SummaryCards({
         label: 'No Leave Taken',
         value: noLeave,
         sub: 'employees',
+        icon: CheckCircle,
         color: 'text-emerald-600',
         bg: 'bg-emerald-50',
       },
     ];
     return (
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {cards.map((c) => (
-          <div key={c.label} className={`${c.bg} rounded-lg p-4`}>
-            <p className="text-xs text-slate-500 font-medium mb-1">{c.label}</p>
-            <p className={`text-2xl font-bold ${c.color}`}>{c.value}</p>
-            <p className="text-xs text-slate-400 mt-0.5">{c.sub}</p>
+          <div
+            key={c.label}
+            className="bg-white border border-slate-200 rounded-xl p-3 hover:shadow-md transition-all"
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium text-slate-500 mb-1">
+                  {c.label}
+                </p>
+                <p className={`text-2xl font-bold ${c.color}`}>{c.value}</p>
+                <p className="text-[10px] text-slate-400 mt-1">{c.sub}</p>
+              </div>
+              <div
+                className={`w-8 h-8 rounded-lg ${c.bg} flex items-center justify-center flex-shrink-0`}
+              >
+                <c.icon size={16} className={c.color} />
+              </div>
+            </div>
           </div>
         ))}
       </div>
@@ -726,6 +772,7 @@ function SummaryCards({
       label: 'Employees Absent',
       value: d.length,
       sub: 'at least once',
+      icon: User,
       color: 'text-rose-500',
       bg: 'bg-rose-50',
     },
@@ -733,6 +780,7 @@ function SummaryCards({
       label: 'Total Absent Days',
       value: totalDays,
       sub: 'combined',
+      icon: Calendar,
       color: 'text-amber-600',
       bg: 'bg-amber-50',
     },
@@ -740,6 +788,7 @@ function SummaryCards({
       label: 'Unnotified',
       value: unnotified,
       sub: 'no prior intimation',
+      icon: AlertTriangle,
       color: 'text-red-600',
       bg: 'bg-red-50',
     },
@@ -747,17 +796,32 @@ function SummaryCards({
       label: 'Chronic Absence',
       value: chronic,
       sub: '4+ days absent',
+      icon: TrendingUp,
       color: 'text-slate-600',
       bg: 'bg-slate-100',
     },
   ];
   return (
-    <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
       {cards.map((c) => (
-        <div key={c.label} className={`${c.bg} rounded-lg p-4`}>
-          <p className="text-xs text-slate-500 font-medium mb-1">{c.label}</p>
-          <p className={`text-2xl font-bold ${c.color}`}>{c.value}</p>
-          <p className="text-xs text-slate-400 mt-0.5">{c.sub}</p>
+        <div
+          key={c.label}
+          className="bg-white border border-slate-200 rounded-xl p-3 hover:shadow-md transition-all"
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-slate-500 mb-1">
+                {c.label}
+              </p>
+              <p className={`text-2xl font-bold ${c.color}`}>{c.value}</p>
+              <p className="text-[10px] text-slate-400 mt-1">{c.sub}</p>
+            </div>
+            <div
+              className={`w-8 h-8 rounded-lg ${c.bg} flex items-center justify-center flex-shrink-0`}
+            >
+              <c.icon size={16} className={c.color} />
+            </div>
+          </div>
         </div>
       ))}
     </div>
@@ -1394,20 +1458,22 @@ export default function Reports() {
         </div>
 
         {/* Tabs */}
-        <div className="mb-3 flex w-full gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 sm:w-fit">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 mb-4">
           {tabs.map((t) => (
             <button
               type="button"
               key={t.id}
               onClick={() => setActiveTab(t.id)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all sm:px-4 ${
+              className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all ${
                 activeTab === t.id
-                  ? 'bg-slate-800 text-white shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                  ? 'bg-teal-600 text-white shadow-sm'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:border-teal-200 hover:text-teal-600'
               }`}
             >
-              {t.icon}
-              {t.label}
+              <span className="flex items-center justify-center gap-1.5">
+                {t.icon}
+                {t.label}
+              </span>
             </button>
           ))}
         </div>

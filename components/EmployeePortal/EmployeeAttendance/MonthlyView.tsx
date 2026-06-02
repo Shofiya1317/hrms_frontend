@@ -274,7 +274,7 @@ export default function MonthlyAttendancePage() {
     <div className="min-h-screen">
       <div className="w-full px-3 py-3 sm:px-5 sm:py-5 lg:px-8 lg:py-6">
         {/* Header */}
-        <div className="mb-5 lg:mb-6">
+        <div className="mb-4 lg:mb-6">
           <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500 mb-2">
             <Calendar size={14} />
             <span>Attendance</span>
@@ -290,19 +290,11 @@ export default function MonthlyAttendancePage() {
                 March 2026 · Track your daily attendance
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <button className="px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md">
-                <Calendar size={14} className="text-slate-500" />
-                <span className="text-xs sm:text-sm font-medium text-slate-700">
-                  Export Report
-                </span>
-              </button>
-            </div>
           </div>
         </div>
 
         {/* Greeting Card */}
-        <div className="relative mb-5 rounded-2xl overflow-hidden bg-slate-900">
+        <div className="relative mb-4 rounded-2xl overflow-hidden bg-slate-900">
           <div
             className="absolute inset-0 opacity-[0.03]"
             style={{
@@ -348,7 +340,7 @@ export default function MonthlyAttendancePage() {
         </div>
 
         {/* Month Navigation */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3 lg:mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 lg:mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm">
               <Calendar size={18} className="text-emerald-600" />
@@ -376,7 +368,7 @@ export default function MonthlyAttendancePage() {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-3 lg:mb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6 mb-3 lg:mb-4">
           {/* Key Metrics - spans 2 columns on desktop */}
           <div className="lg:col-span-2 bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm hover:shadow-md transition-all duration-200">
             <div className="flex items-center justify-between mb-3 sm:mb-4">

@@ -53,6 +53,7 @@ export function AuthLayout({
     '/users',
     '/settings',
     '/reports',
+    '/notifications',
   ].some((path) => pathname.startsWith(path));
 
   const renderAuthButton = () => {

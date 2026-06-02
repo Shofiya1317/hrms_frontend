@@ -90,7 +90,7 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
         />
 
         {/* ── Top Stats Row ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
           {[
             { label: 'Attendance Rate', value: '92%', sub: '+2% vs last month', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50', bar: 92 },
             { label: 'Days Present',    value: '18',  sub: '22 working days',   icon: Award,      color: 'text-blue-600',    bg: 'bg-blue-50',    bar: null },
@@ -112,7 +112,7 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
         </div>
 
         {/* ── Main Grid ── */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
 
           {/* Left col (spans 2) */}
           <div className="xl:col-span-2 space-y-4">

@@ -78,7 +78,7 @@ export default function CheckInPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen">
       {/* Toast */}
       {toast && (
         <div className={`fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-auto z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm font-semibold shadow-lg border animate-fade-in ${
@@ -91,16 +91,16 @@ export default function CheckInPage() {
         </div>
       )}
 
-      <div className="w-full px-3 py-4 sm:px-5 sm:py-5 lg:px-8 lg:py-6">
+      <div className="w-full px-3 py-2 sm:px-5 sm:py-3 lg:px-6 lg:py-4">
         {/* Header */}
-        <div className="mb-5 lg:mb-6">
+        <div className="mb-3 lg:mb-4">
           <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500 mb-2">
             <Activity size={14} />
             <span>Attendance Management</span>
             <ChevronRight size={12} />
             <span className="text-emerald-600 font-semibold">Check-in/Check-out</span>
           </div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">Check-in / Check-out</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-2xl font-bold text-slate-900">Check-in / Check-out</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">Log your daily attendance and track work hours</p>
         </div>
 
@@ -115,7 +115,7 @@ export default function CheckInPage() {
         />
 
         {/* Quick Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-5 lg:mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-3 lg:mb-4">
           {QUICK_STATS.map((stat) => {
             const progress = getProgressPercentage(stat.value, stat.target);
             const StatIcon = stat.icon;
@@ -143,7 +143,7 @@ export default function CheckInPage() {
         </div>
 
         {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-5 lg:mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6 mb-3 lg:mb-4">
           {/* Today's Log */}
           <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm hover:shadow-md transition-all duration-200">
             <div className="flex items-center justify-between mb-4 sm:mb-5">
@@ -259,7 +259,7 @@ export default function CheckInPage() {
         </div>
 
         {/* Leave Balances Section */}
-        <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm mb-5 lg:mb-6">
+        <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm mb-3 lg:mb-4">
           <div className="flex items-center justify-between mb-4 sm:mb-5">
             <div>
               <h3 className="text-sm sm:text-base font-bold text-slate-800">Leave Balances</h3>
@@ -291,7 +291,7 @@ export default function CheckInPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mb-5 lg:mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-3 mb-3 lg:mb-4">
           {QUICK_ACTIONS.map((action) => {
             const ActionIcon = action.icon;
             return (
@@ -313,7 +313,7 @@ export default function CheckInPage() {
         </div>
 
         {/* Info Cards Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3">
           <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-3 sm:p-4 flex items-center gap-3 hover:shadow-md transition-all duration-200">
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
               <Clock size={18} className="text-emerald-600" />

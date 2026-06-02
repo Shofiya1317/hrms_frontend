@@ -7,23 +7,23 @@
 }
 
 .is_radius:hover {
-  border: 1px solid var(--secondary);
-  background-color: #FBA9000D;
+  border: 1px solid #0f766e;
+  background-color: rgba(15, 118, 110, 0.05);
 }
 
 .is_radius.active {
-  border: 1px solid var(--secondary);
-  background-color: #FBA9000D;
-  color: var(--secondary);
+  border: 1px solid #0f766e;
+  background-color: rgba(15, 118, 110, 0.05);
+  color: #0f766e;
 }
 
-/* .is_radius.active .settings-card-title {
-  color: var(--secondary);
-} */
+.is_radius.active .settings-card-title {
+  color: #0f766e;
+}
 
-/* .is_radius.active .settings-card-subtitle {
-  color: var(--secondary);
-} */
+.is_radius.active .settings-card-subtitle {
+  color: #0f766e;
+}
 
 .settings-card-title {
   font-size: 14px;

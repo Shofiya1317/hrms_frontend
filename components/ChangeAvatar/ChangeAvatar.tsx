@@ -74,7 +74,7 @@ export default function ChangeAvatar({
       <div className="px-0 pb-0  d-flex align-items-center flex-column">
         <div className="d-flex position-relative avatar-text-size">
           <Avatar
-            name={displayName}
+            name='S'
             size="160px"
             className="avatarImgRound rounded-circle"
             src={(isUser ? user?.avatar_url : user?.account?.logo_path) ?? ''}

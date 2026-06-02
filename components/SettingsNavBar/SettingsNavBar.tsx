@@ -32,11 +32,11 @@ export function SettingsNavBar({
             {settingIcon}
             <div>
               <div className="settings-card-title fs-14 fw-600">{text}</div>
-              <div className=" settings-card-subtitle fs-12">{subText}</div>
+              <div className="settings-card-subtitle fs-12">{subText}</div>
             </div>
           </div>
           <div>
-            <MdOutlineKeyboardArrowRight size={24} color="var(--textprimary)" />
+            <MdOutlineKeyboardArrowRight size={24} color="#0f766e" />
           </div>
         </div>
       </Nav.Link>

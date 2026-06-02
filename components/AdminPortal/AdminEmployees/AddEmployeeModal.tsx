@@ -166,9 +166,11 @@ export default function AddEmployeeModal({
       const masterData = (inviteResponse?.data?.data ||
         inviteResponse?.data ||
         {}) as InviteMasterData;
-      const shiftList = (shiftsResponse?.data?.data ||
-        shiftsResponse?.data ||
-        []) as MasterOption[];
+      const shiftList = Array.isArray(shiftsResponse?.data?.data)
+        ? shiftsResponse.data.data
+        : Array.isArray(shiftsResponse?.data)
+          ? shiftsResponse.data
+          : [];
 
       setDepartments(masterData.departments || []);
       setDesignations(masterData.designations || []);
@@ -550,8 +552,8 @@ export default function AddEmployeeModal({
                 </label>
                 <Select
                   inputId="shiftId"
-                  options={shifts.map((s) => ({ value: s.id, label: `${s.name} (${s.start_time_24hr} - ${s.end_time_24hr})${s.code ? ` • ${s.code}` : ''}` }))}
-                  value={shifts.map((s) => ({ value: s.id, label: `${s.name} (${s.start_time_24hr} - ${s.end_time_24hr})${s.code ? ` • ${s.code}` : ''}` })).find((o) => o.value === form.shiftId) ?? null}
+                  options={shifts?.map((s) => ({ value: s.id, label: `${s.name} (${s.start_time_24hr} - ${s.end_time_24hr})${s.code ? ` • ${s.code}` : ''}` }))}
+                  value={shifts?.map((s) => ({ value: s.id, label: `${s.name} (${s.start_time_24hr} - ${s.end_time_24hr})${s.code ? ` • ${s.code}` : ''}` })).find((o) => o.value === form.shiftId) ?? null}
                   onChange={(opt) => handleChange('shiftId', opt?.value ?? '')}
                   placeholder="Select shift"
                   styles={customStyles()}
@@ -658,7 +660,7 @@ export default function AddEmployeeModal({
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#0f766e] rounded-xl hover:bg-[#1e5c3a] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>

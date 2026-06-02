@@ -506,16 +506,16 @@ export default function EmployeesRegistry() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="px-3 py-4 sm:px-5 sm:py-5 lg:px-8 lg:py-6">
+    <div className="min-h-screen">
+      <div className="px-3 sm:px-5 lg:px-8">
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#2D7A4F] to-[#1e5c3a] flex items-center justify-center shadow-md">
+            <div className="w-12 h-12 rounded-xl bg-[#0f766e] flex items-center justify-center shadow-md">
               <Users size={22} className="text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+              <h1 className="text-xl sm:text-xl lg:text-xl font-bold text-gray-900">
                 Employees Registry
               </h1>
               <p className="text-xs sm:text-sm text-gray-500 mt-1">
@@ -558,33 +558,85 @@ export default function EmployeesRegistry() {
         </div>
 
         {/* Search and Filters */}
-        <div className="mb-6 space-y-3">
-          {/* Search Bar - Full width on mobile, auto on desktop */}
-          <div className="relative">
-            <Search
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            />
-            <input
-              type="text"
-              placeholder="Search by name, ID, email or role..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all placeholder:text-gray-400"
-            />
+        <div className="mb-4">
+          {/* Mobile View */}
+          <div className="block sm:hidden space-y-2">
+            {/* Search Bar - Full width */}
+            <div className="relative">
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
+              />
+            </div>
+
+            {/* Three buttons in one row */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex-1 flex items-center justify-center gap-1 px-2 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-lg"
+              >
+                <Filter size={14} />
+                {showFilters ? (
+                  <ChevronUp size={12} />
+                ) : (
+                  <ChevronDown size={12} />
+                )}
+              </button>
+
+              <button
+                onClick={() => {
+                  setEditingEmployee(null);
+                  setShowAddModal(true);
+                }}
+                className="flex-1 flex items-center justify-center px-2 py-2 text-white bg-[#0f766e] rounded-lg"
+              >
+                <Plus size={16} /> Add
+              </button>
+
+              <button
+                onClick={() =>
+                  setViewMode(viewMode === 'table' ? 'cards' : 'table')
+                }
+                className="flex-1 flex items-center justify-center px-2 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg"
+              >
+                {viewMode === 'table' ? (
+                  <Grid3x3 size={16} />
+                ) : (
+                  <List size={16} />
+                )}
+              </button>
+            </div>
           </div>
 
-          {/* Filter and Action Buttons Row */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Filter Toggle Button */}
+          {/* Desktop View - Same as before */}
+          <div className="hidden sm:flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1">
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="text"
+                placeholder="Search by name, ID, email or role..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all placeholder:text-gray-400"
+              />
+            </div>
+
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center justify-between sm:justify-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors sm:w-auto"
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors whitespace-nowrap"
             >
-              <span className="flex items-center gap-2">
-                <Filter size={14} />
-                Filters
-              </span>
+              <Filter size={14} />
+              Filters
               {showFilters ? (
                 <ChevronUp size={14} />
               ) : (
@@ -592,23 +644,21 @@ export default function EmployeesRegistry() {
               )}
             </button>
 
-            {/* Add Employee Button */}
             <button
               onClick={() => {
                 setEditingEmployee(null);
                 setShowAddModal(true);
               }}
-              className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl shadow-sm hover:bg-[#1e5c3a] transition-all hover:shadow-md sm:w-auto"
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#0f766e] rounded-xl shadow-sm hover:bg-teal-700 transition-all whitespace-nowrap"
             >
               <Plus size={16} /> Add Employee
             </button>
 
-            {/* View Mode Toggle Button */}
             <button
               onClick={() =>
                 setViewMode(viewMode === 'table' ? 'cards' : 'table')
               }
-              className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors sm:w-auto"
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors whitespace-nowrap"
             >
               {viewMode === 'table' ? (
                 <Grid3x3 size={16} />
@@ -621,13 +671,13 @@ export default function EmployeesRegistry() {
             </button>
           </div>
 
-          {/* Filter Options */}
+          {/* Filter Options - Below for both views */}
           {showFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-fade-in">
+            <div className="flex flex-col sm:flex-row gap-3 mt-3 animate-fade-in">
               <select
                 value={deptFilter}
                 onChange={(e) => setDeptFilter(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 focus:border-[#2D7A4F] focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20"
+                className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
               >
                 {DEPARTMENTS.map((d) => (
                   <option key={d}>{d}</option>
@@ -636,7 +686,7 @@ export default function EmployeesRegistry() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 focus:border-[#2D7A4F] focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20"
+                className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
               >
                 {STATUSES.map((s) => (
                   <option key={s}>{s}</option>

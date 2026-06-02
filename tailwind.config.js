@@ -1,78 +1,83 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: ["class"],
+  darkMode: ['class'],
   content: [
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
   ],
-  prefix: "",
+  prefix: '',
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: '2rem',
       screens: {
-        "2xl": "1400px",
+        xs: '375px',
+        sm: '640px',
+        md: '768px',
+        lg: '1024px',
+        xl: '1280px',
+        '2xl': '1536px',
       },
     },
     extend: {
       colors: {
-        border: "var(--color-border)",
-        input: "var(--color-input)",
-        ring: "var(--color-ring)",
-        background: "var(--color-background)",
-        foreground: "var(--color-foreground)",
-        surface: "var(--color-surface)",
+        border: 'var(--color-border)',
+        input: 'var(--color-input)',
+        ring: 'var(--color-ring)',
+        background: 'var(--color-background)',
+        foreground: 'var(--color-foreground)',
+        surface: 'var(--color-surface)',
         primary: {
-          DEFAULT: "var(--color-primary)",
-          foreground: "var(--color-primary-foreground)",
+          DEFAULT: 'var(--color-primary)',
+          foreground: 'var(--color-primary-foreground)',
         },
         secondary: {
-          DEFAULT: "var(--color-secondary)",
-          foreground: "var(--color-secondary-foreground)",
+          DEFAULT: 'var(--color-secondary)',
+          foreground: 'var(--color-secondary-foreground)',
         },
         destructive: {
-          DEFAULT: "var(--color-destructive)",
-          foreground: "var(--color-destructive-foreground)",
+          DEFAULT: 'var(--color-destructive)',
+          foreground: 'var(--color-destructive-foreground)',
         },
         muted: {
-          DEFAULT: "var(--color-muted)",
-          foreground: "var(--color-muted-foreground)",
+          DEFAULT: 'var(--color-muted)',
+          foreground: 'var(--color-muted-foreground)',
         },
         accent: {
-          DEFAULT: "var(--color-accent)",
-          foreground: "var(--color-accent-foreground)",
+          DEFAULT: 'var(--color-accent)',
+          foreground: 'var(--color-accent-foreground)',
         },
         popover: {
-          DEFAULT: "var(--color-popover)",
-          foreground: "var(--color-popover-foreground)",
+          DEFAULT: 'var(--color-popover)',
+          foreground: 'var(--color-popover-foreground)',
         },
         card: {
-          DEFAULT: "var(--color-card)",
-          foreground: "var(--color-card-foreground)",
+          DEFAULT: 'var(--color-card)',
+          foreground: 'var(--color-card-foreground)',
         },
         success: {
-          DEFAULT: "var(--color-success)",
-          foreground: "var(--color-success-foreground)",
+          DEFAULT: 'var(--color-success)',
+          foreground: 'var(--color-success-foreground)',
         },
         warning: {
-          DEFAULT: "var(--color-warning)",
-          foreground: "var(--color-warning-foreground)",
+          DEFAULT: 'var(--color-warning)',
+          foreground: 'var(--color-warning-foreground)',
         },
         error: {
-          DEFAULT: "var(--color-error)",
-          foreground: "var(--color-error-foreground)",
+          DEFAULT: 'var(--color-error)',
+          foreground: 'var(--color-error-foreground)',
         },
         text: {
-          primary: "var(--color-text-primary)",
-          secondary: "var(--color-text-secondary)",
+          primary: 'var(--color-text-primary)',
+          secondary: 'var(--color-text-secondary)',
         },
       },
       borderRadius: {
-        lg: "var(--radius-lg)",
-        md: "var(--radius-md)",
-        sm: "var(--radius-sm)",
+        lg: 'var(--radius-lg)',
+        md: 'var(--radius-md)',
+        sm: 'var(--radius-sm)',
       },
       fontFamily: {
         heading: ['Inter', 'sans-serif'],
@@ -81,48 +86,48 @@ module.exports = {
         data: ['JetBrains Mono', 'monospace'],
       },
       fontSize: {
-        'nav': '14px',
+        nav: '14px',
       },
       boxShadow: {
-        'card': '0 1px 3px rgba(0, 0, 0, 0.12)',
-        'modal': '0 4px 12px rgba(0, 0, 0, 0.15)',
+        card: '0 1px 3px rgba(0, 0, 0, 0.12)',
+        modal: '0 4px 12px rgba(0, 0, 0, 0.15)',
       },
       transitionDuration: {
-        'fast': '150ms',
-        'base': '200ms',
-        'slow': '300ms',
+        fast: '150ms',
+        base: '200ms',
+        slow: '300ms',
       },
       transitionTimingFunction: {
-        'spring': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+        spring: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
       },
       keyframes: {
-        "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
+        'accordion-down': {
+          from: { height: '0' },
+          to: { height: 'var(--radix-accordion-content-height)' },
         },
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
+        'accordion-up': {
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: '0' },
         },
       },
       animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
+        'accordion-down': 'accordion-down 0.2s ease-out',
+        'accordion-up': 'accordion-up 0.2s ease-out',
       },
       spacing: {
-        'sidebar': '240px',
+        sidebar: '240px',
         'sidebar-padding': '16px',
         'content-margin': '24px',
         'nav-item': '40px',
         'nav-spacing': '12px',
       },
       zIndex: {
-        'sidebar': '1000',
-        'dropdown': '1100',
-        'overlay': '1200',
-        'backdrop': '1150',
+        sidebar: '1000',
+        dropdown: '1100',
+        overlay: '1200',
+        backdrop: '1150',
       },
     },
   },
   plugins: [],
-}
+};
