@@ -8,17 +8,19 @@ import toast from 'react-hot-toast';
 import { MdArrowForward } from 'react-icons/md';
 import { IoMdAdd } from 'react-icons/io';
 import Select from 'react-select';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import CreatableSelect from 'react-select/creatable';
 import CustomStyles from '../CustomStyles/CustomStyles';
 import { onboardingStep2 } from '@/lib/service/auth';
 import { MastersService } from '@/lib/service';
+import { IAccount } from '@/lib/interface/IAccount.interface';
 import {
   IDepartment,
   IMastersListResponse,
   IShift,
   IWorkSchedule,
 } from '@/lib/interface/IMasters.interface';
+import './OrganisationSetupForm.css';
 
 // ── Form types ────────────────────────────────────────────────────
 
@@ -109,13 +111,6 @@ const validationSchema = object({
   work_schedules: array().min(1, 'At least one work schedule is required'),
 });
 
-const initialValues: OrganisationSetup = {
-  branches_locations: [],
-  departments: [],
-  work_shifts: [],
-  work_schedules: [],
-};
-
 // ── Add Custom Button ─────────────────────────────────────────────
 
 function AddCustomBtn({
@@ -164,9 +159,14 @@ function AddCustomBtn({
 
 // ── Component ─────────────────────────────────────────────────────
 
-export default function OrganisationSetupForm({ slug }: { slug: string }) {
+export default function OrganisationSetupForm({
+  slug,
+  account,
+}: {
+  slug: string;
+  account: IAccount | null;
+}) {
   const router = useRouter();
-
   const [departments, setDepartments] = useState<IDepartment[]>([]);
   const [apiShifts, setApiShifts] = useState<IShift[]>([]);
   const [apiSchedules, setApiSchedules] = useState<IWorkSchedule[]>([]);
@@ -183,6 +183,13 @@ export default function OrganisationSetupForm({ slug }: { slug: string }) {
   const [newDept, setNewDept] = useState<NewDept>(emptyDept);
   const [newShift, setNewShift] = useState<NewShift>(emptyShift);
   const [newSchedule, setNewSchedule] = useState<NewSchedule>(emptySchedule);
+
+  const initialValues: OrganisationSetup = {
+    branches_locations: [],
+    departments: account?.department_ids || [], // Map existing department IDs
+    work_shifts: account?.shift_ids || [], // Map existing shift IDs
+    work_schedules: account?.work_schedule_ids || [], // Map existing schedule IDs
+  };
 
   // ── Fetch helpers ───────────────────────────────────────────────
 
@@ -264,7 +271,7 @@ export default function OrganisationSetupForm({ slug }: { slug: string }) {
       };
       if (success) {
         toast.success('Organisation setup completed successfully');
-        router.push('/company_profile/invite_user');
+        router.push('/dashboard');
         router.refresh();
       } else {
         toast.error(
@@ -380,11 +387,190 @@ export default function OrganisationSetupForm({ slug }: { slug: string }) {
       } else {
         toast.error(error ?? 'Failed to create work schedule');
       }
+      // ← stray toast.error() that was here is now removed
+    } catch {
       toast.error('Failed to create work schedule');
     } finally {
       setSavingSchedule(false);
     }
   };
+
+  // ── Custom Time Picker ────────────────────────────────────────────
+
+  function TimePickerInput({
+    value,
+    onChange,
+    placeholder = '--:-- --',
+  }: {
+    value: string;
+    onChange: (val: string) => void;
+    placeholder?: string;
+  }) {
+    const [open, setOpen] = useState(false);
+    const [hour, setHour] = useState('12');
+    const [minute, setMinute] = useState('00');
+    const [period, setPeriod] = useState<'AM' | 'PM'>('AM');
+    const ref = useRef<HTMLDivElement>(null);
+    const hourRef = useRef<HTMLDivElement>(null);
+    const minRef = useRef<HTMLDivElement>(null);
+
+    const hours = Array.from({ length: 12 }, (_, i) =>
+      String(i + 1).padStart(2, '0')
+    );
+    const minutes = Array.from({ length: 60 }, (_, i) =>
+      String(i).padStart(2, '0')
+    );
+
+    // Parse external value into local state only on open
+    const handleOpen = () => {
+      if (value) {
+        const [h, m] = value.split(':').map(Number);
+        if (!isNaN(h) && !isNaN(m)) {
+          const p = h >= 12 ? 'PM' : 'AM';
+          const h12 = h % 12 === 0 ? 12 : h % 12;
+          setHour(String(h12).padStart(2, '0'));
+          setMinute(String(m).padStart(2, '0'));
+          setPeriod(p);
+        }
+      }
+      setOpen((o) => !o);
+    };
+
+    // Close on outside click
+    useEffect(() => {
+      const handler = (e: MouseEvent) => {
+        if (ref.current && !ref.current.contains(e.target as Node))
+          setOpen(false);
+      };
+      document.addEventListener('mousedown', handler);
+      return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    // Scroll active item into view when dropdown opens
+    useEffect(() => {
+      if (!open) return;
+      setTimeout(() => {
+        [hourRef, minRef].forEach((r) => {
+          const active = r.current?.querySelector(
+            '.tp-item--active'
+          ) as HTMLElement;
+          if (active && r.current) {
+            r.current.scrollTop =
+              active.offsetTop -
+              r.current.clientHeight / 2 +
+              active.clientHeight / 2;
+          }
+        });
+      }, 50);
+    }, [open]);
+
+    // Only emit to parent on Done
+    const handleDone = () => {
+      let h24 = parseInt(hour);
+      if (period === 'AM' && h24 === 12) h24 = 0;
+      if (period === 'PM' && h24 !== 12) h24 += 12;
+      onChange(`${String(h24).padStart(2, '0')}:${minute}`);
+      setOpen(false);
+    };
+
+    const displayValue = value
+      ? (() => {
+          const [h, m] = value.split(':').map(Number);
+          if (isNaN(h) || isNaN(m)) return '';
+          const p = h >= 12 ? 'PM' : 'AM';
+          const h12 = h % 12 === 0 ? 12 : h % 12;
+          return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${p}`;
+        })()
+      : '';
+
+    return (
+      <div className="tp-wrapper" ref={ref}>
+        <div
+          className={`tp-trigger${open ? ' tp-trigger--open' : ''}`}
+          onClick={handleOpen}
+        >
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="tp-icon"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+          <span className={displayValue ? 'tp-value' : 'tp-placeholder'}>
+            {displayValue || placeholder}
+          </span>
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            className="tp-chevron"
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </div>
+
+        {open && (
+          <div className="tp-dropdown">
+            <div className="tp-col" ref={hourRef}>
+              <div className="tp-col-label">HH</div>
+              {hours.map((h) => (
+                <div
+                  key={h}
+                  className={`tp-item${h === hour ? ' tp-item--active' : ''}`}
+                  onClick={() => setHour(h)}
+                >
+                  {h}
+                </div>
+              ))}
+            </div>
+
+            <div className="tp-sep">:</div>
+
+            <div className="tp-col" ref={minRef}>
+              <div className="tp-col-label">MM</div>
+              {minutes.map((m) => (
+                <div
+                  key={m}
+                  className={`tp-item${m === minute ? ' tp-item--active' : ''}`}
+                  onClick={() => setMinute(m)}
+                >
+                  {m}
+                </div>
+              ))}
+            </div>
+
+            <div className="tp-period-col">
+              <div className="tp-col-label">--</div>
+              {(['AM', 'PM'] as const).map((p) => (
+                <div
+                  key={p}
+                  className={`tp-period-item${p === period ? ' tp-item--active' : ''}`}
+                  onClick={() => setPeriod(p)}
+                >
+                  {p}
+                </div>
+              ))}
+              <button
+                type="button"
+                className="tp-done-btn"
+                onClick={handleDone}
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   // ── Render ──────────────────────────────────────────────────────
 
@@ -717,26 +903,24 @@ export default function OrganisationSetupForm({ slug }: { slug: string }) {
                     <label className="form-label">
                       Start Time <span className="text-danger">*</span>
                     </label>
-                    <input
-                      type="time"
-                      className="form-control"
+                    <TimePickerInput
                       value={newShift.start_time}
-                      onChange={(e) =>
-                        setNewShift({ ...newShift, start_time: e.target.value })
+                      onChange={(val) =>
+                        setNewShift({ ...newShift, start_time: val })
                       }
+                      placeholder="Start time"
                     />
                   </div>
                   <div className="col-6">
                     <label className="form-label">
                       End Time <span className="text-danger">*</span>
                     </label>
-                    <input
-                      type="time"
-                      className="form-control"
+                    <TimePickerInput
                       value={newShift.end_time}
-                      onChange={(e) =>
-                        setNewShift({ ...newShift, end_time: e.target.value })
+                      onChange={(val) =>
+                        setNewShift({ ...newShift, end_time: val })
                       }
+                      placeholder="End time"
                     />
                   </div>
                 </div>
@@ -838,13 +1022,14 @@ export default function OrganisationSetupForm({ slug }: { slug: string }) {
                 </div>
                 <div className="mb-3">
                   <label className="form-label fw-semibold">Working Days</label>
-                  <div className="d-flex flex-wrap gap-3">
+                  <div className="d-flex flex-wrap gap-2">
                     {DAY_FIELDS.map(({ key, label }) => (
-                      <div className="form-check" key={key}>
+                      <label
+                        key={key}
+                        className={`day-pill${newSchedule[key] ? ' day-pill--active' : ''}`}
+                      >
                         <input
-                          className="form-check-input"
                           type="checkbox"
-                          id={`day_${key}`}
                           checked={newSchedule[key] as boolean}
                           onChange={(e) =>
                             setNewSchedule({
@@ -853,13 +1038,8 @@ export default function OrganisationSetupForm({ slug }: { slug: string }) {
                             })
                           }
                         />
-                        <label
-                          className="form-check-label"
-                          htmlFor={`day_${key}`}
-                        >
-                          {label}
-                        </label>
-                      </div>
+                        {label}
+                      </label>
                     ))}
                   </div>
                 </div>
@@ -867,13 +1047,14 @@ export default function OrganisationSetupForm({ slug }: { slug: string }) {
                   <label className="form-label fw-semibold">
                     Saturday Working Weeks
                   </label>
-                  <div className="d-flex flex-wrap gap-3">
+                  <div className="d-flex flex-wrap gap-2">
                     {SATURDAY_FIELDS.map(({ key, label }) => (
-                      <div className="form-check" key={key}>
+                      <label
+                        key={key}
+                        className={`day-pill day-pill--sat${newSchedule[key] ? ' day-pill--active' : ''}`}
+                      >
                         <input
-                          className="form-check-input"
                           type="checkbox"
-                          id={`sat_${key}`}
                           checked={newSchedule[key] as boolean}
                           onChange={(e) =>
                             setNewSchedule({
@@ -882,13 +1063,8 @@ export default function OrganisationSetupForm({ slug }: { slug: string }) {
                             })
                           }
                         />
-                        <label
-                          className="form-check-label"
-                          htmlFor={`sat_${key}`}
-                        >
-                          {label}
-                        </label>
-                      </div>
+                        {label}
+                      </label>
                     ))}
                   </div>
                 </div>

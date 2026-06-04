@@ -9,7 +9,7 @@ export const createDepartment = (
   tenantId: string,
   token?: string,
 ) => post(
-  '/v1/masters/departments',
+  '/v1/departments',
   body,
   undefined,
   tenantId,
@@ -20,7 +20,7 @@ export const getDepartments = (
   tenantId: string,
   token?: string,
 ) => get(
-  '/v1/masters/departments',
+  '/v1/departments',
   undefined,
   tenantId,
   { bearerToken: token, isFetchToken: !token },
@@ -31,7 +31,7 @@ export const getDepartmentById = (
   tenantId: string,
   token?: string,
 ) => get(
-  `/v1/masters/departments/${id}`,
+  `/v1/departments/${id}`,
   undefined,
   tenantId,
   { bearerToken: token, isFetchToken: !token },
@@ -43,7 +43,7 @@ export const updateDepartment = (
   tenantId: string,
   token?: string,
 ) => put(
-  `/v1/masters/departments/${id}`,
+  `/v1/departments/${id}`,
   body,
   undefined,
   tenantId,
@@ -55,7 +55,7 @@ export const deleteDepartment = (
   tenantId: string,
   token?: string,
 ) => deleteRequest(
-  `/v1/masters/departments/${id}`,
+  `/v1/departments/${id}`,
   undefined,
   tenantId,
   undefined,
@@ -69,7 +69,7 @@ export const createIndustry = (
   tenantId: string,
   token?: string,
 ) => post(
-  '/v1/masters/industries',
+  '/v1/industries',
   body,
   undefined,
   tenantId,
@@ -80,7 +80,7 @@ export const getIndustries = (
   tenantId: string,
   token?: string,
 ) => get(
-  '/v1/masters/industries',
+  '/v1/industries',
   undefined,
   tenantId,
   { bearerToken: token, isFetchToken: !token },
@@ -91,7 +91,7 @@ export const getIndustryById = (
   tenantId: string,
   token?: string,
 ) => get(
-  `/v1/masters/industries/${id}`,
+  `/v1/industries/${id}`,
   undefined,
   tenantId,
   { bearerToken: token, isFetchToken: !token },
@@ -103,7 +103,7 @@ export const updateIndustry = (
   tenantId: string,
   token?: string,
 ) => put(
-  `/v1/masters/industries/${id}`,
+  `/v1/industries/${id}`,
   body,
   undefined,
   tenantId,
@@ -115,7 +115,7 @@ export const deleteIndustry = (
   tenantId: string,
   token?: string,
 ) => deleteRequest(
-  `/v1/masters/industries/${id}`,
+  `/v1/industries/${id}`,
   undefined,
   tenantId,
   undefined,
@@ -129,7 +129,7 @@ export const createWorkSchedule = (
   tenantId: string,
   token?: string,
 ) => post(
-  '/v1/masters/work-schedules',
+  '/v1/work-schedules',
   body,
   undefined,
   tenantId,
@@ -140,7 +140,7 @@ export const getWorkSchedules = (
   tenantId: string,
   token?: string,
 ) => get(
-  '/v1/masters/work-schedules',
+  '/v1/work-schedules',
   undefined,
   tenantId,
   { bearerToken: token, isFetchToken: !token },
@@ -151,7 +151,7 @@ export const getWorkScheduleById = (
   tenantId: string,
   token?: string,
 ) => get(
-  `/v1/masters/work-schedules/${id}`,
+  `/v1/work-schedules/${id}`,
   undefined,
   tenantId,
   { bearerToken: token, isFetchToken: !token },
@@ -163,7 +163,7 @@ export const updateWorkSchedule = (
   tenantId: string,
   token?: string,
 ) => put(
-  `/v1/masters/work-schedules/${id}`,
+  `/v1/work-schedules/${id}`,
   body,
   undefined,
   tenantId,
@@ -175,7 +175,7 @@ export const deleteWorkSchedule = (
   tenantId: string,
   token?: string,
 ) => deleteRequest(
-  `/v1/masters/work-schedules/${id}`,
+  `/v1/work-schedules/${id}`,
   undefined,
   tenantId,
   undefined,
@@ -189,7 +189,7 @@ export const createShift = (
   tenantId: string,
   token?: string,
 ) => post(
-  '/v1/masters/shifts',
+  '/v1/shifts',
   body,
   undefined,
   tenantId,
@@ -200,7 +200,7 @@ export const getShifts = (
   tenantId: string,
   token?: string,
 ) => get(
-  '/v1/masters/shifts',
+  '/v1/shifts',
   undefined,
   tenantId,
   { bearerToken: token, isFetchToken: !token },
@@ -211,7 +211,7 @@ export const getShiftById = (
   tenantId: string,
   token?: string,
 ) => get(
-  `/v1/masters/shifts/${id}`,
+  `/v1/shifts/${id}`,
   undefined,
   tenantId,
   { bearerToken: token, isFetchToken: !token },
@@ -223,7 +223,7 @@ export const updateShift = (
   tenantId: string,
   token?: string,
 ) => put(
-  `/v1/masters/shifts/${id}`,
+  `/v1/shifts/${id}`,
   body,
   undefined,
   tenantId,
@@ -235,7 +235,7 @@ export const deleteShift = (
   tenantId: string,
   token?: string,
 ) => deleteRequest(
-  `/v1/masters/shifts/${id}`,
+  `/v1/shifts/${id}`,
   undefined,
   tenantId,
   undefined,
@@ -248,7 +248,7 @@ export const createEmploymentType = (
   tenantId: string,
   token?: string,
 ) => post(
-  '/v1/masters/employment-types',
+  '/v1/employment-types',
   body,
   undefined,
   tenantId,
@@ -259,7 +259,7 @@ export const getEmploymentTypes = (
   tenantId: string,
   token?: string,
 ) => get(
-  '/v1/masters/employment-types',
+  '/v1/employment-types',
   undefined,
   tenantId,
   { bearerToken: token, isFetchToken: !token },
@@ -270,7 +270,7 @@ export const getEmploymentTypeById = (
   tenantId: string,
   token?: string,
 ) => get(
-  `/v1/masters/employment-types/${id}`,
+  `/v1/employment-types/${id}`,
   undefined,
   tenantId,
   { bearerToken: token, isFetchToken: !token },
@@ -282,7 +282,7 @@ export const updateEmploymentType = (
   tenantId: string,
   token?: string,
 ) => put(
-  `/v1/masters/employment-types/${id}`,
+  `/v1/employment-types/${id}`,
   body,
   undefined,
   tenantId,
@@ -294,7 +294,7 @@ export const deleteEmploymentType = (
   tenantId: string,
   token?: string,
 ) => deleteRequest(
-  `/v1/masters/employment-types/${id}`,
+  `/v1/employment-types/${id}`,
   undefined,
   tenantId,
   undefined,

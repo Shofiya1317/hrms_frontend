@@ -173,11 +173,10 @@ export default function CompanyInformationForm({
   const [cityOptions, setCityOptions] = useState<Option[]>([]);
   const [industryOptions, setIndustryOptions] = useState<Option[]>([]);
 
-
   /**
    * Populates stateOptions and cityOptions from account data.
-   * Matches country by EITHER full name ("India") OR ISO code ("IN")
-   * so it works regardless of how the backend stores the country value.
+   * Only used in the Settings flow to pre-fill existing values.
+   * Matches country by EITHER full name ("India") OR ISO code ("IN").
    */
   const populateStateCityFromAccount = (acct?: IAccount | null) => {
     if (!acct?.country) return;
@@ -230,14 +229,16 @@ export default function CompanyInformationForm({
       }
     });
 
-    // Pre-populate state/city options if account already has country/state set
-    populateStateCityFromAccount(account);
+    // Only pre-populate state/city options in Settings flow
+    if (isSettings) {
+      populateStateCityFromAccount(account);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Re-run state/city population whenever account prop changes (e.g. async load)
+  // Re-run state/city population whenever account prop changes — Settings only
   useEffect(() => {
-    if (account?.country) {
+    if (isSettings && account?.country) {
       populateStateCityFromAccount(account);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -310,9 +311,11 @@ export default function CompanyInformationForm({
     company_name: account?.account_name ?? account?.company_name ?? '',
     industry: account?.industry ?? account?.industries?.[0] ?? '',
     company_size: account?.company_size ?? '',
-    country: account?.country ?? '',
-    state: account?.state ?? '',
-    city: account?.city ?? '',
+    // In onboarding: always start blank so the user must select.
+    // In settings: pre-fill from existing account data.
+    country: isSettings ? (account?.country ?? '') : '',
+    state: isSettings ? (account?.state ?? '') : '',
+    city: isSettings ? (account?.city ?? '') : '',
     timezone: account?.timezone ?? getDefaultTimezone(),
     address: account?.address ?? '',
     official_email_id: account?.official_email_id ?? '',
@@ -500,6 +503,8 @@ export default function CompanyInformationForm({
                         setFieldValue('country', option?.label || '');
                         setFieldValue('state', '');
                         setFieldValue('city', '');
+                        setStateOptions([]);
+                        setCityOptions([]);
                         if (option?.value) {
                           const states = State.getStatesOfCountry(
                             option.value
@@ -508,8 +513,6 @@ export default function CompanyInformationForm({
                             label: state.name,
                           }));
                           setStateOptions(states);
-                        } else {
-                          setStateOptions([]);
                         }
                       }}
                       placeholder="Select country..."
@@ -542,6 +545,7 @@ export default function CompanyInformationForm({
                       onChange={(option: Option | null) => {
                         setFieldValue('state', option?.label || '');
                         setFieldValue('city', '');
+                        setCityOptions([]);
                         if (option?.value && values.country) {
                           const selectedCountry = countryOptions.find(
                             (c) => c.label === values.country
@@ -556,8 +560,6 @@ export default function CompanyInformationForm({
                             }));
                             setCityOptions(cities);
                           }
-                        } else {
-                          setCityOptions([]);
                         }
                       }}
                       isDisabled={!values.country}

@@ -30,6 +30,7 @@ interface ManagerOption {
 interface MasterOption {
   id: string;
   name: string;
+  label?: string;
   code?: string;
   start_time_24hr?: string | null;
   end_time_24hr?: string | null;
@@ -39,6 +40,7 @@ interface InviteMasterData {
   departments?: MasterOption[];
   designations?: MasterOption[];
   employment_types?: MasterOption[];
+  shifts?: MasterOption[];
   employees?: Array<{
     id: string;
     name?: string;
@@ -175,12 +177,12 @@ export default function AddEmployeeModal({
       setDepartments(masterData.departments || []);
       setDesignations(masterData.designations || []);
       setEmploymentTypes(masterData.employment_types || []);
-      setShifts(shiftList);
+      setShifts(masterData.shifts ||[]);
       setManagers(
         (masterData.employees || []).map((employee) => ({
           id: employee.id,
           fullName:
-            `${employee.first_name || ''} ${employee.last_name || ''}`.trim() ||
+         
             employee.name ||
             'Employee',
           department: '',
@@ -552,8 +554,8 @@ export default function AddEmployeeModal({
                 </label>
                 <Select
                   inputId="shiftId"
-                  options={shifts?.map((s) => ({ value: s.id, label: `${s.name} (${s.start_time_24hr} - ${s.end_time_24hr})${s.code ? ` • ${s.code}` : ''}` }))}
-                  value={shifts?.map((s) => ({ value: s.id, label: `${s.name} (${s.start_time_24hr} - ${s.end_time_24hr})${s.code ? ` • ${s.code}` : ''}` })).find((o) => o.value === form.shiftId) ?? null}
+                  options={shifts.map((s) => ({ value: s.id, label: `${s.name ?? ''} (${s.start_time_24hr ?? ''} - ${s.end_time_24hr ?? ''})${s.code ? ` • ${s.code}` : ''}` }))}
+                  value={shifts.map((s) => ({ value: s.id, label: `${s.name ?? ''} (${s.start_time_24hr ?? ''} - ${s.end_time_24hr ?? ''})${s.code ? ` • ${s.code}` : ''}` })).find((o) => o.value === form.shiftId) ?? null}
                   onChange={(opt) => handleChange('shiftId', opt?.value ?? '')}
                   placeholder="Select shift"
                   styles={customStyles()}

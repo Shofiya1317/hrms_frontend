@@ -9,20 +9,36 @@ import './MultiStepProgressBar.css';
 const MultiStepProgressBar = () => {
   const params = useParams();
   const steps = [
+    'sign_up',
     'company_information',
     'organisation_setup',
-    // 'standard_regulations',
-    'invite_user',
-    // 'plans',
   ];
 
   const stepIndex = steps.indexOf(params?.slug as string);
-  const stepPercentage = stepIndex >= 0
-    ? (stepIndex / (steps.length - 1)) * 100
-    : 0;
+const stepPercentage = stepIndex > 0
+  ? ((stepIndex - 0.5) / (steps.length - 1)) * 100
+  : 0;
 
   return (
     <ProgressBar percent={stepPercentage}>
+      <Step>
+        {({ accomplished }) => (
+          <div className="d-flex align-items-center flex-column gap-3">
+            <div
+              data-testid="step"
+              className={`indexedStep ${accomplished ? 'accomplished' : null}`}
+            >
+              {accomplished ? <IoCheckmarkSharp size={18} /> : null}
+            </div>
+            <span className="step-label d-none d-lg-block">
+              Sign up
+            </span>
+            <span className="step-label d-lg-none">
+              <LuUser size={18} />
+            </span>
+          </div>
+        )}
+      </Step>
       <Step>
         {({ accomplished }) => (
           <div className="d-flex align-items-center flex-column gap-3">
@@ -58,59 +74,6 @@ const MultiStepProgressBar = () => {
           </div>
         )}
       </Step>
-      {/* <Step>
-        {({ accomplished }) => (
-          <div className="d-flex align-items-center flex-column gap-3">
-            <div
-              data-testid="step"
-              className={`indexedStep ${accomplished ? 'accomplished' : null}`}
-            >
-              {accomplished ? <IoCheckmarkSharp size={18} /> : null}
-            </div>
-
-            <span className="step-label d-none d-lg-block">
-              Standard & Regulations
-            </span>
-            <span className="step-label d-lg-none">
-              <SlBookOpen size={18} />
-            </span>
-          </div>
-        )}
-      </Step> */}
-      <Step>
-        {({ accomplished }) => (
-          <div className="d-flex align-items-center flex-column gap-3">
-            <div
-              data-testid="step"
-              className={`indexedStep ${accomplished ? 'accomplished' : null}`}
-            >
-              {accomplished ? <IoCheckmarkSharp size={18} /> : null}
-            </div>
-
-            <span className="step-label d-none d-lg-block">Invite employees</span>
-            <span className="step-label d-lg-none">
-              <LuUser size={18} />
-            </span>
-          </div>
-        )}
-      </Step>
-      {/* <Step>
-        {({ accomplished }) => (
-          <div className="d-flex align-items-center flex-column gap-3">
-            <div
-              data-testid="step"
-              className={`indexedStep ${accomplished ? 'accomplished' : null}`}
-            >
-              {accomplished ? <IoCheckmarkSharp size={18} /> : null}
-            </div>
-
-            <span className="step-label d-none d-lg-block">Plans</span>
-            <span className="step-label d-lg-none">
-              <VscGraph size={18} />
-            </span>
-          </div>
-        )}
-      </Step> */}
     </ProgressBar>
   );
 };

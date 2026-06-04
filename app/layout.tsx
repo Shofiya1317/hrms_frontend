@@ -31,26 +31,44 @@ export default async function RootLayout({
     <html lang="en">
       <body className={interVariable.className}>
         <Providers>
-          <AuthLayout slug={slug}>
-            {children}
-          </AuthLayout>
+          <AuthLayout slug={slug}>{children}</AuthLayout>
         </Providers>
         <Toaster
-          position="bottom-center"
+          position="top-right"
           gutter={8}
           toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#0f766e',
+              color: '#fff',
+              borderRadius: '0.5rem',
+            },
             success: {
               duration: 3000,
+              iconTheme: {
+                primary: '#FFFFFF',
+                secondary: '#0f766e',
+              },
               style: {
-                background: '#FBA900',
-                color: '#232538',
+                background: '#0f766e',
+                color: '#fff',
               },
             },
             error: {
-              duration: 5000,
+              duration: 4000,
+              iconTheme: {
+                primary: '#FFFFFF',
+                secondary: '#ef4444',
+              },
               style: {
-                background: 'red',
-                color: 'white',
+                background: '#363636',
+                color: '#fff',
+              },
+            },
+            loading: {
+              iconTheme: {
+                primary: '#FFFFFF',
+                secondary: '#0f766e',
               },
             },
           }}

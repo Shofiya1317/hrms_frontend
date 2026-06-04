@@ -2,3 +2,271 @@
    padding: 20px;
    width: 120px !important;
 }
+/* ── Time Input ───────────────────────────────────────── */
+.time-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.time-input-icon {
+  position: absolute;
+  left: 12px;
+  color: #0f766e;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.time-input-styled {
+  padding-left: 38px !important;
+  border: 1.5px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  font-size: 14px !important;
+  height: 42px !important;
+  color: #1e293b !important;
+  background: #f8fafc !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+  cursor: pointer;
+}
+
+.time-input-styled:focus {
+  border-color: #0f766e !important;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12) !important;
+  background: #ffffff !important;
+  outline: none !important;
+}
+
+.time-input-styled::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+  filter: invert(32%) sepia(98%) saturate(400%) hue-rotate(143deg);
+}
+
+/* ── Day Pill Checkboxes ──────────────────────────────── */
+.day-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.day-pill input[type="checkbox"] {
+  display: none;
+}
+
+.day-pill:hover {
+  border-color: #0f766e;
+  color: #0f766e;
+  background: #f0fdfa;
+}
+
+.day-pill--active {
+  background: #0f766e !important;
+  border-color: #0f766e !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(15, 118, 110, 0.25);
+}
+
+/* Slightly different tint for Saturday pills when inactive */
+.day-pill--sat {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+}
+
+.day-pill--sat.day-pill--active {
+  background: #0f766e !important;
+  border-color: #0f766e !important;
+  color: #ffffff !important;
+}
+
+/* ── Custom Time Picker ───────────────────────────────── */
+.tp-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.tp-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  cursor: pointer;
+  font-size: 14px;
+  color: #1e293b;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  user-select: none;
+  min-height: 42px;
+}
+
+.tp-trigger:hover,
+.tp-trigger--open {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
+  background: #fff;
+}
+
+.tp-icon {
+  color: #0f766e;
+  flex-shrink: 0;
+}
+
+.tp-value {
+  flex: 1;
+  font-weight: 500;
+  color: #1e293b;
+  letter-spacing: 0.4px;
+}
+
+.tp-placeholder {
+  flex: 1;
+  color: #94a3b8;
+}
+
+.tp-chevron {
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.tp-trigger--open .tp-chevron {
+  transform: rotate(180deg);
+  color: #0f766e;
+}
+
+/* Dropdown */
+.tp-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(15, 118, 110, 0.13), 0 2px 8px rgba(0,0,0,0.08);
+  padding: 10px 6px 10px 6px;
+  min-width: 200px;
+  overflow: hidden;
+}
+
+/* Scrollable columns */
+.tp-col {
+  display: flex;
+  flex-direction: column;
+  max-height: 200px;
+  overflow-y: auto;
+  width: 58px;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+.tp-col::-webkit-scrollbar {
+  display: none;
+}
+
+.tp-col-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-align: center;
+  padding: 2px 0 6px;
+  letter-spacing: 0.5px;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
+}
+
+.tp-item {
+  padding: 7px 0;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.tp-item:hover {
+  background: #f0fdfa;
+  color: #0f766e;
+}
+
+.tp-item--active {
+  background: #0f766e !important;
+  color: #fff !important;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+/* Separator */
+.tp-sep {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f766e;
+  padding: 28px 2px 0;
+  align-self: flex-start;
+}
+
+/* AM/PM column */
+.tp-period-col {
+  display: flex;
+  flex-direction: column;
+  width: 52px;
+  padding-top: 0;
+  margin-left: 4px;
+}
+
+.tp-period-item {
+  padding: 8px 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  margin-top: 4px;
+}
+
+.tp-period-item:first-of-type {
+  margin-top: 28px;
+}
+
+.tp-period-item:hover {
+  background: #f0fdfa;
+  color: #0f766e;
+}
+.tp-done-btn {
+  margin-top: 12px;
+  padding: 5px 10px;
+  background: #0f766e;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.15s;
+}
+
+.tp-done-btn:hover {
+  background: #0d6460;
+}

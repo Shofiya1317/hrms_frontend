@@ -426,7 +426,7 @@ if (loading) {
       </div>
 
       {/* ── Charts Row ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mt-4">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-3 mt-3">
         {/* Weekly Attendance Chart */}
         <div className="bg-white border border-slate-200 rounded-xl shadow-sm xl:col-span-2">
           <div className="p-4 sm:p-5">
