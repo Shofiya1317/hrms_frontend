@@ -6,6 +6,7 @@ import { Params } from '../utils';
 export interface InviteEmployeeDto {
   email: string;
   role: 'EMPLOYEE' | 'HR_ADMIN';
+  employee_code?: string;
   first_name: string;
   last_name: string;
   date_of_birth?: string;

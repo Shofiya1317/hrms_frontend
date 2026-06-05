@@ -241,6 +241,73 @@ export const deleteShift = (
   undefined,
   { bearerToken: token, isFetchToken: !token },
 );
+// ── Designations ─────────────────────────────────────────────────────────
+
+export interface DesignationPayload {
+  name: string;
+  description?: string;
+  level?: string;
+  code?: string;
+}
+
+export const createDesignation = (
+  body: DesignationPayload,
+  tenantId: string,
+  token?: string,
+) => post(
+  '/v1/designations',
+  body,
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const getDesignations = (
+  tenantId: string,
+  token?: string,
+) => get(
+  '/v1/designations',
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const getDesignationById = (
+  id: string,
+  tenantId: string,
+  token?: string,
+) => get(
+  `/v1/designations/${id}`,
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const updateDesignation = (
+  id: string,
+  body: DesignationPayload,
+  tenantId: string,
+  token?: string,
+) => put(
+  `/v1/designations/${id}`,
+  body,
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const deleteDesignation = (
+  id: string,
+  tenantId: string,
+  token?: string,
+) => deleteRequest(
+  `/v1/designations/${id}`,
+  undefined,
+  tenantId,
+  undefined,
+  { bearerToken: token, isFetchToken: !token },
+);
+
 // ── Employment type ────────────────────────────────────────────────────────
 
 export const createEmploymentType = (

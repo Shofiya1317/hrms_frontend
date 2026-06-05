@@ -45,7 +45,7 @@ interface Employee {
   manager: string;
   managerId: string | null;
   joinDate: string;
-  status: 'active' | 'inactive' | 'on-leave';
+  status: string;
   employeeId: string;
   dateOfBirth?: string;
   gender?: string;
@@ -53,23 +53,18 @@ interface Employee {
   employmentType?: string;
 }
 
-const STATUS_CONFIG = {
-  active: {
-    label: 'Active',
-    color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    icon: CheckCircle,
-  },
-  inactive: {
-    label: 'Inactive',
-    color: 'bg-gray-50 text-gray-600 border-gray-200',
-    icon: XCircle,
-  },
-  'on-leave': {
-    label: 'On Leave',
-    color: 'bg-amber-50 text-amber-700 border-amber-200',
-    icon: Clock,
-  },
+const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
+  ACTIVE: { label: 'Active', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: CheckCircle },
+  active: { label: 'Active', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: CheckCircle },
+  INACTIVE: { label: 'Inactive', color: 'bg-gray-50 text-gray-600 border-gray-200', icon: XCircle },
+  inactive: { label: 'Inactive', color: 'bg-gray-50 text-gray-600 border-gray-200', icon: XCircle },
+  'ON_LEAVE': { label: 'On Leave', color: 'bg-amber-50 text-amber-700 border-amber-200', icon: Clock },
+  'on-leave': { label: 'On Leave', color: 'bg-amber-50 text-amber-700 border-amber-200', icon: Clock },
+  PROBATION: { label: 'Probation', color: 'bg-blue-50 text-blue-700 border-blue-200', icon: Clock },
+  TERMINATED: { label: 'Terminated', color: 'bg-red-50 text-red-600 border-red-200', icon: XCircle },
 };
+
+const DEFAULT_STATUS = { label: 'Unknown', color: 'bg-gray-50 text-gray-500 border-gray-200', icon: Clock };
 
 const DEPARTMENTS = [
   'All Departments',
@@ -81,7 +76,7 @@ const DEPARTMENTS = [
   'Quality Assurance',
   'Executive',
 ];
-const STATUSES = ['All Status', 'active', 'inactive', 'on-leave'];
+const STATUSES = ['All Status', 'ACTIVE', 'INACTIVE', 'PROBATION', 'ON_LEAVE', 'TERMINATED'];
 
 // Stats Card Component
 function StatCard({ title, value, icon: Icon, color, bgColor }: any) {
@@ -113,7 +108,7 @@ function EmployeeCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const statusCfg = STATUS_CONFIG[employee.status];
+  const statusCfg = STATUS_CONFIG[employee.status] ?? DEFAULT_STATUS;
   const StatusIcon = statusCfg.icon;
   const [showMenu, setShowMenu] = useState(false);
 
@@ -178,18 +173,24 @@ function EmployeeCard({
       <div className="space-y-2 pt-2">
         <div className="flex items-center gap-2 text-xs text-gray-600">
           <Building2 size={12} className="text-gray-400 flex-shrink-0" />
-          <span className="truncate">{employee.department}</span>
+          <span className="truncate">{employee.department || '—'}</span>
         </div>
-        {employee.location && (
+        {employee.designation && (
           <div className="flex items-center gap-2 text-xs text-gray-600">
-            <MapPin size={12} className="text-gray-400 flex-shrink-0" />
-            <span className="truncate">{employee.location}</span>
+            <Award size={12} className="text-gray-400 flex-shrink-0" />
+            <span className="truncate">{employee.designation}</span>
           </div>
         )}
         <div className="flex items-center gap-2 text-xs text-gray-600">
           <Mail size={12} className="text-gray-400 flex-shrink-0" />
           <span className="truncate">{employee.email}</span>
         </div>
+        {employee.phone && (
+          <div className="flex items-center gap-2 text-xs text-gray-600">
+            <Phone size={12} className="text-gray-400 flex-shrink-0" />
+            <span className="truncate">{employee.phone}</span>
+          </div>
+        )}
         <div className="flex items-center gap-2 text-xs text-gray-600">
           <Calendar size={12} className="text-gray-400 flex-shrink-0" />
           <span>Joined {employee.joinDate}</span>
@@ -229,7 +230,7 @@ function EmployeeProfileModal({
   employee: Employee;
   onClose: () => void;
 }) {
-  const statusCfg = STATUS_CONFIG[employee.status];
+  const statusCfg = STATUS_CONFIG[employee.status] ?? DEFAULT_STATUS;
   const StatusIcon = statusCfg.icon;
 
   return (
@@ -384,9 +385,9 @@ export default function EmployeesRegistry() {
   // Stats calculations
   const stats = {
     total: employees.length,
-    active: employees.filter((e) => e.status === 'active').length,
-    onLeave: employees.filter((e) => e.status === 'on-leave').length,
-    departments: new Set(employees.map((e) => e.department)).size,
+    active: employees.filter((e) => e.status === 'ACTIVE' || e.status === 'active').length,
+    onLeave: employees.filter((e) => e.status === 'ON_LEAVE' || e.status === 'on-leave' || e.status === 'PROBATION').length,
+    departments: new Set(employees.map((e) => e.department).filter(Boolean)).size,
   };
 
   const loadEmployees = useCallback(async () => {
@@ -394,38 +395,37 @@ export default function EmployeesRegistry() {
       setLoading(true);
       const response = await getEmployees(subdomain);
       const raw = response?.data;
-      const list: any[] = Array.isArray(raw) ? raw : (raw?.data ?? []);
+      const list: any[] = raw?.employees ?? (Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : []);
 
       setEmployees(
-        list.map((emp: any) => ({
-          id: emp.id,
-          name: `${emp.first_name || ''} ${emp.last_name || ''}`.trim(),
-          avatar:
-            `${emp.first_name?.[0] || ''}${emp.last_name?.[0] || ''}`.toUpperCase(),
-          role: emp.role || 'EMPLOYEE',
-          department: emp.department?.name || emp.department || '',
-          email: emp.email || '',
-          phone: emp.personal_phone || '',
-          location: emp.location || '',
-          manager:
-            emp.reporting_manager?.name ||
-            emp.reporting_manager?.first_name ||
-            '',
-          managerId: emp.reporting_manager_id || null,
-          joinDate: emp.date_of_joining
-            ? new Date(emp.date_of_joining).toLocaleString('default', {
-                month: 'short',
-                year: 'numeric',
-              })
-            : '',
-          status:
-            (emp.status as 'active' | 'inactive' | 'on-leave') || 'active',
-          employeeId: emp.employee_id || `EMP-${emp.id?.slice(0, 6)}`,
-          dateOfBirth: emp.date_of_birth || '',
-          gender: emp.gender || '',
-          designation: emp.designation?.name || '',
-          employmentType: emp.employment_type?.name || '',
-        }))
+        list.map((emp: any) => {
+          const initials = emp.name
+            ? emp.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
+            : (emp.id?.slice(0, 2) ?? 'E').toUpperCase();
+          return {
+            id: emp.id,
+            name: emp.name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim(),
+            avatar: initials,
+            role: emp.role || 'EMPLOYEE',
+            department: emp.department || '',
+            email: emp.email || '',
+            phone: emp.phone || emp.personal_phone || '',
+            location: emp.location || '',
+            manager: emp.manager || emp.reporting_manager?.name || '',
+            managerId: emp.reportingManagerId || emp.reporting_manager_id || null,
+            joinDate: emp.joinDate
+              ? emp.joinDate
+              : emp.date_of_joining
+                ? new Date(emp.date_of_joining).toLocaleDateString('default', { month: 'short', year: 'numeric' })
+                : '',
+            status: emp.status || 'ACTIVE',
+            employeeId: emp.employeeId || emp.employee_id || emp.employee_code || `EMP-${emp.id?.slice(0, 6)}`,
+            dateOfBirth: emp.dateOfBirth || emp.date_of_birth || '',
+            gender: emp.gender || '',
+            designation: emp.designation || emp.designation?.name || '',
+            employmentType: emp.employmentType || emp.employment_type?.name || '',
+          };
+        })
       );
     } catch {
       // silent
@@ -493,11 +493,14 @@ export default function EmployeesRegistry() {
   };
 
   const filtered = employees.filter((e) => {
+    const q = search.toLowerCase();
     const matchSearch =
-      e.name.toLowerCase().includes(search.toLowerCase()) ||
-      e.employeeId.toLowerCase().includes(search.toLowerCase()) ||
-      e.role.toLowerCase().includes(search.toLowerCase()) ||
-      e.email.toLowerCase().includes(search.toLowerCase());
+      e.name.toLowerCase().includes(q) ||
+      e.employeeId.toLowerCase().includes(q) ||
+      e.role.toLowerCase().includes(q) ||
+      e.email.toLowerCase().includes(q) ||
+      (e.designation?.toLowerCase().includes(q) ?? false) ||
+      (e.department?.toLowerCase().includes(q) ?? false);
     const matchDept =
       deptFilter === 'All Departments' || e.department === deptFilter;
     const matchStatus =
@@ -781,7 +784,7 @@ export default function EmployeesRegistry() {
                       Department
                     </th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                      Location
+                      Designation
                     </th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                       Joined
@@ -817,7 +820,7 @@ export default function EmployeesRegistry() {
                     </tr>
                   ) : (
                     filtered.map((emp) => {
-                      const statusCfg = STATUS_CONFIG[emp.status];
+                      const statusCfg = STATUS_CONFIG[emp.status] ?? DEFAULT_STATUS;
                       const StatusIcon = statusCfg.icon;
                       return (
                         <tr
@@ -826,7 +829,7 @@ export default function EmployeesRegistry() {
                         >
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#2D7A4F] to-[#1e5c3a] flex items-center justify-center flex-shrink-0">
+                              <div className="w-9 h-9 rounded-xl bg-[#0f766e] flex items-center justify-center flex-shrink-0">
                                 <span className="text-white text-xs font-bold">
                                   {emp.avatar}
                                 </span>
@@ -847,12 +850,9 @@ export default function EmployeesRegistry() {
                             </span>
                           </td>
                           <td className="px-4 py-3 hidden lg:table-cell">
-                            <div className="flex items-center gap-1.5">
-                              <MapPin size={12} className="text-gray-400" />
-                              <span className="text-sm text-gray-600">
-                                {emp.location || '—'}
-                              </span>
-                            </div>
+                            <span className="text-sm text-gray-600">
+                              {emp.designation || '—'}
+                            </span>
                           </td>
                           <td className="px-4 py-3 hidden lg:table-cell">
                             <span className="text-sm text-gray-600">

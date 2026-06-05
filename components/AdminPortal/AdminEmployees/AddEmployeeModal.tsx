@@ -6,11 +6,18 @@ import { X, UserPlus, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import {
   createEmployee,
   updateEmployee,
-  getInviteMasterData,
+  getEmployees,
   InviteEmployeeDto,
 } from '@/lib/service/employee';
-import { getShifts } from '@/lib/service/masters';
-import Select from 'react-select';
+import {
+  getDepartments,
+  getDesignations,
+  createDesignation,
+  getEmploymentTypes,
+  getShifts,
+} from '@/lib/service/masters';
+import Select, { components } from 'react-select';
+import type { OptionProps } from 'react-select';
 import customStyles from '@/components/CustomStyles/CustomStyles';
 
 interface AddEmployeeModalProps {
@@ -36,20 +43,6 @@ interface MasterOption {
   end_time_24hr?: string | null;
 }
 
-interface InviteMasterData {
-  departments?: MasterOption[];
-  designations?: MasterOption[];
-  employment_types?: MasterOption[];
-  shifts?: MasterOption[];
-  employees?: Array<{
-    id: string;
-    name?: string;
-    first_name?: string;
-    last_name?: string;
-    work_email?: string;
-  }>;
-}
-
 type EmployeeRole = 'EMPLOYEE' | 'HR_ADMIN';
 
 interface EmployeeFormState {
@@ -61,6 +54,7 @@ interface EmployeeFormState {
   designationId: string;
   employmentTypeId: string;
   shiftId: string;
+  employeeCode: string;
   phone: string;
   managerId: string;
   joinDate: string;
@@ -90,6 +84,7 @@ export default function AddEmployeeModal({
     lastName: '',
     email: '',
     role: 'EMPLOYEE' as 'EMPLOYEE' | 'HR_ADMIN',
+    employeeCode: '',
     departmentId: '',
     designationId: '',
     employmentTypeId: '',
@@ -145,6 +140,8 @@ export default function AddEmployeeModal({
           editingEmployee.employmentType ||
           '',
         shiftId: editingEmployee.shiftId || editingEmployee.shift_id || '',
+        employeeCode:
+          editingEmployee.employeeCode || editingEmployee.employee_code || '',
         phone: editingEmployee.phone || '',
         managerId:
           editingEmployee.managerId ||
@@ -159,38 +156,63 @@ export default function AddEmployeeModal({
     }
   }, [editingEmployee, isEditing]);
 
+  const [newDesignationName, setNewDesignationName] = useState('');
+  const [creatingDesignation, setCreatingDesignation] = useState(false);
+
+  const extractList = (res: any) =>
+    Array.isArray(res?.data?.data)
+      ? res.data.data
+      : Array.isArray(res?.data)
+        ? res.data
+        : [];
+
   const loadInviteMasterData = async () => {
     try {
-      const [inviteResponse, shiftsResponse] = await Promise.all([
-        getInviteMasterData(subdomain),
-        getShifts(subdomain),
-      ]);
-      const masterData = (inviteResponse?.data?.data ||
-        inviteResponse?.data ||
-        {}) as InviteMasterData;
-      const shiftList = Array.isArray(shiftsResponse?.data?.data)
-        ? shiftsResponse.data.data
-        : Array.isArray(shiftsResponse?.data)
-          ? shiftsResponse.data
-          : [];
-
-      setDepartments(masterData.departments || []);
-      setDesignations(masterData.designations || []);
-      setEmploymentTypes(masterData.employment_types || []);
-      setShifts(masterData.shifts ||[]);
+      const [deptRes, desigRes, empTypeRes, shiftsRes, employeesRes] =
+        await Promise.all([
+          getDepartments(subdomain),
+          getDesignations(subdomain),
+          getEmploymentTypes(subdomain),
+          getShifts(subdomain),
+          getEmployees(subdomain),
+        ]);
+      setDepartments(extractList(deptRes));
+      setDesignations(extractList(desigRes));
+      setEmploymentTypes(extractList(empTypeRes));
+      setShifts(extractList(shiftsRes));
       setManagers(
-        (masterData.employees || []).map((employee) => ({
-          id: employee.id,
+        extractList(employeesRes).map((e: any) => ({
+          id: e.id,
           fullName:
-         
-            employee.name ||
+            e.name ||
+            e.full_name ||
+            `${e.first_name ?? ''} ${e.last_name ?? ''}`.trim() ||
             'Employee',
-          department: '',
-          jobTitle: employee.work_email || '',
+          department: e.department || '',
+          jobTitle: e.work_email || '',
         }))
       );
     } catch (err) {
-      console.error('Failed to load invite master data', err);
+      console.error('Failed to load master data', err);
+    }
+  };
+
+  const handleCreateDesignation = async () => {
+    const name = newDesignationName.trim();
+    if (!name) return;
+    setCreatingDesignation(true);
+    try {
+      const res = await createDesignation({ name }, subdomain);
+      const created = res?.data?.data || res?.data;
+      if (created?.id) {
+        setDesignations((prev) => [...prev, created]);
+        handleChange('designationId', created.id);
+      }
+      setNewDesignationName('');
+    } catch (err) {
+      console.error('Failed to create designation', err);
+    } finally {
+      setCreatingDesignation(false);
     }
   };
 
@@ -234,6 +256,7 @@ export default function AddEmployeeModal({
       const payload: InviteEmployeeDto = {
         email,
         role: form.role,
+        employee_code: form.employeeCode.trim() || undefined,
         first_name: firstName,
         last_name: lastName,
         date_of_birth: form.dateOfBirth || undefined,
@@ -250,9 +273,14 @@ export default function AddEmployeeModal({
       let response;
       if (isEditing && editingEmployee?.id) {
         response = await updateEmployee(editingEmployee.id, payload, subdomain);
-        const { success: ok, error: err } = response?.data as { success: boolean; error?: string | string[] };
+        const { success: ok, error: err } = response?.data as {
+          success: boolean;
+          error?: string | string[];
+        };
         if (!ok) {
-          const msg = Array.isArray(err) ? err[0] : (err ?? 'Failed to update employee');
+          const msg = Array.isArray(err)
+            ? err[0]
+            : (err ?? 'Failed to update employee');
           setError(msg);
           return;
         }
@@ -261,9 +289,14 @@ export default function AddEmployeeModal({
         onSuccess(updatedEmployee);
       } else {
         response = await createEmployee(payload, subdomain);
-        const { success: ok, error: err } = response?.data as { success: boolean; error?: string | string[] };
+        const { success: ok, error: err } = response?.data as {
+          success: boolean;
+          error?: string | string[];
+        };
         if (!ok) {
-          const msg = Array.isArray(err) ? err[0] : (err ?? 'Failed to create employee');
+          const msg = Array.isArray(err)
+            ? err[0]
+            : (err ?? 'Failed to create employee');
           setError(msg);
           return;
         }
@@ -428,23 +461,43 @@ export default function AddEmployeeModal({
               </div>
             </div>
 
-            {/* Row 2: Email */}
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-xs font-semibold text-gray-600 mb-1.5"
-              >
-                Work Email <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={form.email}
-                onChange={(e) => handleChange('email', e.target.value)}
-                placeholder="john.doe@company.com"
-                className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
-                required
-              />
+            <div className="grid grid-cols-2 gap-4">
+              {/* Row 2: Email */}
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-xs font-semibold text-gray-600 mb-1.5"
+                >
+                  Work Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => handleChange('email', e.target.value)}
+                  placeholder="john.doe@company.com"
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
+                  required
+                />
+              </div>
+
+              {/* Row 3: Employee Code */}
+              <div>
+                <label
+                  htmlFor="employeeCode"
+                  className="block text-xs font-semibold text-gray-600 mb-1.5"
+                >
+                  Employee Code
+                </label>
+                <input
+                  id="employeeCode"
+                  type="text"
+                  value={form.employeeCode}
+                  onChange={(e) => handleChange('employeeCode', e.target.value)}
+                  placeholder="e.g. IM05"
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
+                />
+              </div>
             </div>
 
             {/* Row 4: Role + Employment Type */}
@@ -473,9 +526,21 @@ export default function AddEmployeeModal({
                 </label>
                 <Select
                   inputId="employmentTypeId"
-                  options={employmentTypes.map((t) => ({ value: t.id, label: `${t.name}${t.code ? ` (${t.code})` : ''}` }))}
-                  value={employmentTypes.map((t) => ({ value: t.id, label: `${t.name}${t.code ? ` (${t.code})` : ''}` })).find((o) => o.value === form.employmentTypeId) ?? null}
-                  onChange={(opt) => handleChange('employmentTypeId', opt?.value ?? '')}
+                  options={employmentTypes.map((t) => ({
+                    value: t.id,
+                    label: `${t.name}${t.code ? ` (${t.code})` : ''}`,
+                  }))}
+                  value={
+                    employmentTypes
+                      .map((t) => ({
+                        value: t.id,
+                        label: `${t.name}${t.code ? ` (${t.code})` : ''}`,
+                      }))
+                      .find((o) => o.value === form.employmentTypeId) ?? null
+                  }
+                  onChange={(opt) =>
+                    handleChange('employmentTypeId', opt?.value ?? '')
+                  }
                   placeholder="Select employment type"
                   styles={customStyles()}
                 />
@@ -493,9 +558,21 @@ export default function AddEmployeeModal({
                 </label>
                 <Select
                   inputId="departmentId"
-                  options={departments.map((d) => ({ value: d.id, label: `${d.name}${d.code ? ` (${d.code})` : ''}` }))}
-                  value={departments.map((d) => ({ value: d.id, label: `${d.name}${d.code ? ` (${d.code})` : ''}` })).find((o) => o.value === form.departmentId) ?? null}
-                  onChange={(opt) => handleChange('departmentId', opt?.value ?? '')}
+                  options={departments.map((d) => ({
+                    value: d.id,
+                    label: `${d.name}${d.code ? ` (${d.code})` : ''}`,
+                  }))}
+                  value={
+                    departments
+                      .map((d) => ({
+                        value: d.id,
+                        label: `${d.name}${d.code ? ` (${d.code})` : ''}`,
+                      }))
+                      .find((o) => o.value === form.departmentId) ?? null
+                  }
+                  onChange={(opt) =>
+                    handleChange('departmentId', opt?.value ?? '')
+                  }
                   placeholder="Select department"
                   styles={customStyles()}
                 />
@@ -509,9 +586,18 @@ export default function AddEmployeeModal({
                 </label>
                 <Select
                   inputId="managerId"
-                  options={managers.map((m) => ({ value: m.id, label: `${m.fullName}${m.jobTitle ? ` — ${m.jobTitle}` : ''}${m.department ? ` (${m.department})` : ''}` }))}
-                  value={managers.map((m) => ({ value: m.id, label: m.fullName })).find((o) => o.value === form.managerId) ?? null}
-                  onChange={(opt) => handleChange('managerId', opt?.value ?? '')}
+                  options={managers.map((m) => ({
+                    value: m.id,
+                    label: `${m.fullName}${m.jobTitle ? ` — ${m.jobTitle}` : ''}${m.department ? ` (${m.department})` : ''}`,
+                  }))}
+                  value={
+                    managers
+                      .map((m) => ({ value: m.id, label: m.fullName }))
+                      .find((o) => o.value === form.managerId) ?? null
+                  }
+                  onChange={(opt) =>
+                    handleChange('managerId', opt?.value ?? '')
+                  }
                   placeholder="No manager / Top-level"
                   isClearable
                   styles={customStyles()}
@@ -538,10 +624,73 @@ export default function AddEmployeeModal({
                 </label>
                 <Select
                   inputId="designationId"
-                  options={designations.map((d) => ({ value: d.id, label: `${d.name}${d.code ? ` (${d.code})` : ''}` }))}
-                  value={designations.map((d) => ({ value: d.id, label: `${d.name}${d.code ? ` (${d.code})` : ''}` })).find((o) => o.value === form.designationId) ?? null}
-                  onChange={(opt) => handleChange('designationId', opt?.value ?? '')}
+                  options={[
+                    ...designations.map((d) => ({
+                      value: d.id,
+                      label: `${d.name}${d.code ? ` (${d.code})` : ''}`,
+                      isCustom: false,
+                    })),
+                    {
+                      value: '__custom__',
+                      label: '+ Add custom designation',
+                      isCustom: true,
+                    },
+                  ]}
+                  value={
+                    designations
+                      .map((d) => ({
+                        value: d.id,
+                        label: `${d.name}${d.code ? ` (${d.code})` : ''}`,
+                        isCustom: false,
+                      }))
+                      .find((o) => o.value === form.designationId) ?? null
+                  }
+                  onChange={(opt) => {
+                    if (opt?.value === '__custom__') return;
+                    handleChange('designationId', opt?.value ?? '');
+                  }}
+                  components={{
+                    Option: (props: OptionProps<any>) =>
+                      props.data.isCustom ? (
+                        <div className="px-3 py-2">
+                          <div className="flex gap-2">
+                            <input
+                              className="flex-1 px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#2D7A4F]"
+                              placeholder="Designation name"
+                              value={newDesignationName}
+                              onChange={(e) =>
+                                setNewDesignationName(e.target.value)
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleCreateDesignation();
+                                }
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <button
+                              type="button"
+                              disabled={
+                                creatingDesignation ||
+                                !newDesignationName.trim()
+                              }
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCreateDesignation();
+                              }}
+                              className="px-2 py-1 text-xs font-semibold text-white bg-[#2D7A4F] rounded-lg disabled:opacity-50"
+                            >
+                              {creatingDesignation ? '...' : 'Add'}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <components.Option {...props} />
+                      ),
+                  }}
                   placeholder="Select designation"
+                  isClearable
                   styles={customStyles()}
                 />
               </div>
@@ -554,8 +703,18 @@ export default function AddEmployeeModal({
                 </label>
                 <Select
                   inputId="shiftId"
-                  options={shifts.map((s) => ({ value: s.id, label: `${s.name ?? ''} (${s.start_time_24hr ?? ''} - ${s.end_time_24hr ?? ''})${s.code ? ` • ${s.code}` : ''}` }))}
-                  value={shifts.map((s) => ({ value: s.id, label: `${s.name ?? ''} (${s.start_time_24hr ?? ''} - ${s.end_time_24hr ?? ''})${s.code ? ` • ${s.code}` : ''}` })).find((o) => o.value === form.shiftId) ?? null}
+                  options={shifts.map((s) => ({
+                    value: s.id,
+                    label: `${s.name ?? ''} (${s.start_time_24hr ?? ''} - ${s.end_time_24hr ?? ''})${s.code ? ` • ${s.code}` : ''}`,
+                  }))}
+                  value={
+                    shifts
+                      .map((s) => ({
+                        value: s.id,
+                        label: `${s.name ?? ''} (${s.start_time_24hr ?? ''} - ${s.end_time_24hr ?? ''})${s.code ? ` • ${s.code}` : ''}`,
+                      }))
+                      .find((o) => o.value === form.shiftId) ?? null
+                  }
                   onChange={(opt) => handleChange('shiftId', opt?.value ?? '')}
                   placeholder="Select shift"
                   styles={customStyles()}
@@ -594,7 +753,11 @@ export default function AddEmployeeModal({
                     { value: 'female', label: 'Female' },
                     { value: 'other', label: 'Other' },
                   ]}
-                  value={form.gender ? { value: form.gender, label: capitalize(form.gender) } : null}
+                  value={
+                    form.gender
+                      ? { value: form.gender, label: capitalize(form.gender) }
+                      : null
+                  }
                   onChange={(opt) => handleChange('gender', opt?.value ?? '')}
                   placeholder="Select gender"
                   styles={customStyles()}
