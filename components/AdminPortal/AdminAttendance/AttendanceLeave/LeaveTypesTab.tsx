@@ -21,7 +21,7 @@ interface LeaveType extends LeaveTypePayload {
 // ── Constants ─────────────────────────────────────────────────────
 const EMPTY_FORM: LeaveTypePayload = {
   name: '',
-  code: '',
+  // code: '',
   description: '',
   is_paid: true,
   is_encashable: false,
@@ -65,7 +65,7 @@ function LeaveTypeModal({ mode, initial, onClose, onSave, saving }: LeaveTypeMod
     setForm(prev => ({ ...prev, [field]: value }));
 
   const handleSubmit = async () => {
-    if (!form.name.trim() || !form.code.trim()) {
+    if (!form.name.trim()) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -141,7 +141,7 @@ function LeaveTypeModal({ mode, initial, onClose, onSave, saving }: LeaveTypeMod
                 className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
               />
             </div>
-            <div className="space-y-1.5">
+            {/* <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600">
                 Code <span className="text-red-500">*</span>
               </label>
@@ -152,7 +152,7 @@ function LeaveTypeModal({ mode, initial, onClose, onSave, saving }: LeaveTypeMod
                 placeholder="AL"
                 className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-mono uppercase"
               />
-            </div>
+            </div> */}
           </div>
 
           <div className="space-y-1.5">
@@ -228,7 +228,7 @@ function LeaveTypeModal({ mode, initial, onClose, onSave, saving }: LeaveTypeMod
           </button>
           <button
             onClick={handleSubmit}
-            disabled={saving || !form.name.trim() || !form.code.trim()}
+            disabled={saving || !form.name.trim() }
             className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-[#0f766e] hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-all"
           >
             {saving && <Loader2 size={12} className="animate-spin" />}
@@ -443,11 +443,11 @@ export default function LeaveTypesTab({ apiKey, token }: LeaveTypesTabProps) {
           )}
         </div>
       </td>
-      <td className="px-4 py-3">
+      {/* <td className="px-4 py-3">
         <code className="text-xs font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
           {leaveType.code}
         </code>
-      </td>
+      </td> */}
       <td className="px-4 py-3">
         <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${
           leaveType.is_paid ? 'bg-teal-50 text-teal-700' : 'bg-slate-100 text-slate-400'
@@ -515,9 +515,9 @@ export default function LeaveTypesTab({ apiKey, token }: LeaveTypesTabProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-semibold text-slate-800">{leaveType.name}</span>
-            <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+            {/* <code className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
               {leaveType.code}
-            </code>
+            </code> */}
           </div>
           {leaveType.description && (
             <p className="text-xs text-slate-400 mt-0.5">{leaveType.description}</p>

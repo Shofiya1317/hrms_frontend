@@ -14,10 +14,26 @@ export interface InviteEmployeeDto {
   personal_phone?: string;
   department_id: string;
   designation_id?: string;
-  employment_type_id: string;
+  employment_type: string;
   reporting_manager_id?: string | '';
   shift_id?: string;
   date_of_joining: string;
+}
+
+export interface UpdateEmployeeDto {
+  employee_code?: string;
+  first_name?: string;
+  last_name?: string;
+  date_of_birth?: string;
+  gender?: string;
+  personal_phone?: string;
+  department_id?: string;
+  designation_id?: string;
+  employment_type?: string;
+  reporting_manager_id?: string | '';
+  shift_id?: string;
+  date_of_joining?: string;
+  role?: 'EMPLOYEE' | 'HR_ADMIN';
 }
 
 export const createEmployee = (
@@ -66,7 +82,7 @@ export const getEmployeeById = (
 
 export const updateEmployee = (
   id: string,
-  body: Partial<InviteEmployeeDto>,
+  body: UpdateEmployeeDto,
   tenantId: string,
   token?: string,
 ) => put(

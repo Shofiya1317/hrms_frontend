@@ -158,7 +158,7 @@ export default function EmployeeProfileView({ employee, onClose }: EmployeeProfi
                   )}
                   <div>
                     <p className="text-xs text-gray-400 font-medium mb-1">Reporting Manager</p>
-                    <p className="text-sm font-semibold text-gray-800">{employee.manager || '—'}</p>
+                    <p className="text-sm font-semibold text-gray-800">{employee.manager && employee.manager !== 'null' ? employee.manager : '—'}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-400 font-medium mb-1">Date of Joining</p>

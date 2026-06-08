@@ -6,8 +6,9 @@ import RequestsTab  from './RequestsTab';
 import BalancesTab  from './BalancesTab';
 import HolidaysTab  from './HolidaysTab';
 import LeaveTypesTab from './LeaveTypesTab';
+import LeavePolicyTab from './LeavePolicy';
 
-const TABS = ['Requests', 'Leave Types', 'Balances', 'Holidays'] as const;
+const TABS = ['Requests', 'Leave Types', 'Balances', 'Holidays','Leave policy',] as const;
 type Tab = typeof TABS[number];
 
 const SUMMARY_DATA = [
@@ -73,6 +74,7 @@ export default function AttendanceLeave({ apiKey, token }: AttendanceLeaveProps)
         {subTab === 'Leave Types' && <LeaveTypesTab apiKey={apiKey} token={token} />}
         {subTab === 'Balances'    && <BalancesTab />}
         {subTab === 'Holidays'    && <HolidaysTab />}
+        {subTab === 'Leave policy'    && <LeavePolicyTab apiKey={apiKey} token={token} />}
       </div>
     </div>
   );

@@ -44,6 +44,7 @@ interface Employee {
   location: string;
   manager: string;
   managerId: string | null;
+  reporting_manager_name?: string;
   joinDate: string;
   status: string;
   employeeId: string;
@@ -346,7 +347,7 @@ function EmployeeProfileModal({
                 <div>
                   <p className="text-xs text-gray-500">Reporting Manager</p>
                   <p className="text-sm font-medium text-gray-800">
-                    {employee.manager || '—'}
+                    {employee.reporting_manager_name || employee.manager || '—'}
                   </p>
                 </div>
                 <div>
@@ -411,8 +412,9 @@ export default function EmployeesRegistry() {
             email: emp.email || '',
             phone: emp.phone || emp.personal_phone || '',
             location: emp.location || '',
-            manager: emp.manager || emp.reporting_manager?.name || '',
+            manager: emp.reporting_manager_name || emp.reporting_manager?.name || '',
             managerId: emp.reportingManagerId || emp.reporting_manager_id || null,
+            reporting_manager_name: emp.reporting_manager_name || '',
             joinDate: emp.joinDate
               ? emp.joinDate
               : emp.date_of_joining

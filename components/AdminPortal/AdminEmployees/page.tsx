@@ -12,14 +12,19 @@ interface Employee {
   avatar: string;
   role: string;
   department: string;
+  designation?: string;
+  employmentType?: string;
   email: string;
   phone: string;
   location: string;
   manager: string;
   managerId: string | null;
+  reporting_manager_id?: string | null;
   joinDate: string;
   status: 'active' | 'inactive' | 'on-leave';
   employeeId: string;
+  dateOfBirth?: string | null;
+  gender?: string | null;
 }
 
 const DEPARTMENTS = ['All Departments', 'Engineering', 'Human Resources', 'Sales', 'Finance', 'Operations', 'Quality Assurance', 'Executive'];
@@ -83,29 +88,31 @@ export default function EmployeesPage() {
 
       if (rawEmployees.length > 0) {
         setEmployees(rawEmployees.map((emp: any) => {
-          const fullName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.user?.email || 'Unknown Employee';
-          const departmentName = emp.department?.name || emp.department_name || 'Unassigned';
-          const roleLabel = emp.user?.role || emp.role || 'EMPLOYEE';
-          const statusValue = (emp.user?.status || emp.status || 'ACTIVE').toLowerCase();
-
+          const statusValue = (emp.status || 'ACTIVE').toLowerCase();
+          const name = emp.name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || 'Unknown Employee';
           return {
             id: emp.id,
-            name: fullName,
-            avatar: getInitials(fullName),
-            role: roleLabel,
-            department: departmentName,
-            email: emp.user?.email || emp.work_email || emp.email || '',
-            phone: emp.personal_phone || emp.user?.phone_number || emp.work_phone || '',
-            location: emp.city || emp.country || emp.work_location?.name || '',
-            manager: emp.reporting_manager?.first_name || emp.reporting_manager?.name || emp.managerName || '',
+            name,
+            avatar: getInitials(name),
+            role: emp.role || 'EMPLOYEE',
+            department: emp.department || emp.department_name || 'Unassigned',
+            designation: emp.designation || emp.designation_name || '',
+            employmentType: emp.employmentType || emp.employment_type || '',
+            email: emp.email || emp.work_email || '',
+            phone: emp.phone || emp.personal_phone || '',
+            location: emp.location || emp.city || emp.country || '',
+            manager: emp.reporting_manager_name || emp.managerName || '',
             managerId: emp.reporting_manager_id || emp.managerId || null,
-            joinDate: emp.date_of_joining
+            reporting_manager_id: emp.reporting_manager_id || null,
+            joinDate: emp.joinDate || (emp.date_of_joining
               ? new Date(emp.date_of_joining).toLocaleString('default', { month: 'short', year: 'numeric' })
-              : emp.joinDate || '',
+              : ''),
             status: (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'on-leave')
-              ? statusValue
+              ? statusValue as 'active' | 'inactive' | 'on-leave'
               : 'active',
-            employeeId: emp.employee_code || emp.employee_id || emp.employeeId || `EMP-${String(emp.id || '').slice(0, 6)}`,
+            employeeId: emp.employeeId || emp.employee_code || emp.employee_id || `EMP-${String(emp.id || '').slice(0, 6)}`,
+            dateOfBirth: emp.dateOfBirth || emp.date_of_birth || null,
+            gender: emp.gender || null,
           };
         }));
         return;
@@ -143,23 +150,27 @@ export default function EmployeesPage() {
   };
 
   const handleEmployeeCreated = (created: any) => {
-    const initials = getInitials(created.fullName);
-    const joinMonth = new Date(created.joinDate).toLocaleString('default', { month: 'short', year: 'numeric' });
+    const fullName = created.fullName || `${created.first_name || ''} ${created.last_name || ''}`.trim() || 'Employee';
+    const initials = getInitials(fullName);
+    const rawDate = created.date_of_joining || created.joinDate;
+    const joinMonth = rawDate
+      ? new Date(rawDate).toLocaleString('default', { month: 'short', year: 'numeric' })
+      : '';
 
     const newEmployee: Employee = {
       id: created.id,
-      name: created.fullName,
+      name: fullName,
       avatar: initials,
       role: created.role === 'manager' ? 'Manager' : 'Employee',
-      department: created.department,
-      email: created.email,
-      phone: created.phone || '',
+      department: created.department || created.department?.name || '',
+      email: created.email || created.work_email || '',
+      phone: created.phone || created.personal_phone || '',
       location: created.location || '',
       manager: created.managerName || '',
       managerId: created.managerId || null,
       joinDate: joinMonth,
       status: 'active',
-      employeeId: created.employeeId,
+      employeeId: created.employeeId || created.employee_code || `EMP-${String(created.id || '').slice(0, 6)}`,
     };
 
     setEmployees((prev) => [newEmployee, ...prev]);
@@ -272,6 +283,7 @@ export default function EmployeesPage() {
                     <tr className="border-b border-gray-100 bg-gray-50/50">
                       <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Employee</th>
                       <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Department</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Manager</th>
                       <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Location</th>
                       <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Joined</th>
                       <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
@@ -281,7 +293,7 @@ export default function EmployeesPage() {
                   <tbody className="divide-y divide-gray-50">
                     {filtered.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-4 py-12 text-center text-sm text-gray-400">
+                        <td colSpan={7} className="px-4 py-12 text-center text-sm text-gray-400">
                           {employees.length === 0 ? 'No employees found. Add your first employee.' : 'No results match your filters.'}
                         </td>
                       </tr>
@@ -303,6 +315,9 @@ export default function EmployeesPage() {
                             </td>
                             <td className="px-4 py-3 hidden md:table-cell">
                               <span className="text-sm text-gray-600">{emp.department}</span>
+                            </td>
+                            <td className="px-4 py-3 hidden lg:table-cell">
+                              <span className="text-sm text-gray-600">{emp.manager || '—'}</span>
                             </td>
                             <td className="px-4 py-3 hidden lg:table-cell">
                               <div className="flex items-center gap-1.5">
@@ -402,9 +417,7 @@ function EmployeeProfile({ employee, managerNames }: Readonly<{ employee: Employ
     );
   }
   const statusCfg = STATUS_CONFIG[employee.status];
-  const managerName = employee.managerId
-    ? (managerNames[employee.managerId] || employee.manager || '—')
-    : '—';
+  const managerName = employee.manager || '—';
   return (
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
       {/* Left card */}

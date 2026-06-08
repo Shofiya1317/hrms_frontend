@@ -6,15 +6,13 @@ import { X, UserPlus, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import {
   createEmployee,
   updateEmployee,
-  getEmployees,
+  getInviteMasterData,
+  getEmployeeById,
   InviteEmployeeDto,
+  UpdateEmployeeDto,
 } from '@/lib/service/employee';
 import {
-  getDepartments,
-  getDesignations,
   createDesignation,
-  getEmploymentTypes,
-  getShifts,
 } from '@/lib/service/masters';
 import Select, { components } from 'react-select';
 import type { OptionProps } from 'react-select';
@@ -52,7 +50,7 @@ interface EmployeeFormState {
   role: EmployeeRole;
   departmentId: string;
   designationId: string;
-  employmentTypeId: string;
+  employmentType: string;
   shiftId: string;
   employeeCode: string;
   phone: string;
@@ -60,6 +58,7 @@ interface EmployeeFormState {
   joinDate: string;
   dateOfBirth: string;
   gender: string;
+  leavePolicyId: string;
 }
 
 const ROLES: { value: EmployeeRole; label: string }[] = [
@@ -87,13 +86,14 @@ export default function AddEmployeeModal({
     employeeCode: '',
     departmentId: '',
     designationId: '',
-    employmentTypeId: '',
+    employmentType: '',
     shiftId: '',
     phone: '',
     managerId: '',
     joinDate: new Date().toISOString().split('T')[0],
     dateOfBirth: '',
     gender: '',
+    leavePolicyId: '',
   });
 
   const [loading, setLoading] = useState(false);
@@ -103,8 +103,8 @@ export default function AddEmployeeModal({
   const [managers, setManagers] = useState<ManagerOption[]>([]);
   const [departments, setDepartments] = useState<MasterOption[]>([]);
   const [designations, setDesignations] = useState<MasterOption[]>([]);
-  const [employmentTypes, setEmploymentTypes] = useState<MasterOption[]>([]);
   const [shifts, setShifts] = useState<MasterOption[]>([]);
+  const [leavePolicies, setLeavePolicies] = useState<MasterOption[]>([]);
 
   useEffect(() => {
     if (subdomain) {
@@ -113,82 +113,54 @@ export default function AddEmployeeModal({
   }, [subdomain]);
 
   useEffect(() => {
-    if (editingEmployee && isEditing) {
-      const nameParts = editingEmployee.name?.split(' ') || [];
-      setForm({
-        firstName: nameParts[0] || '',
-        lastName: nameParts.slice(1).join(' ') || '',
-        email: editingEmployee.email || '',
-        role:
-          editingEmployee.role?.toUpperCase() === 'HR_ADMIN' ||
-          editingEmployee.role?.toLowerCase() === 'manager'
-            ? 'HR_ADMIN'
-            : 'EMPLOYEE',
-        departmentId:
-          editingEmployee.departmentId ||
-          editingEmployee.department_id ||
-          editingEmployee.department ||
-          '',
-        designationId:
-          editingEmployee.designationId ||
-          editingEmployee.designation_id ||
-          editingEmployee.designation ||
-          '',
-        employmentTypeId:
-          editingEmployee.employmentTypeId ||
-          editingEmployee.employment_type_id ||
-          editingEmployee.employmentType ||
-          '',
-        shiftId: editingEmployee.shiftId || editingEmployee.shift_id || '',
-        employeeCode:
-          editingEmployee.employeeCode || editingEmployee.employee_code || '',
-        phone: editingEmployee.phone || '',
-        managerId:
-          editingEmployee.managerId ||
-          editingEmployee.reporting_manager_id ||
-          '',
-        joinDate:
-          editingEmployee.joinDate?.split('T')[0] ||
-          new Date().toISOString().split('T')[0],
-        dateOfBirth: editingEmployee.dateOfBirth?.split('T')[0] || '',
-        gender: editingEmployee.gender || '',
-      });
+    if (editingEmployee?.id && isEditing) {
+      loadEmployeeById(editingEmployee.id);
     }
   }, [editingEmployee, isEditing]);
+
+  const loadEmployeeById = async (id: string) => {
+    try {
+      const res = await getEmployeeById(id, subdomain);
+      const emp = res?.data?.data;
+      if (!emp) return;
+      setForm({
+        firstName: emp.first_name || '',
+        lastName: emp.last_name || '',
+        email: emp.work_email || emp.user_email || '',
+        role: (emp.user_role === 'HR_ADMIN' ? 'HR_ADMIN' : 'EMPLOYEE') as EmployeeRole,
+        employeeCode: emp.employee_code || '',
+        departmentId: emp.department_id || '',
+        designationId: emp.designation_id || '',
+        employmentType: emp.employment_type || '',
+        shiftId: emp.shift_id || '',
+        phone: emp.personal_phone || '',
+        managerId: emp.reporting_manager_id || '',
+        joinDate: emp.date_of_joining?.split('T')[0] || new Date().toISOString().split('T')[0],
+        dateOfBirth: emp.date_of_birth?.split('T')[0] || '',
+        gender: emp.gender || '',
+        leavePolicyId: emp.leave_policy_name || '',
+      });
+    } catch (err) {
+      console.error('Failed to load employee', err);
+    }
+  };
 
   const [newDesignationName, setNewDesignationName] = useState('');
   const [creatingDesignation, setCreatingDesignation] = useState(false);
 
-  const extractList = (res: any) =>
-    Array.isArray(res?.data?.data)
-      ? res.data.data
-      : Array.isArray(res?.data)
-        ? res.data
-        : [];
-
   const loadInviteMasterData = async () => {
     try {
-      const [deptRes, desigRes, empTypeRes, shiftsRes, employeesRes] =
-        await Promise.all([
-          getDepartments(subdomain),
-          getDesignations(subdomain),
-          getEmploymentTypes(subdomain),
-          getShifts(subdomain),
-          getEmployees(subdomain),
-        ]);
-      setDepartments(extractList(deptRes));
-      setDesignations(extractList(desigRes));
-      setEmploymentTypes(extractList(empTypeRes));
-      setShifts(extractList(shiftsRes));
+      const res = await getInviteMasterData(subdomain);
+      const data = res?.data?.data;
+      setDepartments(data?.departments ?? []);
+      setDesignations(data?.designations ?? []);
+      setShifts(data?.shifts ?? []);
+      setLeavePolicies(data?.leave_policies ?? []);
       setManagers(
-        extractList(employeesRes).map((e: any) => ({
+        (data?.employees ?? []).map((e: any) => ({
           id: e.id,
-          fullName:
-            e.name ||
-            e.full_name ||
-            `${e.first_name ?? ''} ${e.last_name ?? ''}`.trim() ||
-            'Employee',
-          department: e.department || '',
+          fullName: e.name || 'Employee',
+          department: '',
           jobTitle: e.work_email || '',
         }))
       );
@@ -239,7 +211,7 @@ export default function AddEmployeeModal({
       setError('Please select a department.');
       return;
     }
-    if (!form.employmentTypeId) {
+    if (!form.employmentType) {
       setError('Please select an employment type.');
       return;
     }
@@ -250,8 +222,7 @@ export default function AddEmployeeModal({
       const firstName = form.firstName.trim();
       const lastName = form.lastName.trim();
       const departmentId = form.departmentId.trim();
-      const employmentTypeId = form.employmentTypeId.trim();
-      const joinDate = form.joinDate.trim();
+      const joinDate = (form.joinDate || '').trim();
 
       const payload: InviteEmployeeDto = {
         email,
@@ -260,11 +231,11 @@ export default function AddEmployeeModal({
         first_name: firstName,
         last_name: lastName,
         date_of_birth: form.dateOfBirth || undefined,
-        gender: form.gender ? capitalize(form.gender) : undefined,
+        gender: form.gender || undefined,
         personal_phone: form.phone.trim() || undefined,
         department_id: departmentId,
         designation_id: form.designationId || undefined,
-        employment_type_id: employmentTypeId,
+        employment_type: (form.employmentType || '').trim(),
         reporting_manager_id: form.managerId,
         shift_id: form.shiftId || undefined,
         date_of_joining: joinDate,
@@ -272,7 +243,22 @@ export default function AddEmployeeModal({
 
       let response;
       if (isEditing && editingEmployee?.id) {
-        response = await updateEmployee(editingEmployee.id, payload, subdomain);
+        const updatePayload: UpdateEmployeeDto = {
+          employee_code: form.employeeCode.trim() || undefined,
+          first_name: firstName,
+          last_name: lastName,
+          date_of_birth: form.dateOfBirth || undefined,
+          gender: form.gender || undefined,
+          personal_phone: form.phone.trim() || undefined,
+          department_id: departmentId,
+          designation_id: form.designationId || undefined,
+          employment_type: (form.employmentType || '').trim(),
+          reporting_manager_id: form.managerId || undefined,
+          shift_id: form.shiftId || undefined,
+          date_of_joining: joinDate,
+          role: form.role,
+        };
+        response = await updateEmployee(editingEmployee.id, updatePayload, subdomain);
         const { success: ok, error: err } = response?.data as {
           success: boolean;
           error?: string | string[];
@@ -526,26 +512,22 @@ export default function AddEmployeeModal({
                 </label>
                 <Select
                   inputId="employmentTypeId"
-                  options={employmentTypes.map((t) => ({
-                    value: t.id,
-                    label: `${t.name}${t.code ? ` (${t.code})` : ''}`,
-                  }))}
-                  value={
-                    employmentTypes
-                      .map((t) => ({
-                        value: t.id,
-                        label: `${t.name}${t.code ? ` (${t.code})` : ''}`,
-                      }))
-                      .find((o) => o.value === form.employmentTypeId) ?? null
-                  }
-                  onChange={(opt) =>
-                    handleChange('employmentTypeId', opt?.value ?? '')
-                  }
+                  options={[
+                    { value: 'full_time', label: 'Full Time' },
+                    { value: 'part_time', label: 'Part Time' },
+                    { value: 'contract', label: 'Contract' },
+                    { value: 'probation', label: 'Probation' },
+                  ]}
+                  value={form.employmentType ? { value: form.employmentType, label: form.employmentType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) } : null}
+                  onChange={(opt) => handleChange('employmentType', opt?.value ?? '')}
                   placeholder="Select employment type"
                   styles={customStyles()}
                 />
               </div>
             </div>
+
+           
+            
 
             {/* Row 5: Department + Reporting Manager */}
             <div className="grid grid-cols-2 gap-4">
