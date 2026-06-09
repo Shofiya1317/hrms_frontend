@@ -18,6 +18,8 @@ export interface InviteEmployeeDto {
   reporting_manager_id?: string | '';
   shift_id?: string;
   date_of_joining: string;
+  leave_policy_name?: string;
+  attendance_policy_id?: string;
 }
 
 export interface UpdateEmployeeDto {
@@ -34,6 +36,8 @@ export interface UpdateEmployeeDto {
   shift_id?: string;
   date_of_joining?: string;
   role?: 'EMPLOYEE' | 'HR_ADMIN';
+  leave_policy_name?: string;
+  attendance_policy_id?: string;
 }
 
 export const createEmployee = (

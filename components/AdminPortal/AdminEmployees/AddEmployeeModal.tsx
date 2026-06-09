@@ -59,6 +59,7 @@ interface EmployeeFormState {
   dateOfBirth: string;
   gender: string;
   leavePolicyId: string;
+  attendancePolicyId: string;
 }
 
 const ROLES: { value: EmployeeRole; label: string }[] = [
@@ -94,6 +95,7 @@ export default function AddEmployeeModal({
     dateOfBirth: '',
     gender: '',
     leavePolicyId: '',
+    attendancePolicyId: '',
   });
 
   const [loading, setLoading] = useState(false);
@@ -105,6 +107,7 @@ export default function AddEmployeeModal({
   const [designations, setDesignations] = useState<MasterOption[]>([]);
   const [shifts, setShifts] = useState<MasterOption[]>([]);
   const [leavePolicies, setLeavePolicies] = useState<MasterOption[]>([]);
+  const [attendancePolicies, setAttendancePolicies] = useState<MasterOption[]>([]);
 
   useEffect(() => {
     if (subdomain) {
@@ -139,6 +142,7 @@ export default function AddEmployeeModal({
         dateOfBirth: emp.date_of_birth?.split('T')[0] || '',
         gender: emp.gender || '',
         leavePolicyId: emp.leave_policy_name || '',
+        attendancePolicyId: emp.attendance_policy_id || '',
       });
     } catch (err) {
       console.error('Failed to load employee', err);
@@ -156,6 +160,7 @@ export default function AddEmployeeModal({
       setDesignations(data?.designations ?? []);
       setShifts(data?.shifts ?? []);
       setLeavePolicies(data?.leave_policies ?? []);
+      setAttendancePolicies(data?.attendance_policies ?? []);
       setManagers(
         (data?.employees ?? []).map((e: any) => ({
           id: e.id,
@@ -239,6 +244,8 @@ export default function AddEmployeeModal({
         reporting_manager_id: form.managerId,
         shift_id: form.shiftId || undefined,
         date_of_joining: joinDate,
+        leave_policy_name: form.leavePolicyId || undefined,
+        attendance_policy_id: form.attendancePolicyId || undefined,
       };
 
       let response;
@@ -257,6 +264,8 @@ export default function AddEmployeeModal({
           shift_id: form.shiftId || undefined,
           date_of_joining: joinDate,
           role: form.role,
+          leave_policy_name: form.leavePolicyId || undefined,
+          attendance_policy_id: form.attendancePolicyId || undefined,
         };
         response = await updateEmployee(editingEmployee.id, updatePayload, subdomain);
         const { success: ok, error: err } = response?.data as {
@@ -699,6 +708,44 @@ export default function AddEmployeeModal({
                   }
                   onChange={(opt) => handleChange('shiftId', opt?.value ?? '')}
                   placeholder="Select shift"
+                  styles={customStyles()}
+                />
+              </div>
+            </div>
+
+            {/* Leave Policy + Attendance Policy */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="leavePolicyId"
+                  className="block text-xs font-semibold text-gray-600 mb-1.5"
+                >
+                  Leave Policy
+                </label>
+                <Select
+                  inputId="leavePolicyId"
+                  options={leavePolicies.map((p) => ({ value: p.name, label: p.label ?? p.name }))}
+                  value={form.leavePolicyId ? { value: form.leavePolicyId, label: form.leavePolicyId } : null}
+                  onChange={(opt) => handleChange('leavePolicyId', opt?.value ?? '')}
+                  placeholder="Select leave policy"
+                  isClearable
+                  styles={customStyles()}
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="attendancePolicyId"
+                  className="block text-xs font-semibold text-gray-600 mb-1.5"
+                >
+                  Attendance Policy
+                </label>
+                <Select
+                  inputId="attendancePolicyId"
+                  options={attendancePolicies.map((p) => ({ value: p.id, label: p.name }))}
+                  value={attendancePolicies.map((p) => ({ value: p.id, label: p.name })).find((o) => o.value === form.attendancePolicyId) ?? null}
+                  onChange={(opt) => handleChange('attendancePolicyId', opt?.value ?? '')}
+                  placeholder="Select attendance policy"
+                  isClearable
                   styles={customStyles()}
                 />
               </div>

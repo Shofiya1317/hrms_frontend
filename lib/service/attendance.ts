@@ -120,3 +120,72 @@ export const checkOut = (
   tenantId,
   { bearerToken: token, isFetchToken: !token },
 );
+
+export interface IAttendancePolicyPayload {
+  name: string;
+  grace_period_minutes: number;
+  auto_checkout_hours: number;
+  max_regularization_per_month: number;
+  sandwich_policy_enabled: boolean;
+  sandwich_include_weekoff: boolean;
+  sandwich_include_public_holiday: boolean;
+  sandwich_include_company_holiday: boolean;
+}
+
+export const getAttendancePolicies = (
+  tenantId: string,
+  token?: string,
+) => get(
+  '/v1/attendance-policies',
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const getAttendancePolicyById = (
+  id: string,
+  tenantId: string,
+  token?: string,
+) => get(
+  `/v1/attendance-policies/${id}`,
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const createAttendancePolicy = (
+  body: IAttendancePolicyPayload,
+  tenantId: string,
+  token?: string,
+) => post(
+  '/v1/attendance-policies',
+  body,
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const updateAttendancePolicy = (
+  id: string,
+  body: Partial<IAttendancePolicyPayload>,
+  tenantId: string,
+  token?: string,
+) => put(
+  `/v1/attendance-policies/${id}`,
+  body,
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const deleteAttendancePolicy = (
+  id: string,
+  tenantId: string,
+  token?: string,
+) => deleteRequest(
+  `/v1/attendance-policies/${id}`,
+  undefined,
+  tenantId,
+  undefined,
+  { bearerToken: token, isFetchToken: !token },
+);
