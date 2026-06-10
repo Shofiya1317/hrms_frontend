@@ -3,31 +3,44 @@ import {
 } from '../axiosInstance';
 import { Params } from '../utils';
 
-export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+export enum LeaveStatus {
+  PENDING   = 'pending',
+  APPROVED  = 'approved',
+  REJECTED  = 'rejected',
+  CANCELLED = 'cancelled',
+}
 
-export interface ILeaveApplicationPayload {
+export enum HalfDaySession {
+  MORNING   = 'morning',
+  AFTERNOON = 'afternoon',
+}
+
+export interface ILeaveApplicationPayload { 
   leave_type_id: string;
   from_date: string;
   to_date: string;
   half_day: boolean;
+  half_day_session?: HalfDaySession;
   reason: string;
+  attachment_url?: string;
 }
 
 export interface ILeaveApplicationUpdatePayload {
   from_date?: string;
   to_date?: string;
   half_day?: boolean;
+  half_day_session?: HalfDaySession;
   reason?: string;
 }
 
 export interface ILeaveApprovalPayload {
-  status: 'APPROVED' | 'REJECTED';
+  status: LeaveStatus;
   rejection_reason?: string;
 }
 
 export interface ILeaveApplicationFilters {
   employee_id?: string;
-  status?: LeaveStatus;
+  status?: LeaveStatus | 'cancelled';
   leave_type_id?: string;
   from_date?: string;
   to_date?: string;
@@ -35,17 +48,39 @@ export interface ILeaveApplicationFilters {
 
 export interface ILeaveApplication {
   id: string;
-  employee_id: string;
+  employee_id?: string;
   employee_name?: string;
-  leave_type_id: string;
+  employee?: {
+    id?: string;
+    name?: string;
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    employee_code?: string;
+    department?: string;
+    designation?: string;
+    avatar_url?: string;
+  };
+  leave_type_id?: string;
   leave_type_name?: string;
+  leave_type?: {
+    id: string;
+    name: string;
+    code?: string;
+    is_paid?: boolean;
+  };
   from_date: string;
   to_date: string;
   half_day: boolean;
+  half_day_session?: HalfDaySession;
   reason: string;
   status: LeaveStatus;
   rejection_reason?: string;
-  total_days?: number;
+  total_days?: number | string;
+  applied_on?: string;
+  approved_by?: string;
+  approved_at?: string;
+  attachment_url?: string;
   createdAt?: string;
   updatedAt?: string;
 }

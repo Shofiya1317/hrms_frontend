@@ -18,23 +18,23 @@ const SUMMARY_DATA = [
   { label: 'Holidays 2026',  value: 8, icon: Calendar,     bg: 'bg-blue-50',   text: 'text-blue-600' },
 ];
 
-function SummaryStrip() {
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      {SUMMARY_DATA.map(c => (
-        <div key={c.label} className="bg-white border border-slate-200 rounded-xl p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition-all">
-          <div className={`w-10 h-10 rounded-lg ${c.bg} flex items-center justify-center flex-shrink-0`}>
-            <c.icon size={18} className={c.text} />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-slate-900">{c.value}</p>
-            <p className="text-xs text-slate-500 font-medium">{c.label}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
+// function SummaryStrip() {
+//   return (
+//     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+//       {SUMMARY_DATA.map(c => (
+//         <div key={c.label} className="bg-white border border-slate-200 rounded-xl p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition-all">
+//           <div className={`w-10 h-10 rounded-lg ${c.bg} flex items-center justify-center flex-shrink-0`}>
+//             <c.icon size={18} className={c.text} />
+//           </div>
+//           <div>
+//             <p className="text-2xl font-bold text-slate-900">{c.value}</p>
+//             <p className="text-xs text-slate-500 font-medium">{c.label}</p>
+//           </div>
+//         </div>
+//       ))}
+//     </div>
+//   );
+// }
 
 interface AttendanceLeaveProps {
   apiKey: string;
@@ -52,7 +52,7 @@ export default function AttendanceLeave({ apiKey, token }: AttendanceLeaveProps)
           <p className="text-sm text-slate-500 mt-0.5">Requests, balances, types and holidays</p>
         </div>
 
-        <SummaryStrip />
+        {/* <SummaryStrip /> */}
 
         <div className="grid grid-cols-2 sm:flex sm:gap-2 gap-2">
           {TABS.map(t => (

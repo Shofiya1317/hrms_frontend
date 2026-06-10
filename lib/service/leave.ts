@@ -70,6 +70,64 @@ export const deleteLeaveType = (
   { bearerToken: token, isFetchToken: !token },
 );
 
+// ── Employee Leave Balances ────────────────────────────────────────────────
+
+export interface EmployeeLeaveBalance {
+  employee_id: string;
+  employee_name: string;
+  year: number;
+  leave_policy_name: string;
+  total_leave_used: number;
+  leave_types: {
+    leave_type_id: string;
+    leave_type_code: string;
+    leave_type_name: string;
+    balance: {
+      total_entitled: number;
+      opening_balance: number;
+      credited: number;
+      used: number;
+      pending: number;
+      available: number;
+    };
+    leave_type_properties: {
+      is_paid: boolean;
+      is_encashable: boolean;
+      requires_document: boolean;
+      applicable_gender: string;
+      max_consecutive_days: number;
+      notice_days_required: number;
+      is_active: boolean;
+      description: string;
+    };
+    policy_rules: {
+      days_per_year: string;
+      accrual_type: string;
+      min_days_per_application: string;
+      max_days_per_application: string;
+      max_applications_per_year: number | null;
+      is_carry_forward: boolean;
+      carry_forward_max_days: string;
+      is_encashable: boolean;
+      max_encash_days: string | null;
+      sandwich_applicable: boolean;
+      sandwich_count_as: string | null;
+    };
+  }[];
+}
+
+export const getEmployeeLeaveBalanceDetailed = (
+  employeeId: string,
+  year: number,
+  tenantId: string,
+  token?: string,
+) => get(
+  `/v1/employee-leave-balances/employee/${employeeId}/year/${year}/detailed`,
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
 // ── Company Holidays ──────────────────────────────────────────────
 
 export interface CompanyHolidayPayload {

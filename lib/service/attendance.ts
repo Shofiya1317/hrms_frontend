@@ -5,16 +5,16 @@ import { Params } from '../utils';
 
 export interface ICheckInPayload {
   attendance_date: string;
-  shift_id?: string;
+  // shift_id?: string;
   check_in_time: string;
   check_in_lat?: number;
   check_in_lng?: number;
   check_in_location_name?: string;
-  check_in_method?: string;
-  check_in_within_geofence?: boolean;
-  check_in_distance_meters?: number;
-  check_in_device_info?: string;
-  check_in_photo_url?: string;
+  // check_in_method?: string;
+  // check_in_within_geofence?: boolean;
+  // check_in_distance_meters?: number;
+  // check_in_device_info?: string;
+  // check_in_photo_url?: string;
 }
 
 export interface ICheckOutPayload {

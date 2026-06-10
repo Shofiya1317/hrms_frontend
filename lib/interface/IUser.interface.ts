@@ -24,6 +24,7 @@ export interface IUser {
   is_guest: boolean;
   company_name: string;
   accessToken?: string;
+  employee_id?: string;
 }
 
 export interface IUserFilter {
