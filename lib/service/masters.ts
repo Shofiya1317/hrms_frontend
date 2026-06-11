@@ -69,7 +69,7 @@ export const createIndustry = (
   tenantId: string,
   token?: string,
 ) => post(
-  '/v1/industries',
+  '/admin/industries',
   body,
   undefined,
   tenantId,
@@ -80,7 +80,7 @@ export const getIndustries = (
   tenantId: string,
   token?: string,
 ) => get(
-  '/v1/industries',
+  '/admin/industries',
   undefined,
   tenantId,
   { bearerToken: token, isFetchToken: !token },
@@ -91,7 +91,7 @@ export const getIndustryById = (
   tenantId: string,
   token?: string,
 ) => get(
-  `/v1/industries/${id}`,
+  `/admin/industries/${id}`,
   undefined,
   tenantId,
   { bearerToken: token, isFetchToken: !token },
@@ -103,7 +103,7 @@ export const updateIndustry = (
   tenantId: string,
   token?: string,
 ) => put(
-  `/v1/industries/${id}`,
+  `/admin/industries/${id}`,
   body,
   undefined,
   tenantId,
@@ -115,7 +115,7 @@ export const deleteIndustry = (
   tenantId: string,
   token?: string,
 ) => deleteRequest(
-  `/v1/industries/${id}`,
+  `/admin/industries/${id}`,
   undefined,
   tenantId,
   undefined,

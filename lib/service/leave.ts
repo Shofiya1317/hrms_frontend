@@ -116,6 +116,22 @@ export interface EmployeeLeaveBalance {
   }[];
 }
 
+export const getEmployeeLeaveBalances = (
+  tenantId: string,
+  params?: {
+    employee_id?: string;
+    year?: number;
+    leave_policy_id?: string;
+    leave_type_code?: string;
+  },
+  token?: string,
+) => get(
+  '/v1/employee-leave-balances',
+  params,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
 export const getEmployeeLeaveBalanceDetailed = (
   employeeId: string,
   year: number,
