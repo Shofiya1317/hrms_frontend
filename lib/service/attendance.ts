@@ -42,20 +42,32 @@ export const createAttendance = (
   tenantId: string,
   token?: string,
 ) => post(
-  '/v1/attendance',
+  '/api/v1/attendance',
   body,
   undefined,
   tenantId,
   { bearerToken: token, isFetchToken: !token },
 );
 
+export interface IAttendanceFilters {
+  page?: number;
+  limit?: number;
+  from_date?: string;
+  to_date?: string;
+  employee_id?: string;
+  attendance_status?: 'present' | 'absent' | 'half_day' | 'holiday' | 'weekend' | 'on_leave';
+  day_type?: 'working_day' | 'week_off' | 'company_holiday' | 'public_holiday' | 'optional_holiday';
+  is_late?: boolean;
+  attendance_date?: string;
+}
+
 export const getAttendances = (
   tenantId: string,
-  params?: Params,
+  params?: IAttendanceFilters,
   token?: string,
 ) => get(
   '/v1/attendance',
-  params,
+  params as Params,
   tenantId,
   { bearerToken: token, isFetchToken: !token },
 );
@@ -115,6 +127,26 @@ export const checkOut = (
   token?: string,
 ) => put(
   `/v1/attendance/${id}/check-out`,
+  body,
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export interface IRegularizeAttendancePayload {
+  check_in_time: string;
+  check_out_time?: string;
+  regularization_request_id?: string;
+  remarks?: string;
+}
+
+export const regularizeAttendance = (
+  id: string,
+  body: IRegularizeAttendancePayload,
+  tenantId: string,
+  token?: string,
+) => put(
+  `/v1/attendance/${id}/regularize`,
   body,
   undefined,
   tenantId,

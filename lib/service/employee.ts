@@ -1,5 +1,5 @@
 import {
-  get, post, put, deleteRequest,
+  get, post, put, deleteRequest, patch,
 } from '../axiosInstance';
 import { Params } from '../utils';
 
@@ -109,3 +109,89 @@ export const deleteEmployee = (
   { bearerToken: token, isFetchToken: !token },
 );
 
+export interface ITeamMember {
+  id: string;
+  employee_code: string;
+  first_name: string;
+  last_name: string;
+  work_email: string;
+  personal_phone: string | null;
+  employment_status: 'ACTIVE' | 'INACTIVE' | 'TERMINATED';
+  date_of_joining: string;
+  user_status: 'ACTIVE' | 'PENDING' | 'INACTIVE';
+}
+
+export interface IMyTeamResponse {
+  total_team_members: number;
+  team_members: ITeamMember[];
+}
+
+export const getMyTeam = (
+  tenantId: string,
+  token?: string,
+) => get(
+  '/v1/employees/team/my-team',
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export interface ITeamLeaveApplication {
+  id: string;
+  employee: {
+    id: string;
+    name: string;
+    employee_code: string;
+  };
+  leave_type: {
+    id: string;
+    name: string;
+    code: string;
+  };
+  from_date: string;
+  to_date: string;
+  total_days: string;
+  half_day: boolean;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  reason: string;
+  applied_on: string;
+  approved_at: string | null;
+  approver: any;
+  rejection_reason: string | null;
+}
+
+export interface ITeamLeaveParams {
+  employee_id?: string;
+  status?: string;
+  from_date?: string;
+  to_date?: string;
+  leave_type_id?: string;
+}
+
+export const getTeamLeaves = (
+  tenantId: string,
+  params?: ITeamLeaveParams,
+  token?: string,
+) => get(
+  '/v1/leave-applications/team/leaves',
+  params,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export interface ITeamLeaveApprovalPayload {
+  status: 'approved' | 'rejected';
+  rejection_reason?: string;
+}
+
+export const approveRejectTeamLeave = (
+  leaveId: string,
+  body: ITeamLeaveApprovalPayload,
+  tenantId: string,
+  token?: string,
+) => patch(
+  `/v1/leave-applications/team/leaves/${leaveId}`,
+  body,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);

@@ -2,24 +2,17 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import {
-  ChevronDown, ChevronLeft, ChevronRight, Search, CheckCircle2,
-  XCircle, Clock, AlertTriangle, Loader2, Calendar, TrendingUp,
-  MapPin, Tag, User,
-} from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Search, CheckCircle2, XCircle, Clock, AlertTriangle, Loader2, TrendingUp, User, Calendar } from 'lucide-react';
 import { getAttendances } from '@/lib/service/attendance';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
 type AttendanceStatus = 'present' | 'absent' | 'on_leave' | 'weekend' | 'holiday';
-type DayType = 'working_day' | 'weekend' | 'public_holiday' | 'company_holiday';
-
 interface IAttendanceLog {
   id: string;
   employee_id: string;
   employee_name: string;
   employee_code: string;
   attendance_date: string;
-  day_type: DayType;
+  day_type: string;
   attendance_status: AttendanceStatus;
   check_in_time: string | null;
   check_out_time: string | null;
@@ -35,23 +28,17 @@ interface IAttendanceLog {
   early_exit_minutes: number;
   is_overtime: boolean;
   overtime_minutes: number;
-  leave_info: any;
-  holiday_info: any;
 }
 
-// ── constants ─────────────────────────────────────────────────────────────────
 const STATUS_META: Record<AttendanceStatus, { label: string; bg: string; text: string; dot: string; icon: any }> = {
-  present:  { label: 'Present',  bg: 'bg-teal-50',   text: 'text-teal-700',   dot: 'bg-teal-500',   icon: CheckCircle2 },
-  absent:   { label: 'Absent',   bg: 'bg-red-50',    text: 'text-red-600',    dot: 'bg-red-400',    icon: XCircle },
-  on_leave: { label: 'On Leave', bg: 'bg-blue-50',   text: 'text-blue-600',   dot: 'bg-blue-500',   icon: Calendar },
-  weekend:  { label: 'Weekend',  bg: 'bg-purple-50', text: 'text-purple-600', dot: 'bg-purple-500', icon: Calendar },
-  holiday:  { label: 'Holiday',  bg: 'bg-amber-50',  text: 'text-amber-600',  dot: 'bg-amber-400',  icon: Calendar },
+  present: { label: 'Present', bg: 'bg-teal-50', text: 'text-teal-700', dot: 'bg-teal-500', icon: CheckCircle2 },
+  absent: { label: 'Absent', bg: 'bg-red-50', text: 'text-red-600', dot: 'bg-red-400', icon: XCircle },
+  on_leave: { label: 'On Leave', bg: 'bg-blue-50', text: 'text-blue-600', dot: 'bg-blue-500', icon: Clock },
+  weekend: { label: 'Weekend', bg: 'bg-purple-50', text: 'text-purple-600', dot: 'bg-purple-500', icon: Clock },
+  holiday: { label: 'Holiday', bg: 'bg-amber-50', text: 'text-amber-600', dot: 'bg-amber-400', icon: Clock },
 };
 
-const AVATAR_COLORS = [
-  'bg-[#0f766e]','bg-blue-500','bg-violet-500','bg-rose-500',
-  'bg-amber-500','bg-cyan-500','bg-pink-500','bg-indigo-500',
-];
+const AVATAR_COLORS = ['bg-[#0f766e]','bg-blue-500','bg-violet-500','bg-rose-500','bg-amber-500','bg-cyan-500','bg-pink-500','bg-indigo-500'];
 
 function initials(name = '') {
   return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -76,7 +63,6 @@ function fmtHours(mins: number) {
   return `${h}h ${m}m`;
 }
 
-// ── Tortoise SVG icon for late ────────────────────────────────────────────────
 function TortoiseIcon({ size = 16, className = '' }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
@@ -92,28 +78,18 @@ function TortoiseIcon({ size = 16, className = '' }: { size?: number; className?
   );
 }
 
-// ── Accordion Row ─────────────────────────────────────────────────────────────
 function AttendanceRow({ log, isOpen, onToggle }: { log: IAttendanceLog; isOpen: boolean; onToggle: () => void }) {
   const meta = STATUS_META[log.attendance_status] ?? STATUS_META.present;
   const Icon = meta.icon;
-
   return (
     <div className="border-b border-gray-50 last:border-0">
-      {/* collapsed row */}
-      <div
-        onClick={onToggle}
-        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer"
-      >
+      <div onClick={onToggle} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer">
         <button className={`p-1 rounded-lg transition-transform ${isOpen ? 'rotate-180' : ''}`}>
           <ChevronDown size={14} className="text-gray-400" />
         </button>
-
-        {/* avatar */}
         <div className={`w-9 h-9 rounded-xl ${avatarColor(log.employee_name)} text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0`}>
           {initials(log.employee_name)}
         </div>
-
-        {/* name + code */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-sm font-bold text-[#0f1f2e] truncate">{log.employee_name}</p>
@@ -130,14 +106,10 @@ function AttendanceRow({ log, isOpen, onToggle }: { log: IAttendanceLog; isOpen:
           </div>
           <p className="text-[11px] text-gray-400 mt-0.5">{fmtDate(log.attendance_date)} · {log.shift_name}</p>
         </div>
-
-        {/* status badge */}
         <div className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full ${meta.bg} ${meta.text} border ${meta.bg.replace('bg-', 'border-')}`}>
           <Icon size={12} />
           <span className="text-[10px] font-bold">{meta.label}</span>
         </div>
-
-        {/* times */}
         <div className="hidden md:flex items-center gap-3 text-xs">
           <div className="text-center">
             <p className="text-[9px] text-gray-400 uppercase">In</p>
@@ -149,19 +121,14 @@ function AttendanceRow({ log, isOpen, onToggle }: { log: IAttendanceLog; isOpen:
             <p className="font-mono font-bold text-gray-700">{fmtTime(log.check_out_time)}</p>
           </div>
         </div>
-
-        {/* hours */}
         <div className="hidden lg:block text-right">
           <p className="text-xs font-bold text-[#0f766e]">{log.total_worked_hours}h</p>
           <p className="text-[9px] text-gray-400">{fmtHours(log.total_worked_minutes)}</p>
         </div>
       </div>
-
-      {/* expanded details */}
       {isOpen && (
         <div className="bg-gradient-to-br from-gray-50/50 to-white px-4 py-4 border-t border-gray-100">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-            {/* check in */}
             <div className="bg-white rounded-xl border border-gray-100 p-3">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-6 h-6 rounded-lg bg-teal-50 flex items-center justify-center">
@@ -173,14 +140,10 @@ function AttendanceRow({ log, isOpen, onToggle }: { log: IAttendanceLog; isOpen:
               {log.is_late && (
                 <div className="flex items-center gap-1 mt-2">
                   <TortoiseIcon size={14} className="text-amber-600" />
-                  <p className="text-[10px] font-bold text-amber-600">
-                    Late by {fmtHours(log.late_by_minutes)}
-                  </p>
+                  <p className="text-[10px] font-bold text-amber-600">Late by {fmtHours(log.late_by_minutes)}</p>
                 </div>
               )}
             </div>
-
-            {/* check out */}
             <div className="bg-white rounded-xl border border-gray-100 p-3">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-6 h-6 rounded-lg bg-rose-50 flex items-center justify-center">
@@ -190,13 +153,9 @@ function AttendanceRow({ log, isOpen, onToggle }: { log: IAttendanceLog; isOpen:
               </div>
               <p className="text-lg font-bold text-[#0f1f2e] font-mono">{fmtTime(log.check_out_time)}</p>
               {log.is_early_exit && (
-                <p className="text-[10px] font-bold text-orange-600 mt-2">
-                  Early by {fmtHours(log.early_exit_minutes)}
-                </p>
+                <p className="text-[10px] font-bold text-orange-600 mt-2">Early by {fmtHours(log.early_exit_minutes)}</p>
               )}
             </div>
-
-            {/* worked */}
             <div className="bg-white rounded-xl border border-gray-100 p-3">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-6 h-6 rounded-lg bg-blue-50 flex items-center justify-center">
@@ -207,8 +166,6 @@ function AttendanceRow({ log, isOpen, onToggle }: { log: IAttendanceLog; isOpen:
               <p className="text-lg font-bold text-[#0f1f2e]">{log.total_worked_hours}h</p>
               <p className="text-[10px] text-gray-400 mt-1">{fmtHours(log.total_worked_minutes)}</p>
             </div>
-
-            {/* overtime */}
             <div className="bg-white rounded-xl border border-gray-100 p-3">
               <div className="flex items-center gap-2 mb-2">
                 <div className={`w-6 h-6 rounded-lg ${log.is_overtime ? 'bg-purple-50' : 'bg-gray-50'} flex items-center justify-center`}>
@@ -221,33 +178,6 @@ function AttendanceRow({ log, isOpen, onToggle }: { log: IAttendanceLog; isOpen:
               </p>
             </div>
           </div>
-
-          {/* shift + status info */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-            <div className="bg-white rounded-xl border border-gray-100 p-3 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                <Clock size={14} className="text-indigo-600" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] text-gray-400 uppercase font-semibold">Shift</p>
-                <p className="text-sm font-bold text-[#0f1f2e] truncate">{log.shift_name}</p>
-                <p className="text-[10px] text-gray-500 font-mono">{log.shift_timings}</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-100 p-3 flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-xl ${meta.bg} flex items-center justify-center flex-shrink-0`}>
-                <Icon size={14} className={meta.text} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] text-gray-400 uppercase font-semibold">Status</p>
-                <p className={`text-sm font-bold ${meta.text}`}>{meta.label}</p>
-                <p className="text-[10px] text-gray-500 capitalize">{log.day_type.replace('_', ' ')}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* remarks */}
           {log.remarks && (
             <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
               <div className="flex items-start gap-2">
@@ -265,11 +195,9 @@ function AttendanceRow({ log, isOpen, onToggle }: { log: IAttendanceLog; isOpen:
   );
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
-export default function AttendanceLogs() {
+export default function TeamAttendanceLogs({ teamIds }: { teamIds: string[] }) {
   const params = useParams();
   const subdomain = params?.subdomain as string;
-
   const today = new Date();
   const [selectedDate, setSelectedDate] = useState<string | null>(today.toISOString().split('T')[0]);
   const [calMonth, setCalMonth] = useState(today.getMonth());
@@ -279,20 +207,18 @@ export default function AttendanceLogs() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<AttendanceStatus | 'ALL'>('ALL');
 
   useEffect(() => { 
     if (subdomain) {
       fetchLogs(); 
     }
-  }, [subdomain, selectedDate, statusFilter]);
+  }, [subdomain, selectedDate]);
 
   const fetchLogs = async () => {
     setLoading(true);
     try {
       const params: any = {
         limit: 100,
-        ...(statusFilter !== 'ALL' ? { attendance_status: statusFilter } : {}),
       };
       
       if (selectedDate) {
@@ -300,14 +226,14 @@ export default function AttendanceLogs() {
         params.to_date = selectedDate;
       }
       
-      // Add cache buster to prevent 304
+      // Add cache buster
       params._t = Date.now();
       
       const res = await getAttendances(subdomain, params);
       const raw = Array.isArray(res?.data) ? res.data : (res?.data?.data ?? []);
-      setLogs(raw);
+      setLogs(raw.filter((l: IAttendanceLog) => teamIds.includes(l.employee_id)));
     } catch (error) {
-      console.error('Error fetching attendance logs:', error);
+      console.error('Error fetching team attendance:', error);
     }
     finally { setLoading(false); }
   };
@@ -319,12 +245,10 @@ export default function AttendanceLogs() {
     ), [logs, search]);
 
   const stats = useMemo(() => ({
-    total:       logs.length,
-    present:     logs.filter(l => l.attendance_status === 'present').length,
-    absent:      logs.filter(l => l.attendance_status === 'absent').length,
-    late:        logs.filter(l => l.is_late).length,
-    earlyExit:   logs.filter(l => l.is_early_exit).length,
-    overtime:    logs.filter(l => l.is_overtime).length,
+    total: logs.length,
+    present: logs.filter(l => l.attendance_status === 'present').length,
+    absent: logs.filter(l => l.attendance_status === 'absent').length,
+    late: logs.filter(l => l.is_late).length,
   }), [logs]);
 
   const changeDate = (offset: number) => {
@@ -363,27 +287,22 @@ export default function AttendanceLogs() {
 
   return (
     <div className="space-y-4">
-
-      {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <p className="text-xs text-gray-400">
-          {selectedDate ? `Attendance for ${fmtDate(selectedDate)}` : 'All attendance records'} · {stats.total} employees · {stats.present} present · {stats.absent} absent
+          {selectedDate ? `Attendance for ${fmtDate(selectedDate)}` : 'All attendance records'} · {stats.total} team · {stats.present} present · {stats.absent} absent
         </p>
         <div className="flex items-center gap-2 flex-wrap">
-          {/* today button */}
           <button onClick={handleToday}
             className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-[#0f766e] bg-[#e8f5ee] rounded-xl hover:bg-teal-100 transition-colors">
             <Calendar size={12} />
             Today
           </button>
-          {/* show all button */}
           <button onClick={handleShowAll}
             className={`px-3 py-1.5 text-[10px] font-bold rounded-xl transition-colors ${
               !selectedDate ? 'bg-[#0f766e] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}>
             Show All
           </button>
-          {/* calendar picker */}
           <div className="relative">
             <button onClick={() => setShowCalendar(!showCalendar)}
               className="flex items-center gap-1.5 bg-gray-100 rounded-xl px-3 py-1.5 text-xs font-bold text-[#0f1f2e] hover:bg-gray-200 transition-colors">
@@ -431,37 +350,19 @@ export default function AttendanceLogs() {
               </>
             )}
           </div>
-          {/* search */}
           <div className="relative">
             <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search employee..."
-              className="pl-7 pr-3 py-1.5 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20 focus:border-[#0f766e] transition-all w-40"
-            />
-          </div>
-          {/* status filter */}
-          <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
-            {(['ALL', 'present', 'absent', 'on_leave'] as const).map(s => (
-              <button key={s} onClick={() => setStatusFilter(s)}
-                className={`px-2 py-1 text-[9px] font-bold rounded-lg transition-colors capitalize ${statusFilter === s ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                {s === 'ALL' ? 'All' : STATUS_META[s]?.label ?? s}
-              </button>
-            ))}
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..."
+              className="pl-7 pr-3 py-1.5 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20 focus:border-[#0f766e] transition-all w-36" />
           </div>
         </div>
       </div>
-
-      {/* ── Stats ── */}
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         {[
-          { label: 'Present',   value: stats.present,   color: 'text-teal-600',   bg: 'bg-teal-50',   dot: 'bg-teal-500' },
-          { label: 'Absent',    value: stats.absent,    color: 'text-red-500',    bg: 'bg-red-50',    dot: 'bg-red-400' },
-          { label: 'Late',      value: stats.late,      color: 'text-amber-600',  bg: 'bg-amber-50',  dot: 'bg-amber-400' },
-          { label: 'Early Exit',value: stats.earlyExit, color: 'text-orange-600', bg: 'bg-orange-50', dot: 'bg-orange-400' },
-          { label: 'Overtime',  value: stats.overtime,  color: 'text-purple-600', bg: 'bg-purple-50', dot: 'bg-purple-500' },
-          { label: 'Total',     value: stats.total,     color: 'text-[#0f766e]',  bg: 'bg-[#e8f5ee]', dot: 'bg-[#0f766e]' },
+          { label: 'Present', value: stats.present, color: 'text-teal-600', bg: 'bg-teal-50', dot: 'bg-teal-500' },
+          { label: 'Absent', value: stats.absent, color: 'text-red-500', bg: 'bg-red-50', dot: 'bg-red-400' },
+          { label: 'Late', value: stats.late, color: 'text-amber-600', bg: 'bg-amber-50', dot: 'bg-amber-400' },
+          { label: 'Total', value: stats.total, color: 'text-[#0f766e]', bg: 'bg-[#e8f5ee]', dot: 'bg-[#0f766e]' },
         ].map(s => (
           <div key={s.label} className={`${s.bg} rounded-xl px-3 py-2 border border-gray-100`}>
             <div className="flex items-center gap-1.5 mb-1">
@@ -472,27 +373,17 @@ export default function AttendanceLogs() {
           </div>
         ))}
       </div>
-
-      {/* ── Content ── */}
       {loading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 size={22} className="animate-spin text-[#0f766e]" />
-        </div>
+        <div className="flex justify-center py-12"><Loader2 size={20} className="animate-spin text-[#0f766e]" /></div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-gray-100">
-          <User size={32} className="text-gray-200 mb-3" />
+        <div className="flex flex-col items-center justify-center py-12 bg-gray-50 rounded-xl border border-gray-100">
+          <User size={28} className="text-gray-200 mb-2" />
           <p className="text-sm font-semibold text-gray-400">No attendance records</p>
-          {search && <p className="text-xs text-gray-400 mt-1">Try a different search</p>}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
           {filtered.map(log => (
-            <AttendanceRow
-              key={log.id}
-              log={log}
-              isOpen={expandedId === log.id}
-              onToggle={() => setExpandedId(expandedId === log.id ? null : log.id)}
-            />
+            <AttendanceRow key={log.id} log={log} isOpen={expandedId === log.id} onToggle={() => setExpandedId(expandedId === log.id ? null : log.id)} />
           ))}
         </div>
       )}

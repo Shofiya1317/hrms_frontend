@@ -126,6 +126,11 @@ export const employeeMenuItems: IMenuItem[] = [
       { label: 'Work From Home', path: '/employee/attendance/work-from-home' },
     ],
   },
+  {
+    label: 'My Team',
+    path: '/employee/my-team',
+    icon: <UsersRound size={16} />,
+  },
 ];
 
 export const getMenuItemsByRole = (role: string): IMenuItem[] => {
