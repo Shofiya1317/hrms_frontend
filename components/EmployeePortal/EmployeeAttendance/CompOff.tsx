@@ -1,400 +1,619 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { 
-  Gift, CheckCircle2, Info, Zap, TrendingUp, Calendar, Clock, 
-  Award, Bell, ChevronRight, ArrowRight, Sun, Moon 
+import {
+  Gift, CheckCircle2, Info, Zap, TrendingUp, Calendar, Clock,
+  Award, Bell, ChevronRight, ArrowRight, XCircle, Loader2,
+  AlertCircle, RefreshCw,
 } from 'lucide-react';
+import {
+  getCompOffBalance,
+  getCompOffs,
+  applyCompOff,
+  getAvailableCompOffs,
+  ICompOff,
+  ICompOffBalance,
+  CompOffStatus,
+} from '@/lib/service/compoff';
 
-type CompOffReason = 'weekend_work' | 'holiday_work' | 'overtime_4h' | 'overtime_8h';
+// ─────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────
 
-interface CompOffEligibility {
-  id: string;
-  date: string;
-  reason: CompOffReason;
-  hoursWorked: string;
-  creditDays: number;
-  status: 'eligible' | 'requested' | 'approved' | 'credited' | 'used';
-}
-
-interface CompOffRequest {
-  id: string;
-  eligibilityId: string;
-  date: string;
-  reason: CompOffReason;
-  creditDays: number;
-  status: 'pending' | 'approved' | 'rejected';
-  submittedOn: string;
-  usedOn?: string;
-}
-
-const REASON_CONFIG: Record<CompOffReason, { label: string; description: string; color: string; bg: string; icon: any }> = {
-  weekend_work: { label: 'Weekend Work', description: 'Worked on Saturday/Sunday', color: '#8b5cf6', bg: '#f5f3ff', icon: Calendar },
-  holiday_work: { label: 'Holiday Work', description: 'Worked on public holiday', color: '#ef4444', bg: '#fef2f2', icon: Calendar },
-  overtime_4h: { label: 'Overtime 4h+', description: 'Worked 4+ extra hours', color: '#f59e0b', bg: '#fffbeb', icon: Clock },
-  overtime_8h: { label: 'Overtime 8h+', description: 'Worked 8+ extra hours', color: '#2D7A4F', bg: '#e8f5ee', icon: Award },
+const STATUS_META: Record<string, { label: string; color: string; bg: string; border: string; icon: React.ReactNode }> = {
+  [CompOffStatus.PENDING]:  { label: 'Pending',  color: '#b45309', bg: '#fffbeb', border: '#fde68a', icon: <Clock size={10} /> },
+  [CompOffStatus.APPROVED]: { label: 'Approved', color: '#0f766e', bg: '#f0fdf9', border: '#99f6e4', icon: <CheckCircle2 size={10} /> },
+  [CompOffStatus.REJECTED]: { label: 'Rejected', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', icon: <XCircle size={10} /> },
 };
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  eligible: { label: 'Eligible', color: '#3b82f6', bg: '#eff6ff' },
-  requested: { label: 'Requested', color: '#f59e0b', bg: '#fffbeb' },
-  approved: { label: 'Approved', color: '#2D7A4F', bg: '#e8f5ee' },
-  credited: { label: 'Credited', color: '#8b5cf6', bg: '#f5f3ff' },
-  used: { label: 'Used', color: '#9ca3af', bg: '#f9fafb' },
-  pending: { label: 'Pending', color: '#f59e0b', bg: '#fffbeb' },
-  rejected: { label: 'Rejected', color: '#ef4444', bg: '#fef2f2' },
-};
-
-const ELIGIBILITIES: CompOffEligibility[] = [
-  { id: 'E001', date: '2026-03-15', reason: 'holiday_work', hoursWorked: '8h 30m', creditDays: 1, status: 'eligible' },
-  { id: 'E002', date: '2026-03-08', reason: 'weekend_work', hoursWorked: '6h 00m', creditDays: 0.5, status: 'eligible' },
-  { id: 'E003', date: '2026-03-01', reason: 'overtime_8h', hoursWorked: '10h 15m', creditDays: 1, status: 'credited' },
-  { id: 'E004', date: '2026-02-22', reason: 'weekend_work', hoursWorked: '4h 30m', creditDays: 0.5, status: 'used' },
-];
-
-const PAST_REQUESTS: CompOffRequest[] = [
-  {
-    id: 'CO001',
-    eligibilityId: 'E003',
-    date: '2026-03-01',
-    reason: 'overtime_8h',
-    creditDays: 1,
-    status: 'approved',
-    submittedOn: '2026-03-03',
-  },
-  {
-    id: 'CO002',
-    eligibilityId: 'E004',
-    date: '2026-02-22',
-    reason: 'weekend_work',
-    creditDays: 0.5,
-    status: 'approved',
-    submittedOn: '2026-02-24',
-    usedOn: '2026-03-10',
-  },
-];
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('en-IN', {
+    day: 'numeric', month: 'short', year: 'numeric',
+  });
 }
 
-export default function CompOffPage() {
-  const [eligibilities, setEligibilities] = useState<CompOffEligibility[]>(ELIGIBILITIES);
-  const [requests, setRequests] = useState<CompOffRequest[]>(PAST_REQUESTS);
-  const [showForm, setShowForm] = useState(false);
-  const [selectedEligibility, setSelectedEligibility] = useState<CompOffEligibility | null>(null);
-  const [submitted, setSubmitted] = useState(false);
+function formatHours(hours: number) {
+  const h = Math.floor(hours);
+  const m = Math.round((hours - h) * 60);
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
 
-  const eligibleItems = eligibilities.filter((e) => e.status === 'eligible');
-  const totalBalance = eligibilities
-    .filter((e) => e.status === 'credited')
-    .reduce((sum, e) => sum + e.creditDays, 0);
-  const totalApproved = requests.filter((r) => r.status === 'approved').length;
-  const totalUsed = eligibilities.filter((e) => e.status === 'used').length;
+// ─────────────────────────────────────────────
+// Sub-components
+// ─────────────────────────────────────────────
 
-  const handleClaim = (eligibility: CompOffEligibility) => {
-    setSelectedEligibility(eligibility);
-    setShowForm(true);
-  };
+function StatCard({
+  label, value, sub, icon: Icon, accent, textColor,
+}: {
+  label: string; value: string | number; sub?: string;
+  icon: React.ElementType; accent: string; textColor: string;
+}) {
+  return (
+    <div className={`${accent} rounded-2xl border border-white p-5 shadow-sm flex items-center gap-3`}>
+      <div className="w-10 h-10 rounded-xl bg-white/70 flex items-center justify-center flex-shrink-0 shadow-sm">
+        <Icon size={16} className={textColor} />
+      </div>
+      <div>
+        <p className={`text-2xl font-bold leading-none ${textColor}`}>{value}</p>
+        <p className="text-[11px] text-slate-500 mt-1 font-semibold">{label}</p>
+        {sub && <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>}
+      </div>
+    </div>
+  );
+}
 
-  const handleSubmit = () => {
-    if (!selectedEligibility) return;
+function StatusBadge({ status }: { status: string }) {
+  const meta = STATUS_META[status] ?? { label: status, color: '#64748b', bg: '#f8fafc', border: '#e2e8f0', icon: null };
+  return (
+    <span
+      className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full border"
+      style={{ color: meta.color, backgroundColor: meta.bg, borderColor: meta.border }}
+    >
+      {meta.icon}
+      <span className="ml-0.5">{meta.label}</span>
+    </span>
+  );
+}
 
-    const newReq: CompOffRequest = {
-      id: `CO${String(requests.length + 1).padStart(3, '0')}`,
-      eligibilityId: selectedEligibility.id,
-      date: selectedEligibility.date,
-      reason: selectedEligibility.reason,
-      creditDays: selectedEligibility.creditDays,
-      status: 'pending',
-      submittedOn: new Date().toISOString().split('T')[0],
-    };
+// ─────────────────────────────────────────────
+// Apply Modal
+// ─────────────────────────────────────────────
 
-    setRequests([newReq, ...requests]);
-    setEligibilities(eligibilities.map((e) =>
-      e.id === selectedEligibility.id ? { ...e, status: 'requested' } : e
-    ));
-    setShowForm(false);
-    setSelectedEligibility(null);
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 5000);
+interface ApplyModalProps {
+  tenantId: string;
+  token: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+function ApplyModal({ tenantId, token, onClose, onSuccess }: ApplyModalProps) {
+  const [form, setForm] = useState({
+    worked_date: '',
+   // comp_off_date: '',
+    worked_hours: '',
+    reason: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleSubmit = async () => {
+    if (!form.worked_date || !form.worked_hours || !form.reason.trim()) {
+      setErr('All fields are required.'); return;
+    }
+    const hours = parseFloat(form.worked_hours);
+    if (isNaN(hours) || hours <= 0) { setErr('Enter valid worked hours.'); return; }
+
+    setSaving(true); setErr('');
+    try {
+      await applyCompOff(
+        {
+          worked_date: form.worked_date,
+          worked_hours: hours,
+          reason: form.reason,
+        },
+        tenantId,
+        token,
+      );
+      onSuccess();
+    } catch (e: any) {
+      setErr(e?.response?.data?.message || 'Something went wrong. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Toast Notification */}
-      {submitted && (
-        <div className="fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border bg-[#e8f5ee] border-[#bbddc9] text-[#2D7A4F] text-sm font-medium animate-slide-up">
-          <CheckCircle2 size={16} />
-          Comp Off claim submitted! Awaiting manager approval.
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="h-1 w-full bg-gradient-to-r from-purple-500 to-indigo-500" />
+        <div className="p-6">
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-11 h-11 rounded-xl bg-purple-50 flex items-center justify-center">
+              <Gift size={20} className="text-purple-600" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-gray-900">Apply for Comp Off</h3>
+              <p className="text-xs text-gray-400">Fill in your overtime/extra work details</p>
+            </div>
+          </div>
+
+          {/* Form */}
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Date Worked <span className="text-red-500">*</span></label>
+                <input
+                  type="date" value={form.worked_date}
+                  onChange={e => set('worked_date', e.target.value)}
+                  className="mt-1 w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+                />
+              </div>
+              {/* <div>
+                <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Comp Off Date <span className="text-red-500">*</span></label>
+                <input
+                  type="date" value={form.comp_off_date}
+                  onChange={e => set('comp_off_date', e.target.value)}
+                  className="mt-1 w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+                />
+              </div> */}
+            </div>
+
+            <div>
+              <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Hours Worked <span className="text-red-500">*</span></label>
+              <input
+                type="number" min="0.5" step="0.5" value={form.worked_hours}
+                onChange={e => set('worked_hours', e.target.value)}
+                placeholder="e.g. 4 or 8.5"
+                className="mt-1 w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Reason <span className="text-red-500">*</span></label>
+              <textarea
+                rows={3} value={form.reason}
+                onChange={e => set('reason', e.target.value)}
+                placeholder="Describe why you worked extra (e.g. project deadline, holiday deployment...)"
+                className="mt-1 w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all resize-none"
+              />
+            </div>
+          </div>
+
+          {/* Info note */}
+          <div className="flex items-start gap-2 bg-blue-50 rounded-xl px-3 py-2.5 mt-3">
+            <Info size={13} className="text-blue-500 flex-shrink-0 mt-0.5" />
+            <p className="text-[11px] text-blue-700 leading-relaxed">
+              Once submitted, your manager will review and approve the request. Approved comp offs will be credited to your leave balance.
+            </p>
+          </div>
+
+          {/* Error */}
+          {err && (
+            <div className="flex items-start gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5 mt-3">
+              <AlertCircle size={13} className="text-red-500 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-red-600">{err}</p>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-2.5 mt-5">
+            <button
+              onClick={onClose} disabled={saving}
+              className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit} disabled={saving}
+              className="flex-1 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-sm font-bold text-white disabled:opacity-60 transition-all flex items-center justify-center gap-2"
+            >
+              {saving ? <><Loader2 size={14} className="animate-spin" /> Submitting…</> : 'Submit Claim'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Main Component
+// ─────────────────────────────────────────────
+
+interface CompOffPageProps {
+  apiKey: string;
+  token: string;
+  employeeId: string;
+}
+
+export default function CompOffPage({ apiKey, token, employeeId }: CompOffPageProps) {
+  const params = useParams();
+  const tenantId = params?.subdomain as string || apiKey;
+
+  // API state
+  const [balance, setBalance] = useState<ICompOffBalance | null>(null);
+  const [compOffs, setCompOffs] = useState<ICompOff[]>([]);
+  const [available, setAvailable] = useState<ICompOff[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // UI state
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  useEffect(() => {
+    if (tenantId) fetchAll();
+  }, [tenantId]);
+
+  const fetchAll = async () => {
+    setLoading(true); setError('');
+    try {
+      const [balRes, listRes, availRes] = await Promise.all([
+        getCompOffBalance(tenantId, token),
+        getCompOffs(tenantId, { employee_id: employeeId }, token),
+        getAvailableCompOffs(tenantId, token),
+      ]);
+
+      // Balance
+      if (balRes?.data) setBalance(balRes.data?.data ?? balRes.data);
+
+      // All comp offs
+      const raw = Array.isArray(balRes?.data?.data?.comp_offs)
+        ? balRes.data.data.comp_offs
+        : Array.isArray(listRes?.data?.data)
+        ? listRes.data.data
+        : Array.isArray(listRes?.data)
+        ? listRes.data
+        : [];
+      setCompOffs(raw);
+
+      // Available (unused approved ones)
+      const avail = Array.isArray(availRes?.data?.data)
+        ? availRes.data.data
+        : Array.isArray(availRes?.data)
+        ? availRes.data
+        : [];
+      setAvailable(avail);
+    } catch (e: any) {
+      setError(e?.response?.data?.message || 'Failed to load comp off data.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showToast = (msg: string, type: 'success' | 'error') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const handleApplySuccess = () => {
+    setShowApplyModal(false);
+    showToast('Comp off request submitted! Awaiting manager approval.', 'success');
+    fetchAll();
+  };
+
+  // Derived stats
+  const stats = useMemo(() => ({
+    balance: balance?.comp_off_balance ?? 0,
+    pending:  compOffs.filter(c => c.status === CompOffStatus.PENDING).length,
+    approved: compOffs.filter(c => c.status === CompOffStatus.APPROVED).length,
+    availed:  compOffs.filter(c => c.is_availed).length,
+  }), [compOffs, balance]);
+
+  const pendingList  = useMemo(() => compOffs.filter(c => c.status === CompOffStatus.PENDING),  [compOffs]);
+  const approvedList = useMemo(() => compOffs.filter(c => c.status === CompOffStatus.APPROVED && !c.is_availed), [compOffs]);
+  const historyList  = useMemo(() => compOffs.filter(c => c.status === CompOffStatus.REJECTED || c.is_availed), [compOffs]);
+
+  // ── Render ─────────────────────────────────
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
+        <Loader2 size={28} className="animate-spin text-purple-600" />
+        <p className="text-sm text-slate-400">Loading comp off data…</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center">
+          <AlertCircle size={24} className="text-red-400" />
+        </div>
+        <div className="text-center">
+          <p className="text-sm font-semibold text-slate-700">{error}</p>
+          <p className="text-xs text-slate-400 mt-1">Please try again</p>
+        </div>
+        <button onClick={fetchAll} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 transition-all">
+          <RefreshCw size={14} /> Retry
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* ── Toast ── */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium animate-in slide-in-from-top-2 duration-300 ${
+          toast.type === 'success' ? 'bg-white border-emerald-200 text-emerald-700' : 'bg-white border-red-200 text-red-600'
+        }`}>
+          {toast.type === 'success' ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
+          {toast.msg}
         </div>
       )}
 
-      <div className="w-full px-4 lg:px-8 py-6">
-        {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-            <Gift size={14} />
-            <span>Leave Management</span>
-            <ChevronRight size={12} />
-            <span className="text-[#2D7A4F] font-semibold">Compensatory Off</span>
-          </div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Compensatory Off</h1>
-          <p className="text-sm text-gray-500 mt-1">Claim comp off for overtime, weekend, and holiday work</p>
-        </div>
-
-        {/* Balance + Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-gradient-to-br from-[#0f1f2e] to-[#1a3347] rounded-2xl p-6 relative overflow-hidden">
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#2D7A4F] rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
-            </div>
-            <div className="relative z-10">
-              <p className="text-white/50 text-xs font-medium mb-1">Available Balance</p>
-              <p className="text-4xl font-bold text-white">{totalBalance}</p>
-              <p className="text-[#4a9e6e] text-xs font-medium mt-1">Comp Off days</p>
-              <div className="mt-3 flex items-center gap-1">
-                <TrendingUp size={12} className="text-[#4a9e6e]" />
-                <span className="text-[#4a9e6e] text-xs">+2 this year</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                <Bell size={18} className="text-blue-600" />
-              </div>
-              <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">Ready to claim</span>
-            </div>
-            <p className="text-3xl font-bold text-blue-600">{eligibleItems.length}</p>
-            <p className="text-sm text-gray-600 mt-1">Eligible</p>
-            <p className="text-xs text-gray-400 mt-2">Unclaimed opportunities</p>
-          </div>
-          
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-[#e8f5ee] flex items-center justify-center">
-                <CheckCircle2 size={18} className="text-[#2D7A4F]" />
-              </div>
-              <span className="text-xs font-medium text-[#2D7A4F] bg-[#e8f5ee] px-2 py-1 rounded-full">This year</span>
-            </div>
-            <p className="text-3xl font-bold text-[#2D7A4F]">{totalApproved}</p>
-            <p className="text-sm text-gray-600 mt-1">Approved</p>
-            <p className="text-xs text-gray-400 mt-2">Claims approved</p>
-          </div>
-          
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
-                <Clock size={18} className="text-gray-600" />
-              </div>
-              <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">Consumed</span>
-            </div>
-            <p className="text-3xl font-bold text-gray-700">{totalUsed}</p>
-            <p className="text-sm text-gray-600 mt-1">Used</p>
-            <p className="text-xs text-gray-400 mt-2">Days consumed</p>
-          </div>
-        </div>
-
-        {/* Workflow Guide */}
-        <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-2xl p-6 mb-6">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0">
-              <Zap size={20} className="text-purple-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-base font-bold text-purple-900 mb-3">Comp Off Workflow</p>
-              <div className="flex flex-wrap items-center gap-2 text-sm">
-                <span className="bg-white/60 px-3 py-1.5 rounded-lg text-purple-800 font-medium">1. Overtime/Weekend detected</span>
-                <span className="text-purple-400">→</span>
-                <span className="bg-white/60 px-3 py-1.5 rounded-lg text-purple-800 font-medium">2. Eligibility created</span>
-                <span className="text-purple-400">→</span>
-                <span className="bg-white/60 px-3 py-1.5 rounded-lg text-purple-800 font-medium">3. You claim it</span>
-                <span className="text-purple-400">→</span>
-                <span className="bg-white/60 px-3 py-1.5 rounded-lg text-purple-800 font-medium">4. Manager approves</span>
-                <span className="text-purple-400">→</span>
-                <span className="bg-white/60 px-3 py-1.5 rounded-lg text-purple-800 font-medium">5. Credited to balance</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Eligible to Claim Section */}
-        {eligibleItems.length > 0 && (
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                <h3 className="text-lg font-bold text-gray-800">Eligible to Claim</h3>
-                <span className="text-sm font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{eligibleItems.length}</span>
-              </div>
-              <span className="text-xs text-gray-400">Last updated today</span>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {eligibleItems.map((item) => {
-                const rc = REASON_CONFIG[item.reason];
-                const IconComponent = rc.icon;
-                return (
-                  <div key={item.id} className="bg-white rounded-2xl border border-gray-200 p-5 hover:shadow-lg transition-all duration-200 group">
-                    <div className="flex items-start gap-4">
-                      <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105"
-                        style={{ backgroundColor: rc.bg }}
-                      >
-                        <IconComponent size={20} style={{ color: rc.color }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="text-base font-bold text-gray-800">{rc.label}</p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              {formatDate(item.date)} · {item.hoursWorked} worked
-                            </p>
-                          </div>
-                          <div className="text-right flex-shrink-0">
-                            <p className="text-lg font-bold" style={{ color: rc.color }}>+{item.creditDays}</p>
-                            <p className="text-[10px] text-gray-400">day{item.creditDays !== 1 ? 's' : ''}</p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleClaim(item)}
-                          className="mt-3 w-full text-sm font-semibold text-white px-4 py-2 rounded-xl transition-all hover:scale-105"
-                          style={{ backgroundColor: rc.color }}
-                        >
-                          Claim Comp Off
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Claim Confirmation Modal */}
-        {showForm && selectedEligibility && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl animate-slide-up">
-              <div className="w-14 h-14 rounded-2xl bg-purple-50 flex items-center justify-center mb-4">
-                <Gift size={24} className="text-purple-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Claim Comp Off</h3>
-              <p className="text-gray-600 mb-5">
-                You are claiming <strong>{selectedEligibility.creditDays} comp off day{selectedEligibility.creditDays !== 1 ? 's' : ''}</strong> for{' '}
-                <strong>{REASON_CONFIG[selectedEligibility.reason].label}</strong> on{' '}
-                <strong>{formatDate(selectedEligibility.date)}</strong>.
-              </p>
-              
-              <div className="bg-gray-50 rounded-xl p-4 mb-5 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Date worked</span>
-                  <span className="font-semibold text-gray-800">{formatDate(selectedEligibility.date)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Hours worked</span>
-                  <span className="font-semibold text-gray-800">{selectedEligibility.hoursWorked}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Credit</span>
-                  <span className="font-semibold text-[#2D7A4F]">+{selectedEligibility.creditDays} day{selectedEligibility.creditDays !== 1 ? 's' : ''}</span>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-2 bg-blue-50 rounded-xl px-4 py-3 mb-6">
-                <Info size={14} className="text-blue-500 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-blue-700 leading-relaxed">
-                  This will be sent to <strong>Priya Nair (Manager)</strong> for approval. Once approved, it will be credited to your leave balance.
-                </p>
-              </div>
-              
-              <div className="flex gap-3">
-                <button
-                  onClick={() => { setShowForm(false); setSelectedEligibility(null); }}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  className="flex-1 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-sm font-bold text-white transition-colors"
-                >
-                  Submit Claim
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Comp Off History */}
+      {/* ── Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-bold text-gray-800">Comp Off History</h3>
-              <span className="text-sm font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{eligibilities.length}</span>
-            </div>
-            <Link href="/employee/attendance/compoff/history" className="text-sm font-semibold text-[#2D7A4F] hover:underline flex items-center gap-1">
-              View all <ArrowRight size={14} />
-            </Link>
+          <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
+            <Gift size={12} />
+            <span>Leave Management</span>
+            <ChevronRight size={11} />
+            <span className="text-purple-600 font-semibold">Compensatory Off</span>
           </div>
-          
-          <div className="grid grid-cols-1 gap-3">
-            {eligibilities.map((item) => {
-              const rc = REASON_CONFIG[item.reason];
-              const sc = STATUS_CONFIG[item.status];
-              const IconComponent = rc.icon;
-              return (
-                <div key={item.id} className="bg-white rounded-2xl border border-gray-200 p-5 hover:shadow-md transition-all duration-200">
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: rc.bg }}
-                    >
-                      <IconComponent size={20} style={{ color: rc.color }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <p className="text-base font-bold text-gray-800">{rc.label}</p>
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            {formatDate(item.date)} · {item.hoursWorked} worked
-                          </p>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <p className="text-sm font-bold" style={{ color: rc.color }}>+{item.creditDays}d</p>
-                          <span
-                            className="text-[10px] font-bold px-2 py-1 rounded-full mt-1 inline-block"
-                            style={{ backgroundColor: sc.bg, color: sc.color }}
-                          >
-                            {sc.label}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <h1 className="text-lg font-bold text-gray-900">Compensatory Off</h1>
+          <p className="text-xs text-gray-400 mt-0.5">Claim comp off for overtime, weekend, and holiday work</p>
         </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={fetchAll}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-all"
+          >
+            <RefreshCw size={12} /> Refresh
+          </button>
+          <button
+            onClick={() => setShowApplyModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-sm font-semibold text-white transition-all shadow-sm shadow-purple-200"
+          >
+            <Gift size={14} /> Apply Comp Off
+          </button>
+        </div>
+      </div>
 
-        {/* Info Banner */}
-        <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-5 border border-blue-200">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-              <Info size={18} className="text-blue-600" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-gray-800 mb-1">Did you know?</h4>
-              <p className="text-sm text-gray-600">
-                Unclaimed comp off eligibility expires after 90 days. Claim your eligible comp offs before they expire!
-              </p>
+      {/* ── Stat Cards ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatCard
+          label="Balance"
+          value={stats.balance}
+          sub="Available days"
+          icon={TrendingUp}
+          accent="bg-gradient-to-br from-purple-50 to-indigo-50"
+          textColor="text-purple-700"
+        />
+        <StatCard
+          label="Pending"
+          value={stats.pending}
+          sub="Awaiting approval"
+          icon={Clock}
+          accent="bg-gradient-to-br from-amber-50 to-orange-50"
+          textColor="text-amber-700"
+        />
+        <StatCard
+          label="Approved"
+          value={stats.approved}
+          sub="Ready to use"
+          icon={CheckCircle2}
+          accent="bg-gradient-to-br from-teal-50 to-emerald-50"
+          textColor="text-teal-700"
+        />
+        <StatCard
+          label="Availed"
+          value={stats.availed}
+          sub="Days consumed"
+          icon={Award}
+          accent="bg-gradient-to-br from-slate-50 to-slate-100"
+          textColor="text-slate-600"
+        />
+      </div>
+
+      {/* ── Workflow Guide ── */}
+      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-100 rounded-2xl p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0">
+            <Zap size={15} className="text-purple-600" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-purple-900 mb-2">How it works</p>
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+              {['Apply with details', 'Manager reviews', 'On approval — credited', 'Use as leave'].map((step, i, arr) => (
+                <React.Fragment key={step}>
+                  <span className="bg-white/70 px-2.5 py-1 rounded-lg text-purple-800 font-medium">{i + 1}. {step}</span>
+                  {i < arr.length - 1 && <span className="text-purple-300">→</span>}
+                </React.Fragment>
+              ))}
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ── Pending Requests ── */}
+      {pendingList.length > 0 && (
+        <Section
+          title="Pending Approval"
+          count={pendingList.length}
+          dot="bg-amber-400 animate-pulse"
+          icon={<Clock size={13} className="text-amber-500" />}
+        >
+          {pendingList.map(item => <CompOffCard key={item.id} item={item} />)}
+        </Section>
+      )}
+
+      {/* ── Approved (available to use) ── */}
+      {approvedList.length > 0 && (
+        <Section
+          title="Approved & Available"
+          count={approvedList.length}
+          dot="bg-teal-400"
+          icon={<CheckCircle2 size={13} className="text-teal-500" />}
+        >
+          {approvedList.map(item => <CompOffCard key={item.id} item={item} />)}
+        </Section>
+      )}
+
+      {/* ── Empty state ── */}
+      {compOffs.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-slate-100 shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-purple-50 flex items-center justify-center mb-3">
+            <Gift size={22} className="text-purple-300" />
+          </div>
+          <p className="text-sm font-bold text-slate-400">No comp off requests yet</p>
+          <p className="text-xs text-slate-300 mt-1">Apply for your first comp off to get started</p>
+          <button
+            onClick={() => setShowApplyModal(true)}
+            className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 transition-all"
+          >
+            <Gift size={13} /> Apply Now
+          </button>
+        </div>
+      )}
+
+      {/* ── History (rejected + availed) ── */}
+      {historyList.length > 0 && (
+        <Section
+          title="History"
+          count={historyList.length}
+          dot="bg-slate-300"
+          icon={<Calendar size={13} className="text-slate-400" />}
+          action={
+            <Link href="/employee/attendance/compoff/history" className="text-xs font-semibold text-purple-600 hover:underline flex items-center gap-1">
+              View all <ArrowRight size={12} />
+            </Link>
+          }
+        >
+          {historyList.slice(0, 5).map(item => <CompOffCard key={item.id} item={item} />)}
+        </Section>
+      )}
+
+      {/* ── Info Banner ── */}
+      <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100 flex items-start gap-3">
+        <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+          <Info size={14} className="text-blue-600" />
+        </div>
+        <div>
+          <p className="text-xs font-bold text-slate-800 mb-0.5">Expiry reminder</p>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            Comp off eligibility expires after 90 days. Make sure to apply before it lapses.
+          </p>
+        </div>
+      </div>
+
+      {/* ── Apply Modal ── */}
+      {showApplyModal && (
+        <ApplyModal
+          tenantId={tenantId}
+          token={token}
+          onClose={() => setShowApplyModal(false)}
+          onSuccess={handleApplySuccess}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Section wrapper
+// ─────────────────────────────────────────────
+
+function Section({
+  title, count, dot, icon, children, action,
+}: {
+  title: string; count: number; dot: string;
+  icon: React.ReactNode; children: React.ReactNode;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className={`w-2 h-2 rounded-full ${dot}`} />
+          <h3 className="text-sm font-bold text-slate-800">{title}</h3>
+          <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{count}</span>
+        </div>
+        {action}
+      </div>
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden divide-y divide-slate-50">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Comp Off Card (row)
+// ─────────────────────────────────────────────
+
+function CompOffCard({ item }: { item: ICompOff }) {
+  const isAvailed = item.is_availed;
+  const expiresOn = item.expires_on;
+
+  return (
+    <div className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50/60 transition-all">
+      {/* Icon */}
+      <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
+        item.status === CompOffStatus.APPROVED ? 'bg-teal-50'
+        : item.status === CompOffStatus.REJECTED ? 'bg-red-50'
+        : 'bg-amber-50'}`}>
+        {item.status === CompOffStatus.APPROVED
+          ? <CheckCircle2 size={16} className="text-teal-600" />
+          : item.status === CompOffStatus.REJECTED
+          ? <XCircle size={16} className="text-red-500" />
+          : <Clock size={16} className="text-amber-500" />}
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-semibold text-slate-800">
+            {formatDate(item.worked_date)}
+          </span>
+          <StatusBadge status={isAvailed ? 'availed' : item.status} />
+          {isAvailed && (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Used</span>
+          )}
+        </div>
+        <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">{item.reason}</p>
+        <div className="flex items-center gap-3 mt-1 flex-wrap">
+          <span className="text-[10px] text-slate-400">
+            Worked: <span className="font-medium text-slate-600">{formatHours(item.worked_hours)}</span>
+          </span>
+          {/* <span className="text-[10px] text-slate-400">
+            Comp off: <span className="font-medium text-slate-600">{formatDate(item.comp_off_date)}</span>
+          </span> */}
+          {expiresOn && item.status === CompOffStatus.APPROVED && !isAvailed && (
+            <span className="text-[10px] text-amber-600 font-medium">
+              Expires {formatDate(expiresOn)}
+            </span>
+          )}
+        </div>
+        {item.status === CompOffStatus.REJECTED && item.rejection_reason && (
+          <p className="text-[10px] text-red-500 mt-1">
+            Reason: {item.rejection_reason}
+          </p>
+        )}
+      </div>
+
+      {/* Meta right */}
+      <div className="flex-shrink-0 text-right hidden sm:block">
+        <p className="text-[10px] text-slate-400">Applied</p>
+        <p className="text-[11px] font-medium text-slate-600">{formatDate(item.created_at)}</p>
+        {item.approved_at && (
+          <>
+            <p className="text-[10px] text-slate-400 mt-1">Approved</p>
+            <p className="text-[11px] font-medium text-slate-600">{formatDate(item.approved_at)}</p>
+          </>
+        )}
       </div>
     </div>
   );

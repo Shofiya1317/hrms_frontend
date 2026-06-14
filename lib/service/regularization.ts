@@ -136,3 +136,36 @@ export const deleteRegularization = (
   undefined,
   { bearerToken: token, isFetchToken: !token },
 );
+
+
+export interface ITeamRegularizationFilters {
+  status?: RegularizationStatus;
+  from_date?: string;
+  to_date?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface ITeamRegularizationMeta {
+  totalCount: number;
+  currentCount: number;
+  currentPage: number;
+  limit: number;
+}
+
+export interface ITeamRegularizationResponse {
+  success: boolean;
+  data: IRegularization[];
+  meta: ITeamRegularizationMeta;
+}
+
+export const getTeamRegularizations = (
+  tenantId: string,
+  params?: ITeamRegularizationFilters,
+  token?: string,
+) => get(
+  '/v1/attendance-regularizations/team/requests',
+  params as Params,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);

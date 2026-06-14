@@ -187,13 +187,13 @@ export default function BalancesTab() {
 
   const filtered = useMemo(() =>
     balances.filter(e =>
-      e.employee_name.toLowerCase().includes(search.toLowerCase())
+      e.employee_name?.toLowerCase().includes(search.toLowerCase())
     ), [balances, search]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const stats = useMemo(() => {
+  const stats = useMemo(() => { 
     const allTypes: ILeaveTypeBalance[] = balances.flatMap(e => e.leave_types);
     return {
       employees: balances.length,

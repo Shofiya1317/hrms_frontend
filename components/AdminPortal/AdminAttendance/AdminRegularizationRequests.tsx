@@ -37,7 +37,18 @@ function ReviewDrawer({ req, onClose, onDone }: { req: IRegularization; onClose:
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const meta = STATUS_META[req.status];
-  const employeeName = req.employee_name || req.employee?.name || `${req.employee?.first_name} ${req.employee?.last_name}`.trim() || 'Employee';
+  
+  // Extract employee name with multiple fallbacks
+  let employeeName = 'Employee';
+  if (req.employee_name && typeof req.employee_name === 'string' && req.employee_name.trim()) {
+    employeeName = req.employee_name.trim();
+  } else if (req.employee?.name && typeof req.employee.name === 'string' && req.employee.name.trim()) {
+    employeeName = req.employee.name.trim();
+  } else if (req.employee?.first_name || req.employee?.last_name) {
+    employeeName = `${req.employee.first_name || ''} ${req.employee.last_name || ''}`.trim();
+  }
+  
+  const employeeCode = req.employee_code || req.employee?.employee_code || 'N/A';
 
   const handleSubmit = async () => {
     if (action === 'rejected' && !rejectionReason.trim()) {
@@ -86,8 +97,7 @@ function ReviewDrawer({ req, onClose, onDone }: { req: IRegularization; onClose:
           <div className="mb-4">
             <p className="text-sm font-bold text-[#0f1f2e]">{employeeName}</p>
             <p className="text-[10px] text-gray-400 mt-0.5">
-              {req.employee_code && `${req.employee_code} • `}
-              {fmtDate(req.attendance_date)}
+              {employeeCode} • {fmtDate(req.attendance_date)}
             </p>
             <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full mt-2 ${meta.bg} ${meta.text}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
@@ -190,7 +200,18 @@ function ReviewDrawer({ req, onClose, onDone }: { req: IRegularization; onClose:
 function RequestRow({ req, onSelect }: { req: IRegularization; onSelect: () => void }) {
   const meta = STATUS_META[req.status];
   const Icon = meta.icon;
-  const employeeName = req.employee?.name || `${req.employee?.first_name} ${req.employee?.last_name}`.trim() || 'Employee';
+  
+  // Extract employee name with multiple fallbacks
+  let employeeName = 'Employee';
+  if (req.employee_name && typeof req.employee_name === 'string' && req.employee_name.trim()) {
+    employeeName = req.employee_name.trim();
+  } else if (req.employee?.name && typeof req.employee.name === 'string' && req.employee.name.trim()) {
+    employeeName = req.employee.name.trim();
+  } else if (req.employee?.first_name || req.employee?.last_name) {
+    employeeName = `${req.employee.first_name || ''} ${req.employee.last_name || ''}`.trim();
+  }
+  
+  const employeeCode = req.employee_code || req.employee?.employee_code || '';
 
   return (
     <div
@@ -209,8 +230,14 @@ function RequestRow({ req, onSelect }: { req: IRegularization; onSelect: () => v
           </span>
         </div>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
+          {employeeCode && (
+            <>
+              <span className="text-[10px] text-gray-500 font-medium">{employeeCode}</span>
+              <span className="text-gray-300">·</span>
+            </>
+          )}
           <span className="text-[10px] text-gray-500 font-medium">
-            {req.attendanceLog?.attendance_date ? fmtDate(req.attendanceLog.attendance_date) : 'N/A'}
+            {req.attendance_date ? fmtDate(req.attendance_date) : (req.attendanceLog?.attendance_date ? fmtDate(req.attendanceLog.attendance_date) : 'N/A')}
           </span>
           <span className="text-gray-300">·</span>
           <span className="text-[10px] text-gray-500">
@@ -243,6 +270,7 @@ export default function AdminRegularizationRequests() {
     try {
       const res = await getRegularizations(subdomain, { limit: 100 });
       const raw = Array.isArray(res?.data) ? res.data : res?.data?.data ?? [];
+      console.log('Raw regularization data:', JSON.stringify(raw[0], null, 2));
       setRequests(raw);
     } catch {
       /* silent */
@@ -258,10 +286,10 @@ export default function AdminRegularizationRequests() {
       const q = search.toLowerCase();
       list = list.filter(
         r =>
-          r.employee?.name?.toLowerCase().includes(q) ||
-          r.employee?.first_name?.toLowerCase().includes(q) ||
-          r.employee?.last_name?.toLowerCase().includes(q) ||
+          r.employee_name?.toLowerCase().includes(q) ||
+          r.employee_code?.toLowerCase().includes(q) ||
           r.employee?.employee_code?.toLowerCase().includes(q) ||
+          r.employee?.name?.toLowerCase().includes(q) ||
           r.remarks?.toLowerCase().includes(q)
       );
     }

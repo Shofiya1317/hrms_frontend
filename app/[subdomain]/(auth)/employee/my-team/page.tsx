@@ -2,27 +2,30 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Loader2, Users, Calendar, ClipboardList } from 'lucide-react';
+import { Loader2, Users, Calendar, ClipboardList, Gift } from 'lucide-react';
 import { getMyTeam, ITeamMember } from '@/lib/service/employee';
 import TeamLeaveRequests from '@/components/EmployeePortal/EmployeeManager/TeamLeaveRequests';
 import TeamAttendanceLogs from '@/components/EmployeePortal/EmployeeManager/TeamAttendanceLogs';
 import TeamRegularization from '@/components/EmployeePortal/EmployeeManager/TeamRegularization';
+import TeamCompOffRequests from '@/components/EmployeePortal/EmployeeManager/TeamCompOffRequests';
+import TeamMembersStrip from '@/components/EmployeePortal/EmployeeManager/TeamMembersStrip';
 
-type Tab = 'leave-requests' | 'attendance-logs' | 'regularization';
+type Tab = 'leave-requests' | 'attendance-logs' | 'regularization' | 'comp-off';
 
 const TABS: { id: Tab; label: string; icon: any }[] = [
-  { id: 'leave-requests', label: 'Leave Requests', icon: Calendar },
+  { id: 'leave-requests',  label: 'Leave Requests',  icon: Calendar      },
   { id: 'attendance-logs', label: 'Attendance Logs', icon: ClipboardList },
-  { id: 'regularization', label: 'Regularization', icon: Users },
+  { id: 'regularization',  label: 'Regularization',  icon: Users         },
+  { id: 'comp-off',        label: 'Comp Off',        icon: Gift          },
 ];
 
 export default function MyTeamPage() {
-  const params = useParams();
+  const params    = useParams();
   const subdomain = params?.subdomain as string;
 
   const [activeTab, setActiveTab] = useState<Tab>('leave-requests');
-  const [team, setTeam] = useState<ITeamMember[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [team,      setTeam]      = useState<ITeamMember[]>([]);
+  const [loading,   setLoading]   = useState(true);
 
   useEffect(() => {
     if (subdomain) fetchTeam();
@@ -31,7 +34,7 @@ export default function MyTeamPage() {
   const fetchTeam = async () => {
     setLoading(true);
     try {
-      const res = await getMyTeam(subdomain);
+      const res  = await getMyTeam(subdomain);
       const data = res?.data?.data ?? res?.data;
       setTeam(data?.team_members ?? []);
     } catch { /* silent */ }
@@ -47,10 +50,15 @@ export default function MyTeamPage() {
         <div>
           <h1 className="text-lg font-bold text-[#0f1f2e]">My Team</h1>
           <p className="text-xs text-gray-400 mt-0.5">
-            {loading ? 'Loading...' : `${team.length} team member${team.length !== 1 ? 's' : ''} reporting to you`}
+            {loading
+              ? 'Loading...'
+              : `${team.length} team member${team.length !== 1 ? 's' : ''} reporting to you`}
           </p>
         </div>
       </div>
+
+      {/* Team members story strip */}
+      <TeamMembersStrip team={team} loading={loading} />
 
       {loading ? (
         <div className="flex justify-center py-20">
@@ -63,37 +71,36 @@ export default function MyTeamPage() {
           <p className="text-xs text-gray-400 mt-1">You don't have any direct reports yet</p>
         </div>
       ) : (
-        <>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           {/* Tabs */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="flex items-center gap-1 p-2 border-b border-gray-100 overflow-x-auto">
-              {TABS.map(tab => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                      activeTab === tab.id
-                        ? 'bg-[#0f766e] text-white shadow-sm'
-                        : 'text-gray-500 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Icon size={14} />
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Tab Content */}
-            <div className="p-4">
-              {activeTab === 'leave-requests' && <TeamLeaveRequests teamIds={teamIds} />}
-              {activeTab === 'attendance-logs' && <TeamAttendanceLogs teamIds={teamIds} />}
-              {activeTab === 'regularization' && <TeamRegularization teamIds={teamIds} />}
-            </div>
+          <div className="flex items-center gap-1 p-2 border-b border-gray-100 overflow-x-auto">
+            {TABS.map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? 'bg-[#0f766e] text-white shadow-sm'
+                      : 'text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon size={14} />
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
-        </>
+
+          {/* Tab Content */}
+          <div className="p-4">
+            {activeTab === 'leave-requests'  && <TeamLeaveRequests  teamIds={teamIds} />}
+            {activeTab === 'attendance-logs' && <TeamAttendanceLogs teamIds={teamIds} />}
+            {activeTab === 'regularization'  && <TeamRegularization teamIds={teamIds} />}
+            {activeTab === 'comp-off'        && <TeamCompOffRequests />}
+          </div>
+        </div>
       )}
     </div>
   );
