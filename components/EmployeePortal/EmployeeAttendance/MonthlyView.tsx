@@ -3,10 +3,16 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import {
-  ChevronLeft, ChevronRight, Calendar, Loader2, CheckCircle2, XCircle,
+  ChevronLeft, ChevronRight, Calendar, Loader2, CheckCircle2,
   Clock, AlertCircle, Award, RotateCcw, Sun, Moon, Zap, Info, TrendingUp,
+  Star, Gift, Heart, Briefcase, CalendarDays, Shield, Building, Users,
+  MapPin, Timer
 } from 'lucide-react';
 import { getAttendances } from '@/lib/service/attendance';
+import {
+  getMonthlyCalendar, getWorkSchedule,
+  ICalendarDay, IMonthlyCalendar, IWorkSchedule
+} from '@/lib/service/companyHoliday';
 
 type AttendanceStatus = 'present' | 'absent' | 'on_leave' | 'weekend' | 'holiday';
 
@@ -27,25 +33,34 @@ interface IAttendanceLog {
   holiday_info: any;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
+// Calendar day status configuration
+const CALENDAR_STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string; icon: any }> = {
+  working: { label: 'Working Day', color: '#16a34a', bg: '#f0fdf4', dot: '#16a34a', icon: Briefcase },
+  holiday: { label: 'Holiday', color: '#ef4444', bg: '#fef2f2', dot: '#ef4444', icon: CalendarDays },
+  weekend: { label: 'Weekend', color: '#9ca3af', bg: '#f9fafb', dot: '#9ca3af', icon: Sun },
+  working_override: { label: 'Working Override', color: '#2563eb', bg: '#eff6ff', dot: '#2563eb', icon: Shield },
+  holiday_override: { label: 'Holiday Override', color: '#f59e0b', bg: '#fffbeb', dot: '#f59e0b', icon: Award },
+};
+
+// Attendance status configuration  
+const ATTENDANCE_STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
   present: { label: 'Present', color: '#16a34a', bg: '#f0fdf4', dot: '#16a34a' },
   late: { label: 'Late', color: '#f59e0b', bg: '#fffbeb', dot: '#f59e0b' },
   on_leave: { label: 'Leave', color: '#2563eb', bg: '#eff6ff', dot: '#2563eb' },
   absent: { label: 'Absent', color: '#ef4444', bg: '#fef2f2', dot: '#ef4444' },
-  holiday: { label: 'Holiday', color: '#8b5cf6', bg: '#f5f3ff', dot: '#8b5cf6' },
-  weekend: { label: 'Weekend', color: '#9ca3af', bg: '#f9fafb', dot: '#9ca3af' },
   regularized: { label: 'Regularized', color: '#10b981', bg: '#ecfdf5', dot: '#10b981' },
   future: { label: '', color: '#d1d5db', bg: '#f9fafb', dot: '#d1d5db' },
 };
 
 const LEGEND = [
-  { status: 'present', label: 'Present' },
-  { status: 'late', label: 'Late' },
-  { status: 'on_leave', label: 'Leave' },
-  { status: 'absent', label: 'Absent' },
+  { status: 'working', label: 'Working Day' },
   { status: 'holiday', label: 'Holiday' },
-  { status: 'regularized', label: 'Regularized' },
   { status: 'weekend', label: 'Weekend' },
+  { status: 'working_override', label: 'Working Override' },
+  { status: 'holiday_override', label: 'Holiday Override' },
+  { status: 'present', label: 'Present' },
+  { status: 'absent', label: 'Absent' },
+  { status: 'on_leave', label: 'Leave' },
 ];
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -71,15 +86,18 @@ export default function MonthlyAttendancePage() {
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [logs, setLogs] = useState<IAttendanceLog[]>([]);
+  const [calendarData, setCalendarData] = useState<IMonthlyCalendar | null>(null);
+  const [workSchedule, setWorkSchedule] = useState<IWorkSchedule | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedDay, setSelectedDay] = useState<IAttendanceLog | null>(null);
+  const [selectedDay, setSelectedDay] = useState<{ attendance?: IAttendanceLog; calendar?: ICalendarDay } | null>(null);
 
   useEffect(() => {
-    if (subdomain) fetchAttendance();
+    if (subdomain) {
+      Promise.all([fetchAttendance(), fetchCalendarData(), fetchWorkSchedule()]);
+    }
   }, [subdomain, currentMonth, currentYear]);
 
   const fetchAttendance = async () => {
-    setLoading(true);
     try {
       const firstDay = new Date(currentYear, currentMonth, 1);
       const lastDay = new Date(currentYear, currentMonth + 1, 0);
@@ -95,24 +113,67 @@ export default function MonthlyAttendancePage() {
       setLogs(raw);
     } catch (error) {
       console.error('Error fetching attendance:', error);
+    }
+  };
+
+  const fetchCalendarData = async () => {
+    setLoading(true);
+    try {
+      const res = await getMonthlyCalendar(currentYear, currentMonth + 1, subdomain);
+      setCalendarData(res?.data || null);
+    } catch (error) {
+      console.error('Error fetching calendar data:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchWorkSchedule = async () => {
+    try {
+      const res = await getWorkSchedule(subdomain);
+      setWorkSchedule(res?.data || null);
+    } catch (error) {
+      console.error('Error fetching work schedule:', error);
+    }
+  };
+
+  // Create attendance lookup by date
+  const attendanceByDate = useMemo(() => {
+    const map: Record<string, IAttendanceLog> = {};
+    logs.forEach(log => {
+      map[log.attendance_date] = log;
+    });
+    return map;
+  }, [logs]);
+
   const stats = useMemo(() => {
+    if (!calendarData) return {
+      present: 0, absent: 0, leave: 0, late: 0, regularized: 0,
+      workingDays: 0, holidays: 0, weekends: 0, workingOverrides: 0, holidayOverrides: 0,
+      total: 0, attendanceRate: 0
+    };
+
     const present = logs.filter(l => l.attendance_status === 'present').length;
     const absent = logs.filter(l => l.attendance_status === 'absent').length;
     const leave = logs.filter(l => l.attendance_status === 'on_leave').length;
     const late = logs.filter(l => l.is_late).length;
-    const holiday = logs.filter(l => l.attendance_status === 'holiday').length;
     const regularized = logs.filter(l => l.is_regularized).length;
     
-    const workingDays = logs.filter(l => l.day_type === 'working_day').length;
-    const attendanceRate = workingDays > 0 ? Math.round((present / workingDays) * 100) : 0;
+    const workingDays = calendarData.days.filter(d => d.status === 'working').length;
+    const holidays = calendarData.days.filter(d => d.status === 'holiday').length;
+    const weekends = calendarData.days.filter(d => d.status === 'weekend').length;
+    const workingOverrides = calendarData.days.filter(d => d.status === 'working_override').length;
+    const holidayOverrides = calendarData.days.filter(d => d.status === 'holiday_override').length;
     
-    return { present, absent, leave, late, holiday, regularized, total: logs.length, attendanceRate, workingDays };
-  }, [logs]);
+    const totalWorkingDays = calendarData.total_working_days;
+    const attendanceRate = totalWorkingDays > 0 ? Math.round((present / totalWorkingDays) * 100) : 0;
+    
+    return {
+      present, absent, leave, late, regularized,
+      workingDays, holidays, weekends, workingOverrides, holidayOverrides,
+      total: calendarData.days.length, attendanceRate
+    };
+  }, [logs, calendarData]);
 
   const prevMonth = () => {
     if (currentMonth === 0) {
@@ -159,10 +220,14 @@ export default function MonthlyAttendancePage() {
 
   const MONTH_STATS = [
     { label: 'Present', value: stats.present, status: 'present', icon: CheckCircle2 },
+    { label: 'Absent', value: stats.absent, status: 'absent', icon: Clock },
     { label: 'Leave', value: stats.leave, status: 'on_leave', icon: Calendar },
     { label: 'Late', value: stats.late, status: 'late', icon: AlertCircle },
-    { label: 'Absent', value: stats.absent, status: 'absent', icon: Clock },
-    { label: 'Holiday', value: stats.holiday, status: 'holiday', icon: Award },
+    { label: 'Working Days', value: stats.workingDays, status: 'working', icon: Briefcase },
+    { label: 'Holidays', value: stats.holidays, status: 'holiday', icon: CalendarDays },
+    { label: 'Weekends', value: stats.weekends, status: 'weekend', icon: Sun },
+    { label: 'Working Override', value: stats.workingOverrides, status: 'working_override', icon: Shield },
+    { label: 'Holiday Override', value: stats.holidayOverrides, status: 'holiday_override', icon: Award },
     { label: 'Regularized', value: stats.regularized, status: 'regularized', icon: RotateCcw },
   ];
 
@@ -275,7 +340,7 @@ export default function MonthlyAttendancePage() {
               </div>
               <div className="text-right">
                 <p className="text-base sm:text-lg font-semibold text-emerald-600">
-                  {stats.present}/{stats.workingDays}
+                  {stats.present}/{calendarData?.total_working_days || 0}
                 </p>
                 <p className="text-[10px] sm:text-xs text-slate-500">
                   Days Present
@@ -288,19 +353,25 @@ export default function MonthlyAttendancePage() {
                 style={{ width: `${stats.attendanceRate}%` }}
               />
             </div>
+            {workSchedule && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-xs font-semibold text-blue-800">{workSchedule.name}</p>
+                <p className="text-[10px] text-blue-600 mt-1">{workSchedule.description}</p>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-3 sm:gap-4">
-            {MONTH_STATS.slice(0, 4).map((stat) => {
-              const cfg = STATUS_CONFIG[stat.status];
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-1 gap-3 sm:gap-4">
+            {MONTH_STATS.slice(0, 6).map((stat) => {
+              const cfg = CALENDAR_STATUS_CONFIG[stat.status] || ATTENDANCE_STATUS_CONFIG[stat.status];
               const StatIcon = stat.icon;
               return (
                 <div key={stat.label} className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-3 sm:p-4 shadow-sm hover:shadow-md transition-all duration-200">
                   <div className="flex items-center justify-between mb-2">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: cfg.bg }}>
-                      <StatIcon size={14} style={{ color: cfg.color }} />
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: cfg?.bg }}>
+                      <StatIcon size={14} style={{ color: cfg?.color }} />
                     </div>
-                    <span className="text-xs sm:text-sm font-bold" style={{ color: cfg.color }}>
+                    <span className="text-xs sm:text-sm font-bold" style={{ color: cfg?.color }}>
                       {stat.value}
                     </span>
                   </div>
@@ -317,7 +388,7 @@ export default function MonthlyAttendancePage() {
           <div className="flex justify-center py-20 bg-white rounded-2xl border border-slate-200">
             <Loader2 size={22} className="animate-spin text-emerald-600" />
           </div>
-        ) : (
+        ) : calendarData ? (
           <>
             {/* Calendar Section */}
             <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 overflow-hidden shadow-sm mb-3 lg:mb-4">
@@ -330,63 +401,120 @@ export default function MonthlyAttendancePage() {
               </div>
 
               <div className="grid grid-cols-7">
-                {cells.map((cell, i) => {
-                  if (cell === null) {
-                    return (
-                      <div key={`empty-${i}`} className="aspect-square border-b border-r border-slate-100 bg-slate-50/30" />
-                    );
+                {(() => {
+                  const firstDay = new Date(currentYear, currentMonth, 1);
+                  const firstDayOfWeek = firstDay.getDay();
+                  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                  
+                  const cells: (ICalendarDay | null | 'future')[] = [];
+                  
+                  // Add empty cells for days before month starts
+                  for (let i = 0; i < firstDayOfWeek; i++) {
+                    cells.push(null);
                   }
                   
-                  if (cell === 'future') {
-                    const day = i - firstDayOfMonth + 1;
-                    return (
-                      <div key={`future-${i}`} className="aspect-square border-b border-r border-slate-100 p-1 sm:p-2 flex flex-col items-center justify-center bg-slate-50/30">
-                        <span className="text-xs sm:text-sm font-bold text-gray-300">{day}</span>
-                      </div>
-                    );
+                  // Add calendar days or future placeholders
+                  for (let day = 1; day <= daysInMonth; day++) {
+                    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const calendarDay = calendarData.days.find(d => d.date === dateStr);
+                    const cellDate = new Date(dateStr);
+                    const isFuture = cellDate > today;
+                    
+                    if (isFuture && !calendarDay) {
+                      cells.push('future');
+                    } else {
+                      cells.push(calendarDay || null);
+                    }
                   }
+                  
+                  return cells.map((cell, i) => {
+                    if (cell === null) {
+                      return (
+                        <div key={`empty-${i}`} className="aspect-square border-b border-r border-slate-100 bg-slate-50/30" />
+                      );
+                    }
+                    
+                    if (cell === 'future') {
+                      const day = i - firstDayOfWeek + 1;
+                      return (
+                        <div key={`future-${i}`} className="aspect-square border-b border-r border-slate-100 p-1 sm:p-2 flex flex-col items-center justify-center bg-slate-50/30">
+                          <span className="text-xs sm:text-sm font-bold text-gray-300">{day}</span>
+                        </div>
+                      );
+                    }
 
-                  const log = cell as IAttendanceLog;
-                  const day = new Date(log.attendance_date).getDate();
-                  const displayStatus = log.is_regularized ? 'regularized' : log.is_late ? 'late' : log.attendance_status;
-                  const cfg = STATUS_CONFIG[displayStatus] || STATUS_CONFIG.present;
-                  const isSelected = selectedDay?.id === log.id;
-                  const isToday = new Date(log.attendance_date).toDateString() === today.toDateString();
+                    const calendarDay = cell as ICalendarDay;
+                    const day = new Date(calendarDay.date).getDate();
+                    const dateStr = calendarDay.date;
+                    const attendance = attendanceByDate[dateStr];
+                    
+                    // Determine primary display based on calendar status
+                    const calendarCfg = CALENDAR_STATUS_CONFIG[calendarDay.status] || CALENDAR_STATUS_CONFIG.working;
+                    let attendanceStatus = '';
+                    let attendanceCfg = null;
+                    
+                    if (attendance) {
+                      attendanceStatus = attendance.is_regularized ? 'regularized' : 
+                                        attendance.is_late ? 'late' : 
+                                        attendance.attendance_status;
+                      attendanceCfg = ATTENDANCE_STATUS_CONFIG[attendanceStatus];
+                    }
+                    
+                    const isSelected = selectedDay?.calendar?.date === calendarDay.date;
+                    const isToday = new Date(calendarDay.date).toDateString() === today.toDateString();
+                    const CalendarIcon = calendarCfg.icon;
 
-                  return (
-                    <button
-                      key={log.id}
-                      onClick={() => setSelectedDay(isSelected ? null : log)}
-                      className={`aspect-square border-b border-r border-slate-100 p-1 sm:p-2 flex flex-col items-center justify-center gap-0.5 sm:gap-1 transition-all duration-200 cursor-pointer hover:opacity-80 ${
-                        isSelected ? 'ring-2 ring-inset ring-emerald-500 shadow-sm' : ''
-                      }`}
-                      style={{ backgroundColor: isSelected ? cfg.bg : cfg.bg }}
-                    >
-                      <span
-                        className={`text-xs sm:text-sm font-bold ${
-                          isToday
-                            ? 'w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs sm:text-sm'
-                            : ''
+                    return (
+                      <button
+                        key={calendarDay.date}
+                        onClick={() => setSelectedDay(isSelected ? null : { calendar: calendarDay, attendance })}
+                        className={`aspect-square border-b border-r border-slate-100 p-1 sm:p-2 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer hover:opacity-80 ${
+                          isSelected ? 'ring-2 ring-inset ring-emerald-500 shadow-sm' : ''
                         }`}
-                        style={{ color: isToday ? undefined : cfg.color }}
+                        style={{ backgroundColor: calendarCfg.bg }}
                       >
-                        {day}
-                      </span>
-                      {cfg.label && (
+                        {/* Day number */}
                         <span
-                          className="text-[7px] sm:text-[9px] font-semibold px-1 sm:px-1.5 py-0.5 rounded-full whitespace-nowrap hidden sm:block"
-                          style={{
-                            backgroundColor: cfg.dot + '20',
-                            color: cfg.color,
-                          }}
+                          className={`text-xs sm:text-sm font-bold ${
+                            isToday
+                              ? 'w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center'
+                              : ''
+                          }`}
+                          style={{ color: isToday ? undefined : calendarCfg.color }}
                         >
-                          {cfg.label}
+                          {day}
                         </span>
-                      )}
-                      <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full" style={{ backgroundColor: cfg.dot }} />
-                    </button>
-                  );
-                })}
+                        
+                        {/* Calendar status icon */}
+                        <CalendarIcon size={10} className="flex-shrink-0" style={{ color: calendarCfg.color }} />
+                        
+                        {/* Holiday/Override name or attendance status */}
+                        {calendarDay.holiday_name || calendarDay.override_name ? (
+                          <span className="text-[6px] sm:text-[7px] font-medium text-center leading-none" style={{ color: calendarCfg.color }}>
+                            {(calendarDay.holiday_name || calendarDay.override_name || '').length > 6 ? 
+                             (calendarDay.holiday_name || calendarDay.override_name || '').slice(0, 6) + '..' : 
+                             (calendarDay.holiday_name || calendarDay.override_name)}
+                          </span>
+                        ) : attendanceCfg ? (
+                          <span
+                            className="text-[6px] sm:text-[7px] font-semibold px-1 py-0.5 rounded-full"
+                            style={{ backgroundColor: attendanceCfg.dot + '20', color: attendanceCfg.color }}
+                          >
+                            {attendanceCfg.label.slice(0, 3)}
+                          </span>
+                        ) : null}
+                        
+                        {/* Status dots */}
+                        <div className="flex items-center gap-0.5">
+                          <div className="w-1 h-1 rounded-full" style={{ backgroundColor: calendarCfg.dot }} />
+                          {attendanceCfg && (
+                            <div className="w-1 h-1 rounded-full" style={{ backgroundColor: attendanceCfg.dot }} />
+                          )}
+                        </div>
+                      </button>
+                    );
+                  });
+                })()}
               </div>
             </div>
 
@@ -395,45 +523,80 @@ export default function MonthlyAttendancePage() {
               <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-6 mb-5 lg:mb-6 shadow-lg animate-fade-in">
                 <div className="flex items-start sm:items-center justify-between mb-4 sm:mb-5">
                   <div className="flex items-center gap-3">
-                    <div
-                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-base sm:text-lg font-bold"
-                      style={{
-                        backgroundColor: STATUS_CONFIG[selectedDay.attendance_status]?.bg,
-                        color: STATUS_CONFIG[selectedDay.attendance_status]?.color,
-                      }}
-                    >
-                      {new Date(selectedDay.attendance_date).getDate()}
-                    </div>
-                    <div>
-                      <p className="text-base sm:text-lg font-bold text-slate-800">
-                        {new Date(selectedDay.attendance_date).toLocaleDateString('en-GB', { 
-                          day: 'numeric', 
-                          month: 'long', 
-                          year: 'numeric' 
-                        })}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span
-                          className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full"
-                          style={{
-                            backgroundColor: STATUS_CONFIG[selectedDay.attendance_status]?.bg,
-                            color: STATUS_CONFIG[selectedDay.attendance_status]?.color,
-                          }}
-                        >
-                          {STATUS_CONFIG[selectedDay.attendance_status]?.label}
-                        </span>
-                        {selectedDay.is_late && (
-                          <span className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
-                            Late by {fmtHours(selectedDay.late_by_minutes)}
-                          </span>
-                        )}
-                        {selectedDay.is_regularized && (
-                          <span className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                            Regularized
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                    {(() => {
+                      const calendarDay = selectedDay.calendar!;
+                      const attendance = selectedDay.attendance;
+                      const calendarCfg = CALENDAR_STATUS_CONFIG[calendarDay.status] || CALENDAR_STATUS_CONFIG.working;
+                      const CalendarIcon = calendarCfg.icon;
+                      
+                      return (
+                        <>
+                          <div
+                            className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-base sm:text-lg font-bold"
+                            style={{
+                              backgroundColor: calendarCfg.bg,
+                              color: calendarCfg.color,
+                            }}
+                          >
+                            <CalendarIcon size={20} />
+                          </div>
+                          <div>
+                            <p className="text-base sm:text-lg font-bold text-slate-800">
+                              {new Date(calendarDay.date).toLocaleDateString('en-GB', { 
+                                day: 'numeric', 
+                                month: 'long', 
+                                year: 'numeric' 
+                              })}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              <span
+                                className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full"
+                                style={{
+                                  backgroundColor: calendarCfg.bg,
+                                  color: calendarCfg.color,
+                                }}
+                              >
+                                {calendarCfg.label}
+                              </span>
+                              {calendarDay.is_override && (
+                                <span className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                                  Override
+                                </span>
+                              )}
+                              {attendance?.is_late && (
+                                <span className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                                  Late by {fmtHours(attendance.late_by_minutes)}
+                                </span>
+                              )}
+                              {attendance?.is_regularized && (
+                                <span className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                                  Regularized
+                                </span>
+                              )}
+                            </div>
+                            
+                            {/* Calendar day details */}
+                            <div className="mt-3 space-y-2">
+                              <div className="text-xs text-slate-600">
+                                <span className="font-semibold">Status:</span> {calendarDay.reason}
+                              </div>
+                              {(calendarDay.holiday_name || calendarDay.override_name) && (
+                                <div className="text-xs text-slate-700">
+                                  <span className="font-semibold">
+                                    {calendarDay.holiday_name ? 'Holiday:' : 'Override:'}
+                                  </span> {calendarDay.holiday_name || calendarDay.override_name}
+                                </div>
+                              )}
+                              {attendance && (
+                                <div className="text-xs text-slate-600">
+                                  <span className="font-semibold">Attendance:</span> {attendance.attendance_status}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                   <button
                     onClick={() => setSelectedDay(null)}
@@ -443,45 +606,47 @@ export default function MonthlyAttendancePage() {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-                  {selectedDay.check_in_time && (
-                    <div className="bg-slate-50 rounded-xl p-3">
-                      <p className="text-[10px] sm:text-xs text-slate-500 mb-1">Check-in</p>
-                      <p className="text-sm sm:text-base font-bold text-slate-800">
-                        {fmtTime(selectedDay.check_in_time)}
-                      </p>
-                    </div>
-                  )}
-                  {selectedDay.check_out_time && (
-                    <div className="bg-slate-50 rounded-xl p-3">
-                      <p className="text-[10px] sm:text-xs text-slate-500 mb-1">Check-out</p>
-                      <p className="text-sm sm:text-base font-bold text-slate-800">
-                        {fmtTime(selectedDay.check_out_time)}
-                      </p>
-                    </div>
-                  )}
-                  {selectedDay.total_worked_hours && (
-                    <div className="bg-slate-50 rounded-xl p-3">
-                      <p className="text-[10px] sm:text-xs text-slate-500 mb-1">Hours Worked</p>
-                      <p className="text-sm sm:text-base font-bold text-slate-800">
-                        {selectedDay.total_worked_hours}
-                      </p>
-                    </div>
-                  )}
-                  {selectedDay.shift_name && (
-                    <div className="bg-slate-50 rounded-xl p-3">
-                      <p className="text-[10px] sm:text-xs text-slate-500 mb-1">Shift</p>
-                      <p className="text-xs sm:text-sm font-medium text-slate-800">
-                        {selectedDay.shift_name}
-                      </p>
-                    </div>
-                  )}
-                </div>
+                {selectedDay.attendance && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                    {selectedDay.attendance.check_in_time && (
+                      <div className="bg-slate-50 rounded-xl p-3">
+                        <p className="text-[10px] sm:text-xs text-slate-500 mb-1">Check-in</p>
+                        <p className="text-sm sm:text-base font-bold text-slate-800">
+                          {fmtTime(selectedDay.attendance.check_in_time)}
+                        </p>
+                      </div>
+                    )}
+                    {selectedDay.attendance.check_out_time && (
+                      <div className="bg-slate-50 rounded-xl p-3">
+                        <p className="text-[10px] sm:text-xs text-slate-500 mb-1">Check-out</p>
+                        <p className="text-sm sm:text-base font-bold text-slate-800">
+                          {fmtTime(selectedDay.attendance.check_out_time)}
+                        </p>
+                      </div>
+                    )}
+                    {selectedDay.attendance.total_worked_hours && (
+                      <div className="bg-slate-50 rounded-xl p-3">
+                        <p className="text-[10px] sm:text-xs text-slate-500 mb-1">Hours Worked</p>
+                        <p className="text-sm sm:text-base font-bold text-slate-800">
+                          {selectedDay.attendance.total_worked_hours}
+                        </p>
+                      </div>
+                    )}
+                    {selectedDay.attendance.shift_name && (
+                      <div className="bg-slate-50 rounded-xl p-3">
+                        <p className="text-[10px] sm:text-xs text-slate-500 mb-1">Shift</p>
+                        <p className="text-xs sm:text-sm font-medium text-slate-800">
+                          {selectedDay.attendance.shift_name}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-                {selectedDay.remarks && (
+                {selectedDay.attendance?.remarks && (
                   <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
                     <p className="text-[10px] sm:text-xs text-amber-700 font-semibold mb-1">Note</p>
-                    <p className="text-xs text-amber-800">{selectedDay.remarks}</p>
+                    <p className="text-xs text-amber-800">{selectedDay.attendance.remarks}</p>
                   </div>
                 )}
               </div>
@@ -498,10 +663,10 @@ export default function MonthlyAttendancePage() {
                 </div>
                 <div className="flex flex-wrap gap-3 sm:gap-4">
                   {LEGEND.map((l) => {
-                    const cfg = STATUS_CONFIG[l.status];
+                    const cfg = CALENDAR_STATUS_CONFIG[l.status] || ATTENDANCE_STATUS_CONFIG[l.status];
                     return (
                       <div key={l.status} className="flex items-center gap-1.5 sm:gap-2">
-                        <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full" style={{ backgroundColor: cfg.dot }} />
+                        <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full" style={{ backgroundColor: cfg?.dot }} />
                         <span className="text-[10px] sm:text-xs text-slate-600">{l.label}</span>
                       </div>
                     );
@@ -516,17 +681,39 @@ export default function MonthlyAttendancePage() {
                   </div>
                   <div>
                     <h4 className="text-xs sm:text-sm font-bold text-slate-800 mb-1">
-                      Attendance Summary
+                      Monthly Calendar Summary
                     </h4>
-                    <p className="text-[10px] sm:text-xs text-slate-600 leading-relaxed">
+                    <p className="text-[10px] sm:text-xs text-slate-600 leading-relaxed mb-2">
                       You have maintained {stats.attendanceRate}% attendance this month.
                       {stats.attendanceRate >= 90 ? ' Excellent performance! Keep it up! 🎉' : ' Keep up the good work!'}
                     </p>
+                    {calendarData && (
+                      <div className="text-[10px] sm:text-xs text-slate-500 leading-relaxed space-y-1">
+                        <p>
+                          <span className="font-semibold">Working Days:</span> {calendarData.total_working_days}
+                          <span className="mx-2">•</span>
+                          <span className="font-semibold">Holidays:</span> {calendarData.total_holidays}
+                        </p>
+                        {workSchedule && (
+                          <p>
+                            <span className="font-semibold">Schedule:</span> {workSchedule.name}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
           </>
+        ) : (
+          <div className="flex justify-center py-20 bg-white rounded-2xl border border-slate-200">
+            <div className="text-center">
+              <Calendar size={40} className="text-slate-300 mx-auto mb-4" />
+              <p className="text-slate-500 font-medium">No calendar data available</p>
+              <p className="text-xs text-slate-400 mt-1">Please check your connection and try again</p>
+            </div>
+          </div>
         )}
       </div>
     </div>

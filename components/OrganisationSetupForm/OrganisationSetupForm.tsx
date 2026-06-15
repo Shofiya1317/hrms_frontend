@@ -108,7 +108,6 @@ const validationSchema = object({
   ),
   departments: array().min(1, 'At least one department is required'),
   work_shifts: array().min(1, 'At least one work shift is required'),
-  work_schedules: array().min(1, 'At least one work schedule is required'),
 });
 
 // ── Add Custom Button ─────────────────────────────────────────────
@@ -259,10 +258,24 @@ export default function OrganisationSetupForm({
   const onSubmit = async (values: OrganisationSetup) => {
     try {
       const payload = {
-        work_location_ids: values.branches_locations,
+        work_location: values.branches_locations,
         department_ids: values.departments,
         shift_ids: values.work_shifts,
-        work_schedule_ids: values.work_schedules,
+        work_schedule: {
+          name: newSchedule.name || "Standard 5-Day Week",
+          monday: newSchedule.monday,
+          tuesday: newSchedule.tuesday,
+          wednesday: newSchedule.wednesday,
+          thursday: newSchedule.thursday,
+          friday: newSchedule.friday,
+          saturday_week_1: newSchedule.saturday_week_1,
+          saturday_week_2: newSchedule.saturday_week_2,
+          saturday_week_3: newSchedule.saturday_week_3,
+          saturday_week_4: newSchedule.saturday_week_4,
+          saturday_week_5: newSchedule.saturday_week_5,
+          sunday: newSchedule.sunday,
+          description: newSchedule.description || "Monday to Friday working days"
+        }
       };
       const res = await onboardingStep2(payload, slug);
       const { success, error } = res?.data as {
@@ -381,13 +394,11 @@ export default function OrganisationSetupForm({
       };
       if (success) {
         await fetchWorkSchedules();
-        setNewSchedule(emptySchedule);
-        setShowCustomScheduleModal(false);
         toast.success('Work schedule created successfully');
+        // Don't reset here, let the Save & Select button handle it
       } else {
         toast.error(error ?? 'Failed to create work schedule');
       }
-      // ← stray toast.error() that was here is now removed
     } catch {
       toast.error('Failed to create work schedule');
     } finally {
@@ -715,7 +726,7 @@ export default function OrganisationSetupForm({
                     )}
                   </div>
 
-                  <div className="col-12 col-md-12">
+                  {/* <div className="col-12 col-md-6">
                     <label className="form-label fw-medium">
                       Work Schedule <span className="text-danger">*</span>
                     </label>
@@ -752,6 +763,74 @@ export default function OrganisationSetupForm({
                         {String(errors.work_schedules)}
                       </div>
                     )}
+                  </div> */}
+
+                  {/* Work Schedule Visual Builder */}
+                  <div className="col-12 col-md-12">
+                    <label className="form-label fw-medium">
+                      Configure Schedule
+                    </label>
+                    <div className="schedule-builder-card">
+                      <div className="mb-3">
+                        <input
+                          type="text"
+                          className="form-control form-control-sm"
+                          placeholder="Schedule name (e.g. 5-Day Week)"
+                          value={newSchedule.name}
+                          onChange={(e) =>
+                            setNewSchedule({ ...newSchedule, name: e.target.value })
+                          }
+                        />
+                      </div>
+                      
+                      <div className="mb-3">
+                        <div className="schedule-label">Working Days</div>
+                        <div className="d-flex flex-wrap gap-2">
+                          {DAY_FIELDS.map(({ key, label }) => (
+                            <label
+                              key={key}
+                              className={`day-pill${newSchedule[key] ? ' day-pill--active' : ''}`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={newSchedule[key] as boolean}
+                                onChange={(e) =>
+                                  setNewSchedule({
+                                    ...newSchedule,
+                                    [key]: e.target.checked,
+                                  })
+                                }
+                              />
+                              {label.substring(0, 3)}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="mb-3">
+                        <div className="schedule-label">Saturday Weeks</div>
+                        <div className="d-flex flex-wrap gap-2">
+                          {SATURDAY_FIELDS.map(({ key, label }) => (
+                            <label
+                              key={key}
+                              className={`day-pill day-pill--sat${newSchedule[key] ? ' day-pill--active' : ''}`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={newSchedule[key] as boolean}
+                                onChange={(e) =>
+                                  setNewSchedule({
+                                    ...newSchedule,
+                                    [key]: e.target.checked,
+                                  })
+                                }
+                              />
+                              {label}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -971,7 +1050,7 @@ export default function OrganisationSetupForm({
       )}
 
       {/* ── Custom Schedule Modal ── */}
-      {showCustomScheduleModal && (
+      {/* {showCustomScheduleModal && (
         <div
           className="modal show d-block"
           tabIndex={-1}
@@ -1091,7 +1170,7 @@ export default function OrganisationSetupForm({
             </div>
           </div>
         </div>
-      )}
+      )} */}
     </>
   );
 }

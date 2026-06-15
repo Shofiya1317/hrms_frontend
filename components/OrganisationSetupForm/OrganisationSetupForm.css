@@ -270,3 +270,73 @@
 .tp-done-btn:hover {
   background: #0d6460;
 }
+/* Schedule Builder Styles */
+.schedule-builder-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 4px;
+}
+
+.schedule-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.day-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 20px;
+  background: #ffffff;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  min-width: 45px;
+}
+
+.day-pill input {
+  display: none;
+}
+
+.day-pill:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.day-pill--active {
+  border-color: #10b981;
+  background: #10b981;
+  color: #ffffff;
+}
+
+.day-pill--sat {
+  border-color: #f59e0b;
+  color: #92400e;
+}
+
+.day-pill--sat:hover {
+  border-color: #f59e0b;
+  background: #fef3c7;
+}
+
+.day-pill--sat.day-pill--active {
+  border-color: #f59e0b;
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+.flex-1 {
+  flex: 1;
+}
