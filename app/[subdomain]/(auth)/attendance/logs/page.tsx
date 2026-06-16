@@ -1,15 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { ClipboardList, FileText } from 'lucide-react';
+import { ClipboardList, FileText, Home } from 'lucide-react';
 import AttendanceLogs from '@/components/AdminPortal/AdminAttendance/AttendanceLogs';
 import AdminRegularizationRequests from '@/components/AdminPortal/AdminAttendance/AdminRegularizationRequests';
+import AdminWFHRequests from '@/components/AdminPortal/AdminAttendance/AdminWFHRequests';
+import AdminOnDutyRequests from '@/components/AdminPortal/AdminAttendance/AdminOnDutyRequests';
 
-type Tab = 'logs' | 'regularization';
+type Tab = 'logs' | 'regularization' | 'wfh' | 'onduty';
 
 const TABS: { id: Tab; label: string; icon: any }[] = [
-  { id: 'logs', label: 'Attendance Logs', icon: ClipboardList },
-  { id: 'regularization', label: 'Regularization Requests', icon: FileText },
+  { id: 'logs',           label: 'Attendance Logs',          icon: ClipboardList },
+  { id: 'regularization', label: 'Regularization Requests',  icon: FileText      },
+  { id: 'wfh',            label: 'WFH Requests',             icon: Home          },
+  { id: 'onduty',         label: 'On-Duty Requests',         icon: Home          },
 ];
 
 export default function AttendanceLogsPage() {
@@ -19,7 +23,7 @@ export default function AttendanceLogsPage() {
     <div className="space-y-4 p-3 sm:p-4 lg:p-6">
       <div>
         <h1 className="text-lg font-bold text-[#0f1f2e]">Attendance Management</h1>
-        <p className="text-xs text-gray-400 mt-0.5">View logs and manage regularization requests</p>
+        <p className="text-xs text-gray-400 mt-0.5">View logs, manage regularization and WFH requests</p>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -44,9 +48,13 @@ export default function AttendanceLogsPage() {
         </div>
 
         <div className="p-4">
-          {activeTab === 'logs' && <AttendanceLogs />}
+          {activeTab === 'logs'           && <AttendanceLogs />}
           {activeTab === 'regularization' && <AdminRegularizationRequests />}
-        </div>
+          {activeTab === 'wfh'            && <AdminWFHRequests />}
+          {activeTab === 'onduty'         && <AdminOnDutyRequests />}
+
+
+          </div>
       </div>
     </div>
   );

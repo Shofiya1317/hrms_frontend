@@ -123,7 +123,7 @@ export const employeeMenuItems: IMenuItem[] = [
     icon: <FileText size={16} />,
     menuItems: [
       { label: 'Regularization', path: '/employee/attendance/regularization' },
-      { label: 'Work From Home', path: '/employee/attendance/work-from-home' },
+      { label: 'Work From Home', path: '/employee/attendance/wfh-request' },
     ],
   },
   {

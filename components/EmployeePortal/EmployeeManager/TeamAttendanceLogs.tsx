@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { ChevronDown, ChevronLeft, ChevronRight, Search, CheckCircle2, XCircle, Clock, AlertTriangle, Loader2, TrendingUp, User, Calendar } from 'lucide-react';
 import { getAttendances } from '@/lib/service/attendance';
 
-type AttendanceStatus = 'present' | 'absent' | 'on_leave' | 'weekend' | 'holiday';
+type AttendanceStatus = 'present' | 'absent' | 'on_leave' | 'weekend' | 'holiday' | 'checked_in' | 'checked_out';
 interface IAttendanceLog {
   id: string;
   employee_id: string;
@@ -31,11 +31,13 @@ interface IAttendanceLog {
 }
 
 const STATUS_META: Record<AttendanceStatus, { label: string; bg: string; text: string; dot: string; icon: any }> = {
-  present: { label: 'Present', bg: 'bg-teal-50', text: 'text-teal-700', dot: 'bg-teal-500', icon: CheckCircle2 },
-  absent: { label: 'Absent', bg: 'bg-red-50', text: 'text-red-600', dot: 'bg-red-400', icon: XCircle },
-  on_leave: { label: 'On Leave', bg: 'bg-blue-50', text: 'text-blue-600', dot: 'bg-blue-500', icon: Clock },
-  weekend: { label: 'Weekend', bg: 'bg-purple-50', text: 'text-purple-600', dot: 'bg-purple-500', icon: Clock },
-  holiday: { label: 'Holiday', bg: 'bg-amber-50', text: 'text-amber-600', dot: 'bg-amber-400', icon: Clock },
+  present:     { label: 'Present',    bg: 'bg-teal-50',   text: 'text-teal-700',   dot: 'bg-teal-500',   icon: CheckCircle2 },
+  absent:      { label: 'Absent',     bg: 'bg-red-50',    text: 'text-red-600',    dot: 'bg-red-400',    icon: XCircle },
+  on_leave:    { label: 'On Leave',   bg: 'bg-blue-50',   text: 'text-blue-600',   dot: 'bg-blue-500',   icon: Clock },
+  weekend:     { label: 'Weekend',    bg: 'bg-purple-50', text: 'text-purple-600', dot: 'bg-purple-500', icon: Clock },
+  holiday:     { label: 'Holiday',    bg: 'bg-amber-50',  text: 'text-amber-600',  dot: 'bg-amber-400',  icon: Clock },
+  checked_in:  { label: 'Checked In', bg: 'bg-cyan-50',   text: 'text-cyan-700',   dot: 'bg-cyan-500',   icon: Clock },
+  checked_out: { label: 'Completed',  bg: 'bg-teal-50',   text: 'text-teal-700',   dot: 'bg-teal-500',   icon: CheckCircle2 },
 };
 
 const AVATAR_COLORS = ['bg-[#0f766e]','bg-blue-500','bg-violet-500','bg-rose-500','bg-amber-500','bg-cyan-500','bg-pink-500','bg-indigo-500'];

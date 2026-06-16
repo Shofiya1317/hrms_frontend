@@ -8,9 +8,11 @@ import {
   MapPin, Tag, User,
 } from 'lucide-react';
 import { getAttendances } from '@/lib/service/attendance';
+import { getLeaveApplications } from '@/lib/service/leaveApplication';
+import { LeaveStatus } from '@/lib/service/leaveApplication';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-type AttendanceStatus = 'present' | 'absent' | 'on_leave' | 'weekend' | 'holiday';
+type AttendanceStatus = 'present' | 'absent' | 'on_leave' | 'weekend' | 'holiday' | 'checked_in' | 'checked_out';
 type DayType = 'working_day' | 'weekend' | 'public_holiday' | 'company_holiday';
 
 interface IAttendanceLog {
@@ -41,11 +43,13 @@ interface IAttendanceLog {
 
 // ── constants ─────────────────────────────────────────────────────────────────
 const STATUS_META: Record<AttendanceStatus, { label: string; bg: string; text: string; dot: string; icon: any }> = {
-  present:  { label: 'Present',  bg: 'bg-teal-50',   text: 'text-teal-700',   dot: 'bg-teal-500',   icon: CheckCircle2 },
-  absent:   { label: 'Absent',   bg: 'bg-red-50',    text: 'text-red-600',    dot: 'bg-red-400',    icon: XCircle },
-  on_leave: { label: 'On Leave', bg: 'bg-blue-50',   text: 'text-blue-600',   dot: 'bg-blue-500',   icon: Calendar },
-  weekend:  { label: 'Weekend',  bg: 'bg-purple-50', text: 'text-purple-600', dot: 'bg-purple-500', icon: Calendar },
-  holiday:  { label: 'Holiday',  bg: 'bg-amber-50',  text: 'text-amber-600',  dot: 'bg-amber-400',  icon: Calendar },
+  present:     { label: 'Present',    bg: 'bg-teal-50',   text: 'text-teal-700',   dot: 'bg-teal-500',   icon: CheckCircle2 },
+  absent:      { label: 'Absent',     bg: 'bg-red-50',    text: 'text-red-600',    dot: 'bg-red-400',    icon: XCircle },
+  on_leave:    { label: 'On Leave',   bg: 'bg-blue-50',   text: 'text-blue-600',   dot: 'bg-blue-500',   icon: Calendar },
+  weekend:     { label: 'Weekend',    bg: 'bg-purple-50', text: 'text-purple-600', dot: 'bg-purple-500', icon: Calendar },
+  holiday:     { label: 'Holiday',    bg: 'bg-amber-50',  text: 'text-amber-600',  dot: 'bg-amber-400',  icon: Calendar },
+  checked_in:  { label: 'Checked In', bg: 'bg-cyan-50',   text: 'text-cyan-700',   dot: 'bg-cyan-500',   icon: Clock },
+  checked_out: { label: 'Completed',  bg: 'bg-teal-50',   text: 'text-teal-700',   dot: 'bg-teal-500',   icon: CheckCircle2 },
 };
 
 const AVATAR_COLORS = [
@@ -152,8 +156,8 @@ function AttendanceRow({ log, isOpen, onToggle }: { log: IAttendanceLog; isOpen:
 
         {/* hours */}
         <div className="hidden lg:block text-right">
-          <p className="text-xs font-bold text-[#0f766e]">{log.total_worked_hours}h</p>
-          <p className="text-[9px] text-gray-400">{fmtHours(log.total_worked_minutes)}</p>
+          {/* <p className="text-xs font-bold text-[#0f766e]">{log.total_worked_hours}h</p> */}
+          <p className="text-xs font-bold text-[#0f766e]">{fmtHours(log.total_worked_minutes)}</p>
         </div>
       </div>
 
@@ -304,8 +308,66 @@ export default function AttendanceLogs() {
       params._t = Date.now();
       
       const res = await getAttendances(subdomain, params);
-      const raw = Array.isArray(res?.data) ? res.data : (res?.data?.data ?? []);
-      setLogs(raw);
+
+const attendanceLogs = Array.isArray(res?.data)
+  ? res.data
+  : (res?.data?.data ?? []);
+  if (statusFilter === 'on_leave' && selectedDate) {
+  const leaveRes = await getLeaveApplications(
+    subdomain,
+    {
+      status: LeaveStatus.APPROVED,
+      from_date: selectedDate,
+      to_date: selectedDate,
+    }
+  );
+
+  const leaveApps = Array.isArray(leaveRes?.data)
+    ? leaveRes.data
+    : (leaveRes?.data?.data ?? []);
+
+  const leaveLogs = leaveApps.map((leave: any) => ({
+    id: `leave-${leave.id}`,
+    employee_id: leave.employee_id,
+    employee_name: leave.employee_name,
+    employee_code: leave.employee_code,
+
+    attendance_date: selectedDate,
+
+    attendance_status: 'on_leave',
+
+    check_in_time: null,
+    check_out_time: null,
+
+    total_worked_minutes: 0,
+    total_worked_hours: '0',
+
+    shift_name: '-',
+    shift_timings: '-',
+
+    is_regularized: false,
+
+    remarks: leave.reason,
+
+    is_late: false,
+    late_by_minutes: 0,
+
+    is_early_exit: false,
+    early_exit_minutes: 0,
+
+    is_overtime: false,
+    overtime_minutes: 0,
+
+    day_type: 'working_day',
+
+    leave_info: leave,
+    holiday_info: null,
+  }));
+
+  setLogs(leaveLogs);
+  return;
+}
+      setLogs(attendanceLogs);
     } catch (error) {
       console.error('Error fetching attendance logs:', error);
     }

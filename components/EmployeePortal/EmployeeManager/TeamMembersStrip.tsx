@@ -32,17 +32,24 @@ const AVATAR_PALETTES = [
 // Helpers
 // ─────────────────────────────────────────────
  
-function initials(firstName?: string, lastName?: string): string {
+function initials(firstName?: string, lastName?: string, fullName?: string): string {
+  if (fullName) {
+    const parts = fullName.split(' ').filter(Boolean);
+    return parts.map(part => part[0]).join('').slice(0, 2).toUpperCase() || '??';
+  }
   return ((firstName?.[0] ?? '') + (lastName?.[0] ?? '')).toUpperCase() || '??';
 }
- 
+
 function capitalize(str?: string): string {
   if (!str) return '';
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
- 
+
 function fullName(member: ITeamMember): string {
-  return `${capitalize(member.first_name)} ${capitalize(member.last_name)}`.trim();
+  if (member.first_name || member.last_name) {
+    return `${capitalize(member.first_name)} ${capitalize(member.last_name)}`.trim();
+  }
+  return member.employee_name ?? '';
 }
  
 function paletteFor(name: string): [string, string] {
@@ -66,7 +73,7 @@ function StoryBubble({ member, index }: { member: ITeamMember; index: number }) 
   const name        = fullName(member);
   const [bg, bg2]   = paletteFor(name || member.employee_code || String(index));
   const isActive    = member.employment_status === 'ACTIVE' || member.user_status === 'ACTIVE';
- 
+
   return (
     <div className="group relative flex flex-col items-center gap-1.5 flex-shrink-0 w-[72px]">
       {/* Story ring + avatar */}
@@ -83,23 +90,23 @@ function StoryBubble({ member, index }: { member: ITeamMember; index: number }) 
               className="w-full h-full rounded-full flex items-center justify-center text-white text-[13px] font-semibold tracking-wide select-none"
               style={{ background: `linear-gradient(135deg, ${bg}, ${bg2})` }}
             >
-              {initials(member.first_name, member.last_name)}
+              {initials(member.first_name, member.last_name, name)}
             </div>
           </div>
         </div>
- 
+
         {/* Active status dot */}
         {isActive && (
           <span className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-gray-950" />
         )}
       </div>
- 
+
       {/* Name + code */}
       <span className="text-[11px] text-gray-700 dark:text-gray-300 text-center w-full truncate leading-tight font-medium px-0.5">
-        {capitalize(member.first_name)}
+        {name || member.employee_code}
       </span>
       <span className="text-[10px] text-gray-400 text-center -mt-1">{member.employee_code}</span>
- 
+
       {/* Tooltip on hover */}
       <div
         className="absolute bottom-[calc(100%+10px)] left-1/2 -translate-x-1/2 z-20 w-48
@@ -114,14 +121,14 @@ function StoryBubble({ member, index }: { member: ITeamMember; index: number }) 
               className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[11px] font-semibold flex-shrink-0"
               style={{ background: `linear-gradient(135deg, ${bg}, ${bg2})` }}
             >
-              {initials(member.first_name, member.last_name)}
+              {initials(member.first_name, member.last_name, name)}
             </div>
             <div className="min-w-0">
               <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{name}</p>
               <p className="text-[10px] text-gray-400">{member.employee_code}</p>
             </div>
           </div>
- 
+
           {/* Details */}
           <div className="space-y-1.5">
             {member.work_email && (

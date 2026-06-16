@@ -2,21 +2,31 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Loader2, Users, Calendar, ClipboardList, Gift } from 'lucide-react';
+import { Loader2, Users, Calendar, ClipboardList, Gift, Home } from 'lucide-react';
 import { getMyTeam, ITeamMember } from '@/lib/service/employee';
 import TeamLeaveRequests from '@/components/EmployeePortal/EmployeeManager/TeamLeaveRequests';
 import TeamAttendanceLogs from '@/components/EmployeePortal/EmployeeManager/TeamAttendanceLogs';
 import TeamRegularization from '@/components/EmployeePortal/EmployeeManager/TeamRegularization';
 import TeamCompOffRequests from '@/components/EmployeePortal/EmployeeManager/TeamCompOffRequests';
+import TeamWFHRequests from '@/components/EmployeePortal/EmployeeManager/TeamWFHRequests';
 import TeamMembersStrip from '@/components/EmployeePortal/EmployeeManager/TeamMembersStrip';
+import TeamOnDutyRequests from '@/components/EmployeePortal/EmployeeManager/TeamOnDutyRequests';
 
-type Tab = 'leave-requests' | 'attendance-logs' | 'regularization' | 'comp-off';
-
+type Tab =
+  | 'leave-requests'
+  | 'attendance-logs'
+  | 'regularization'
+  | 'comp-off'
+  | 'wfh-requests'
+  | 'onduty-requests';
+  
 const TABS: { id: Tab; label: string; icon: any }[] = [
   { id: 'leave-requests',  label: 'Leave Requests',  icon: Calendar      },
   { id: 'attendance-logs', label: 'Attendance Logs', icon: ClipboardList },
   { id: 'regularization',  label: 'Regularization',  icon: Users         },
   { id: 'comp-off',        label: 'Comp Off',        icon: Gift          },
+  { id: 'wfh-requests',    label: 'WFH Requests',    icon: Home          },
+  { id: 'onduty-requests', label: 'On-Duty Requests', icon: Home          },
 ];
 
 export default function MyTeamPage() {
@@ -35,9 +45,12 @@ export default function MyTeamPage() {
     setLoading(true);
     try {
       const res  = await getMyTeam(subdomain);
-      const data = res?.data?.data ?? res?.data;
-      setTeam(data?.team_members ?? []);
-    } catch { /* silent */ }
+      // Response structure: { data: { children: [...] } }
+      const teamData = res?.data?.data ?? res?.data;
+      setTeam(teamData?.children ?? []);
+    } catch (error) { 
+      console.error('Error fetching team:', error);
+    }
     finally { setLoading(false); }
   };
 
@@ -99,6 +112,8 @@ export default function MyTeamPage() {
             {activeTab === 'attendance-logs' && <TeamAttendanceLogs teamIds={teamIds} />}
             {activeTab === 'regularization'  && <TeamRegularization teamIds={teamIds} />}
             {activeTab === 'comp-off'        && <TeamCompOffRequests />}
+            {activeTab === 'wfh-requests'    && <TeamWFHRequests />}
+            {activeTab === 'onduty-requests' && <TeamOnDutyRequests />}
           </div>
         </div>
       )}

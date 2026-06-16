@@ -9,6 +9,14 @@
     box-sizing: border-box;
   }
 }
+
+.org-tree .rst__lineHalfHorizontalRight,
+.org-tree .rst__lineHalfHorizontalLeft,
+.org-tree .rst__lineFullVertical {
+  border-color: #cbd5e1;
+}
+
+
 :root {
   /* --primary: #20294c; */
   --primary: #163b45;
