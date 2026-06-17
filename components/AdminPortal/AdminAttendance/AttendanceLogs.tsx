@@ -208,8 +208,8 @@ function AttendanceRow({ log, isOpen, onToggle }: { log: IAttendanceLog; isOpen:
                 </div>
                 <p className="text-[10px] font-bold text-gray-500 uppercase">Worked</p>
               </div>
-              <p className="text-lg font-bold text-[#0f1f2e]">{log.total_worked_hours}h</p>
-              <p className="text-[10px] text-gray-400 mt-1">{fmtHours(log.total_worked_minutes)}</p>
+              <p className="text-lg font-bold text-[#0f1f2e]">{fmtHours(log.total_worked_minutes)}</p>
+              {/* <p className="text-[10px] text-gray-400 mt-1">{fmtHours(log.total_worked_minutes)}</p> */}
             </div>
 
             {/* overtime */}

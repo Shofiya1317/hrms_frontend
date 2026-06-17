@@ -124,6 +124,7 @@ export const employeeMenuItems: IMenuItem[] = [
     menuItems: [
       { label: 'Regularization', path: '/employee/attendance/regularization' },
       { label: 'Work From Home', path: '/employee/attendance/wfh-request' },
+      { label: 'On Duty', path: '/employee/attendance/on-duty' },
     ],
   },
   {
@@ -626,7 +627,7 @@ function Header(props: HeaderProps) {
 
   return (
     <div className="fixed inset-x-0 top-0 p-0" style={{ zIndex: 1030 }}>
-      <Navbar expand="lg" className="header_bg px-3 py-0 sm:px-4 lg:px-6">
+      <Navbar expand="lg" className="header_bg px-3 py-0 sm:px-4 lg:px-6" expanded={true}>
         {/* ── Logo ── */}
         <Navbar.Brand href="/dashboard" className="p-0">
           <div className="flex items-center font-semibold">
@@ -796,7 +797,7 @@ function Header(props: HeaderProps) {
         )}
 
         {/* ── Desktop nav ── */}
-        <Navbar.Collapse id="navbarScroll">
+        <div className="hidden lg:flex flex-1 min-w-0">
           <div className="custom-nav-container">
             <div className="flex min-w-0 flex-grow items-center justify-between">
               <Nav
@@ -876,7 +877,7 @@ function Header(props: HeaderProps) {
               </div>
             </div>
           </div>
-        </Navbar.Collapse>
+        </div>
       </Navbar>
     </div>
   );

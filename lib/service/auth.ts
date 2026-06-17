@@ -181,8 +181,14 @@ export const acceptInvitation = async (
     accept_terms_and_conditions: boolean
   },
 ) => post(
-  `/v1/auth/${token}/accept_invitation`,
-  params,
+  '/v1/auth/accept_invitation',
+  {
+    token,
+    password: params.password,
+    confirm_password: params.confirm_password,
+    name: params.name,
+    phone_number: params.phone_number,
+  },
   undefined,
   slug,
 );
@@ -196,10 +202,17 @@ export const acceptInvitationByAdmin = async (
     accept_terms_and_conditions: boolean
   },
 ) => post(
-  `/auth/${token}/acceptInvitation`,
-  params,
+  '/auth/acceptInvitation',
+  {
+    token,
+    password: params.password,
+    confirm_password: params.confirm_password,
+  },
   undefined,
   slug,
+  {
+    isFetchToken: false,
+  },
 );
 
 export const verifyMagicLinkToken = async (
@@ -260,6 +273,7 @@ export const inviteUsers = async (
   tenantId,
 );
 
+// Verify invitation token - GET endpoint that returns employee/user details
 export const verifyInvitation = async (
   token: string,
   slug: string,
@@ -392,5 +406,4 @@ export const getVerifyAdminToken = (token: string) => get(
   {
     isFetchToken: false,
   },
-  undefined,
 );

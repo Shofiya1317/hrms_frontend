@@ -63,16 +63,40 @@ function ApplyModal({ editing, tenantId, onClose, onSuccess }: ModalProps) {
     if (!reason.trim()) { setErr('Reason is required.'); return; }
     setSaving(true); setErr('');
     try {
+      let response;
       if (isEdit) {
         const payload: IUpdateWFHPayload = { date, reason };
-        await updateWFH(editing!.id, payload, tenantId);
+        response = await updateWFH(editing!.id, payload, tenantId);
       } else {
         const payload: IApplyWFHPayload = { date, reason };
-        await applyWFH(payload, tenantId);
+        response = await applyWFH(payload, tenantId);
       }
+      
+      console.log('WFH API Response:', response);
+      
+      // Check if the response indicates an error
+      const responseData = response?.data as any;
+      const status = response?.status;
+      
+      // Handle error responses (status 400, 404, etc. or success: false)
+      if (status && (status >= 400 || responseData?.success === false)) {
+        const errorMsg = Array.isArray(responseData?.error) 
+          ? responseData.error[0] 
+          : responseData?.error || responseData?.message || 'Failed to submit WFH request.';
+        setErr(errorMsg);
+        setSaving(false);
+        return;
+      }
+      
+      // If we reach here, it's successful
       onSuccess();
     } catch (e: any) {
-      setErr(e?.response?.data?.message || 'Something went wrong. Please try again.');
+      console.error('WFH Submit Error:', e);
+      const errorData = e?.response?.data;
+      const errorMsg = Array.isArray(errorData?.error)
+        ? errorData.error[0]
+        : errorData?.error || errorData?.message || 'Something went wrong. Please try again.';
+      setErr(errorMsg);
     } finally { setSaving(false); }
   };
 
@@ -294,14 +318,37 @@ function RequestCard({ req, onEdit, onCancel }: {
 // Toast
 // ─────────────────────────────────────────────
 
-function Toast({ msg, type }: { msg: string; type: 'success' | 'error' }) {
+function Toast({ msg, type, onClose }: { msg: string; type: 'success' | 'error'; onClose: () => void }) {
   return (
-    <div className="fixed top-4 right-4 z-[100] animate-in slide-in-from-top-2 duration-300">
-      <div className={`flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium ${
-        type === 'success' ? 'bg-white border-emerald-200 text-emerald-700' : 'bg-white border-red-200 text-red-600'
+    <div className="fixed bottom-6 right-6 z-[100] animate-in slide-in-from-right-2 duration-300">
+      <div className={`flex items-start gap-3 px-4 py-3 rounded-xl shadow-lg border max-w-md ${
+        type === 'success' ? 'bg-white border-emerald-200' : 'bg-white border-red-200'
       }`}>
-        {type === 'success' ? <CheckCircle2 size={15} /> : <AlertCircle size={15} />}
-        {msg}
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+          type === 'success' ? 'bg-emerald-50' : 'bg-red-50'
+        }`}>
+          {type === 'success' 
+            ? <CheckCircle2 size={16} className="text-emerald-600" /> 
+            : <AlertCircle size={16} className="text-red-600" />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className={`text-sm font-semibold ${
+            type === 'success' ? 'text-emerald-900' : 'text-red-900'
+          }`}>
+            {type === 'success' ? 'Success' : 'Error'}
+          </p>
+          <p className={`text-xs mt-0.5 leading-relaxed ${
+            type === 'success' ? 'text-emerald-700' : 'text-red-700'
+          }`}>
+            {msg}
+          </p>
+        </div>
+        <button
+          onClick={onClose}
+          className="text-slate-400 hover:text-slate-600 transition-colors"
+        >
+          <X size={16} />
+        </button>
       </div>
     </div>
   );
@@ -368,7 +415,7 @@ const EmployeeWfhRequests = () => {
 
   return (
     <>
-      {toast && <Toast msg={toast.msg} type={toast.type} />}
+      {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
       <div className="space-y-4">
 

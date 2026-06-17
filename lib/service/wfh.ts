@@ -63,6 +63,7 @@ export interface ITeamWFHQueryParams extends Params {
   status?: WFHStatus | string;
   from_date?: string;
   to_date?: string;
+  approver?:string;
 }
 
 // ─────────────────────────────────────────────

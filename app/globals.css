@@ -1171,3 +1171,14 @@ input[type='number'] {
     padding-inline: 14px;
   }
 }
+
+/* Ensure navbar is visible on desktop */
+@media (min-width: 992px) {
+  .navbar-collapse {
+    display: flex !important;
+    flex-basis: auto;
+  }
+  .custom-nav-container {
+    display: flex !important;
+  }
+}

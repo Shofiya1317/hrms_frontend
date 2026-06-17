@@ -154,8 +154,8 @@ function RequestRow({ wfh, onSelect }: { wfh: IWFH; onSelect: () => void }) {
           </span>
         </div>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
-          <span className="text-[10px] text-gray-500 font-medium">{wfh.employee?.work_email || '—'}</span>
-          <span className="text-gray-300">·</span>
+          <span className="text-[10px] text-gray-500 font-medium">Requested wfh on</span>
+          {/* <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} /> */}
           <span className="text-[10px] text-gray-500">{fmtDate(wfh.date)}</span>
         </div>
       </div>

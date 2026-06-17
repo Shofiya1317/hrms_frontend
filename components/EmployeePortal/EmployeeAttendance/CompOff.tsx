@@ -114,7 +114,7 @@ function ApplyModal({ tenantId, token, onClose, onSuccess }: ApplyModalProps) {
 
     setSaving(true); setErr('');
     try {
-      await applyCompOff(
+      const response = await applyCompOff(
         {
           worked_date: form.worked_date,
           worked_hours: hours,
@@ -123,9 +123,32 @@ function ApplyModal({ tenantId, token, onClose, onSuccess }: ApplyModalProps) {
         tenantId,
         token,
       );
+      
+      console.log('Comp Off API Response:', response);
+      
+      // Check if the response indicates an error
+      const responseData = response?.data as any;
+      const status = response?.status;
+      
+      // Handle error responses (status 400, 404, etc. or success: false)
+      if (status && (status >= 400 || responseData?.success === false)) {
+        const errorMsg = Array.isArray(responseData?.error) 
+          ? responseData.error[0] 
+          : responseData?.error || responseData?.message || 'Failed to submit comp off request.';
+        setErr(errorMsg);
+        setSaving(false);
+        return;
+      }
+      
+      // If we reach here, it's successful
       onSuccess();
     } catch (e: any) {
-      setErr(e?.response?.data?.message || 'Something went wrong. Please try again.');
+      console.error('Comp Off Submit Error:', e);
+      const errorData = e?.response?.data;
+      const errorMsg = Array.isArray(errorData?.error)
+        ? errorData.error[0]
+        : errorData?.error || errorData?.message || 'Something went wrong. Please try again.';
+      setErr(errorMsg);
     } finally {
       setSaving(false);
     }
@@ -298,8 +321,13 @@ export default function CompOffPage({ apiKey, token, employeeId }: CompOffPagePr
 
   const handleApplySuccess = () => {
     setShowApplyModal(false);
-    showToast('Comp off request submitted! Awaiting manager approval.', 'success');
+    showToast('Comp off request submitted successfully!', 'success');
     fetchAll();
+  };
+  
+  const handleApplyError = (errorMsg: string) => {
+    setShowApplyModal(false);
+    showToast(errorMsg, 'error');
   };
 
   // Derived stats
@@ -346,11 +374,34 @@ export default function CompOffPage({ apiKey, token, employeeId }: CompOffPagePr
     <div className="space-y-5">
       {/* ── Toast ── */}
       {toast && (
-        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium animate-in slide-in-from-top-2 duration-300 ${
-          toast.type === 'success' ? 'bg-white border-emerald-200 text-emerald-700' : 'bg-white border-red-200 text-red-600'
+        <div className={`fixed bottom-6 right-6 z-50 flex items-start gap-3 px-4 py-3 rounded-xl shadow-lg border max-w-md animate-in slide-in-from-right-2 duration-300 ${
+          toast.type === 'success' ? 'bg-white border-emerald-200' : 'bg-white border-red-200'
         }`}>
-          {toast.type === 'success' ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
-          {toast.msg}
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+            toast.type === 'success' ? 'bg-emerald-50' : 'bg-red-50'
+          }`}>
+            {toast.type === 'success' 
+              ? <CheckCircle2 size={16} className="text-emerald-600" /> 
+              : <XCircle size={16} className="text-red-600" />}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm font-semibold ${
+              toast.type === 'success' ? 'text-emerald-900' : 'text-red-900'
+            }`}>
+              {toast.type === 'success' ? 'Success' : 'Error'}
+            </p>
+            <p className={`text-xs mt-0.5 leading-relaxed ${
+              toast.type === 'success' ? 'text-emerald-700' : 'text-red-700'
+            }`}>
+              {toast.msg}
+            </p>
+          </div>
+          <button
+            onClick={() => setToast(null)}
+            className="text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            <XCircle size={16} />
+          </button>
         </div>
       )}
 
