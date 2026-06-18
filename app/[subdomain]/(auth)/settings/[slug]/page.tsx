@@ -1,4 +1,3 @@
-import AccessWrapper from '@/components/AccessWrapper/AccessWrapper';
 import AddorEditUser from '@/components/AddorEditUser/AddorEditUser';
 import OrganisationSetupForm from '@/components/OrganisationSetupForm/OrganisationSetupForm';
 import ChangePassword from '@/components/ChangePassword/ChangePassword';
@@ -12,8 +11,6 @@ import { redirect } from 'next/navigation';
 import './SettingsLayout.css';
 
 // Slugs that each role is allowed to access.
-// ADMIN can access everything. HR gets org slugs except company_profile.
-// EMPLOYEE only gets personal slugs.
 const ROLE_ALLOWED_SLUGS: Record<string, string[]> = {
   ADMIN: [
     'profile',
@@ -59,8 +56,8 @@ export default async function page({ params }: { params: { slug?: string } }) {
     switch (slug) {
       case 'profile':
         return {
-          title: 'My profile',
-          subTitle: 'Edit your personal information',
+          title: 'My Profile',
+          subTitle: 'Manage your personal information and preferences',
           component: (
             <AddorEditUser apiKey={apiKey} isCurrentUser user={user} id={id} />
           ),
@@ -68,42 +65,34 @@ export default async function page({ params }: { params: { slug?: string } }) {
 
       case 'change_password':
         return {
-          title: 'Change password',
-          subTitle: 'Update your login credentials',
+          title: 'Change Password',
+          subTitle: 'Update your account security credentials',
           component: <ChangePassword slug={apiKey} />,
         };
 
       case 'company_profile':
         return {
-          title: 'Company profile',
-          subTitle: 'Edit your company details',
+          title: 'Company Profile',
+          subTitle: 'Manage your company information, address, and details',
           component: (
-            <AccessWrapper module="ORGANIZATION" feature="READ">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <CompanyInformationForm slug={apiKey} account={user?.account} />
-            </AccessWrapper>
+            </div>
           ),
         };
 
       case 'organisation_setup':
         return {
-          title: 'Organisation setup',
-          subTitle: 'Manage departments, business units & policies',
-          component: (
-            <AccessWrapper module="SETTINGS" feature="ORGANISATION_SETUP">
-              <OrganisationSetupForm slug={apiKey} />
-            </AccessWrapper>
-          ),
+          title: 'Organisation Setup',
+          subTitle: 'Configure departments, business units, shifts, and policies',
+          component: <OrganisationSetupForm slug={apiKey} />,
         };
 
       case 'invite_users':
         return {
-          title: 'Invite users',
-          subTitle: 'Onboard new employees into the system',
-          component: (
-            <AccessWrapper module="SETTINGS" feature="INVITE_USERS">
-              <UserInviteForm slug={apiKey} />
-            </AccessWrapper>
-          ),
+          title: 'Invite Users',
+          subTitle: 'Send invitations to onboard new employees into the system',
+          component: <UserInviteForm slug={apiKey} />,
         };
 
       default:
@@ -121,11 +110,13 @@ export default async function page({ params }: { params: { slug?: string } }) {
     <div className="p-1 p-md-4">
       {title && (
         <div className="pb-4">
-          <span className="settings-subtitle">{subTitle}</span>
-          <h4 className="fw-700 mb-0">{title}</h4>
+          <p className="text-sm text-gray-500 mb-1">{subTitle}</p>
+          <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
         </div>
       )}
-      {component}
+      <div className="mt-4">
+        {component}
+      </div>
     </div>
   );
 }

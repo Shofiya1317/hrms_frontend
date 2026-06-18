@@ -182,6 +182,66 @@ export const deleteWorkSchedule = (
   { bearerToken: token, isFetchToken: !token },
 );
 
+// ── Work Locations ───────────────────────────────────────────────
+
+export const createWorkLocation = (
+  body: { name: string; [key: string]: unknown },
+  tenantId: string,
+  token?: string,
+) => post(
+  '/v1/work-locations',
+  body,
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const getWorkLocations = (
+  tenantId: string,
+  token?: string,
+) => get(
+  '/v1/work-locations',
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const getWorkLocationById = (
+  id: string,
+  tenantId: string,
+  token?: string,
+) => get(
+  `/v1/work-locations/${id}`,
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const updateWorkLocation = (
+  id: string,
+  body: { name: string; [key: string]: unknown },
+  tenantId: string,
+  token?: string,
+) => put(
+  `/v1/work-locations/${id}`,
+  body,
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const deleteWorkLocation = (
+  id: string,
+  tenantId: string,
+  token?: string,
+) => deleteRequest(
+  `/v1/work-locations/${id}`,
+  undefined,
+  tenantId,
+  undefined,
+  { bearerToken: token, isFetchToken: !token },
+);
+
 // ── Shifts ────────────────────────────────────────────────────────
 
 export const createShift = (

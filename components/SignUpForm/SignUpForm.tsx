@@ -30,6 +30,7 @@ interface IField {
   password: string;
   company_name: string;
   workspace_url: string;
+  phone_number: string;
   terms: string;
 }
 
@@ -47,6 +48,7 @@ export const handleSignUpSubmit = async (
     slug: `${values.workspace_url}`,
     email: values.email,
     password: values.password,
+    phone_number: values.phone_number || undefined,
   });
   const { success, error } = res?.data as { error: string[]; success: boolean };
   if (success) {
@@ -145,6 +147,10 @@ export default function SignUpForm() {
         'Workspace URL must be between 4 and 20 characters',
       )
       .required('Workspace URL is required'),
+    phone_number: string()
+      .matches(/^[0-9+\-\s()]*$/, 'Invalid phone number format')
+      .min(10, 'Phone number must be at least 10 digits')
+      .max(15, 'Phone number must not exceed 15 digits'),
     email: string()
       .email('Invalid email address')
       .matches(
@@ -309,6 +315,7 @@ export default function SignUpForm() {
               fullname: '',
               company_name: '',
               workspace_url: '',
+              phone_number: '',
               email: '',
               password: '',
               terms: '',
@@ -381,6 +388,16 @@ export default function SignUpForm() {
                     label="Email Address"
                     type="email"
                     placeholder="Enter your email address"
+                  />
+                </div>
+                <div>
+                  <FormikField
+                    name="phone_number"
+                    errors={errors}
+                    validationSchema={validationSchema}
+                    label="Phone Number (Optional)"
+                    type="tel"
+                    placeholder="Enter your phone number"
                   />
                 </div>
                 <div>

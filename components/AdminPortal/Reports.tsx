@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import { getMonthlyConsolidatedReport } from '@/lib/service/attendance';
 import {
   FileText,
   CalendarDays,
@@ -18,7 +20,6 @@ import {
   Timer,
   BarChart3,
   Calendar,
-  Star,
   DollarSign,
   Activity,
   Umbrella,
@@ -116,7 +117,7 @@ const months = [
   'December',
 ];
 
-const years = ['2024', '2025', '2026'];
+const years = ['2024', '2025', '2026', '2027'];
 
 const mockMonthly: MonthlyRecord[] = [
   {
@@ -624,17 +625,21 @@ function SelectFilter({
 function SummaryCards({
   tab,
   data,
+  apiData,
 }: {
   tab: TabId;
   data: MonthlyRecord[] | LeaveRecord[] | AbsentRecord[];
+  apiData?: any;
 }) {
   if (tab === 'monthly') {
     const d = data as MonthlyRecord[];
-    const avgPct = Math.round(
-      d.reduce((s, r) => s + r.attendancePct, 0) / d.length
-    );
-    const totalAbsent = d.reduce((s, r) => s + r.absent, 0);
-    const perfect = d.filter((r) => r.attendancePct === 100).length;
+    const avgPct = apiData?.company_overview?.avg_attendance_rate
+      ? parseInt(apiData.company_overview.avg_attendance_rate)
+      : Math.round(d.reduce((s, r) => s + r.attendancePct, 0) / (d.length || 1));
+    const totalPresent = apiData?.company_overview?.total_present_days ?? d.reduce((s, r) => s + r.present, 0);
+    const totalAbsent = apiData?.company_overview?.total_absent_days ?? d.reduce((s, r) => s + r.absent, 0);
+    const totalLate = apiData?.company_overview?.total_late_arrivals ?? d.reduce((s, r) => s + r.late, 0);
+    const totalEmp = apiData?.total_employees ?? d.length;
     const cards = [
       {
         label: 'Avg Attendance',
@@ -645,6 +650,14 @@ function SummaryCards({
         bg: 'bg-teal-50',
       },
       {
+        label: 'Total Present Days',
+        value: totalPresent,
+        sub: 'across the month',
+        icon: CheckCircle,
+        color: 'text-emerald-600',
+        bg: 'bg-emerald-50',
+      },
+      {
         label: 'Total Absent Days',
         value: totalAbsent,
         sub: 'across the month',
@@ -653,20 +666,12 @@ function SummaryCards({
         bg: 'bg-rose-50',
       },
       {
-        label: 'Perfect Attendance',
-        value: perfect,
-        sub: 'employees, 0 absences',
-        icon: Star,
-        color: 'text-emerald-600',
-        bg: 'bg-emerald-50',
-      },
-      {
-        label: 'Total Employees',
-        value: d.length,
-        sub: 'in this report',
+        label: 'Late Arrivals',
+        value: totalLate,
+        sub: `${totalEmp} employees total`,
         icon: Users,
-        color: 'text-slate-600',
-        bg: 'bg-slate-100',
+        color: 'text-amber-600',
+        bg: 'bg-amber-50',
       },
     ];
     return (
@@ -1382,10 +1387,15 @@ function CalendarView({ data }: { data: CalendarEmployee[] }) {
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function Reports() {
+  const params = useParams();
+  const subdomain = params?.subdomain as string;
   const [activeTab, setActiveTab] = useState<TabId>('monthly');
-  const [selectedMonth, setSelectedMonth] = useState('May');
-  const [selectedYear, setSelectedYear] = useState('2025');
+  const [selectedMonth, setSelectedMonth] = useState('June');
+  const [selectedYear, setSelectedYear] = useState('2026');
   const [selectedDept, setSelectedDept] = useState('All Departments');
+  const [loading, setLoading] = useState(false);
+  const [apiData, setApiData] = useState<any>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
     {
@@ -1393,21 +1403,61 @@ export default function Reports() {
       label: 'Monthly Summary',
       icon: <CalendarDays size={15} />,
     },
-    { id: 'leave', label: 'Leave Summary', icon: <PalmtreeIcon size={15} /> },
-    { id: 'absent', label: 'Absent Report', icon: <UserX size={15} /> },
-    {
-      id: 'calendar',
-      label: 'Calendar View',
-      icon: <CalendarRange size={15} />,
-    },
+    // { id: 'leave', label: 'Leave Summary', icon: <PalmtreeIcon size={15} /> },
+    // { id: 'absent', label: 'Absent Report', icon: <UserX size={15} /> },
+    // {
+    //   id: 'calendar',
+    //   label: 'Calendar View',
+    //   icon: <CalendarRange size={15} />,
+    // },
   ];
+
+  useEffect(() => {
+    if (!subdomain) return;
+    const fetchData = async () => {
+      setLoading(true);
+      setApiError(null);
+      try {
+        const monthNum = months.indexOf(selectedMonth) + 1;
+        const year = parseInt(selectedYear);
+        const response = await getMonthlyConsolidatedReport(subdomain, { year, month: monthNum });
+        const payload = response?.data?.data ?? response?.data;
+        if (response?.status === 200 && payload?.employee_summaries) {
+          setApiData(payload);
+        } else {
+          setApiData(null);
+          setApiError(`API returned status ${response?.status}`);
+        }
+      } catch (error) {
+        console.error('Error fetching report:', error);
+        setApiError('Failed to fetch report data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [selectedMonth, selectedYear, subdomain]);
 
   function filterByDept<T extends { department: string }>(data: T[]): T[] {
     if (selectedDept === 'All Departments') return data;
     return data.filter((r) => r.department === selectedDept);
   }
 
-  const monthlyData = filterByDept(mockMonthly);
+  const transformedMonthly: MonthlyRecord[] = apiData?.employee_summaries?.map((emp: any) => ({
+    id: emp.employee_id,
+    name: emp.employee_name,
+    department: emp.department || 'N/A',
+    avatar: (emp.employee_name as string)?.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() || 'NA',
+    present: emp.monthly_overview?.present_days ?? 0,
+    absent: emp.monthly_overview?.absent_days ?? 0,
+    late: emp.monthly_overview?.late_arrivals ?? 0,
+    leaves: emp.leave_impact?.approved_leave ?? 0,
+    workingDays: emp.monthly_overview?.working_days ?? 0,
+    attendancePct: parseInt(emp.monthly_overview?.attendance_rate) || 0,
+    trend: 'stable' as const,
+  })) || [];
+
+  const monthlyData = filterByDept(transformedMonthly);
   const leaveData = filterByDept(mockLeave);
   const absentData = filterByDept(mockAbsent);
 
@@ -1445,13 +1495,14 @@ export default function Reports() {
           <div className="flex items-center gap-1.5 rounded-lg border border-slate-100 bg-white px-3 py-2 text-xs text-slate-400 sm:col-span-2 lg:ml-auto">
             <Users size={13} />
             <span>
-              {activeTab === 'monthly'
-                ? monthlyData.length
-                : activeTab === 'leave'
-                  ? leaveData.length
-                  : activeTab === 'absent'
-                    ? absentData.length
-                    : mockCalendar.length}{' '}
+              {loading ? '...' : 
+                activeTab === 'monthly'
+                  ? monthlyData.length
+                  : activeTab === 'leave'
+                    ? leaveData.length
+                    : activeTab === 'absent'
+                      ? absentData.length
+                      : mockCalendar.length}{' '}
               employees
             </span>
           </div>
@@ -1489,72 +1540,89 @@ export default function Reports() {
                   ? leaveData
                   : absentData
             }
+            apiData={apiData}
           />
         )}
 
         {/* Table / Calendar Card */}
         <div className="rounded-lg border border-slate-200 bg-white p-3 sm:p-5">
-          {activeTab !== 'calendar' && (
-            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="font-semibold text-slate-700 text-sm">
-                {activeTab === 'monthly'
-                  ? 'Attendance Breakdown'
-                  : activeTab === 'leave'
-                    ? 'Leave Breakdown'
-                    : 'Absence Log'}{' '}
-                <span className="font-normal text-slate-400">
-                  — {selectedMonth} {selectedYear}
-                </span>
-              </h2>
-              {selectedDept !== 'All Departments' && (
-                <span className="text-xs bg-indigo-50 text-indigo-600 border border-indigo-100 px-2.5 py-1 rounded-full font-medium">
-                  {selectedDept}
-                </span>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'calendar' && (
-            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="font-semibold text-slate-700 text-sm">
-                Daily Attendance Calendar
-                <span className="font-normal text-slate-400">
-                  {' '}
-                  — {selectedMonth} {selectedYear}
-                </span>
-              </h2>
-              {selectedDept !== 'All Departments' && (
-                <span className="text-xs bg-indigo-50 text-indigo-600 border border-indigo-100 px-2.5 py-1 rounded-full font-medium">
-                  {selectedDept}
-                </span>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'monthly' && <MonthlyTable data={monthlyData} />}
-          {activeTab === 'leave' && <LeaveTable data={leaveData} />}
-          {activeTab === 'absent' && <AbsentTable data={absentData} />}
-          {activeTab === 'calendar' && (
-            <CalendarView
-              data={
-                selectedDept === 'All Departments'
-                  ? mockCalendar
-                  : mockCalendar.filter((e) => e.department === selectedDept)
-              }
-            />
-          )}
-
-          {activeTab !== 'calendar' &&
-            (activeTab === 'monthly'
-              ? monthlyData
-              : activeTab === 'leave'
-                ? leaveData
-                : absentData
-            ).length === 0 && (
-              <div className="text-center py-12 text-slate-400 text-sm">
-                No records found for this department.
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="flex flex-col items-center gap-3">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-teal-600" />
+                <p className="text-sm text-slate-400">Loading report data...</p>
               </div>
-            )}
+            </div>
+          ) : apiError ? (
+            <div className="flex flex-col items-center gap-2 py-12 text-center">
+              <p className="text-sm font-medium text-rose-500">Failed to load report</p>
+              <p className="text-xs text-slate-400">{apiError}</p>
+            </div>
+          ) : (
+            <>
+              {activeTab !== 'calendar' && (
+                <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <h2 className="font-semibold text-slate-700 text-sm">
+                    {activeTab === 'monthly'
+                      ? 'Attendance Breakdown'
+                      : activeTab === 'leave'
+                        ? 'Leave Breakdown'
+                        : 'Absence Log'}{' '}
+                    <span className="font-normal text-slate-400">
+                      — {apiData?.period_label || `${selectedMonth} ${selectedYear}`}
+                    </span>
+                  </h2>
+                  {selectedDept !== 'All Departments' && (
+                    <span className="text-xs bg-indigo-50 text-indigo-600 border border-indigo-100 px-2.5 py-1 rounded-full font-medium">
+                      {selectedDept}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'calendar' && (
+                <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <h2 className="font-semibold text-slate-700 text-sm">
+                    Daily Attendance Calendar
+                    <span className="font-normal text-slate-400">
+                      {' '}
+                      — {selectedMonth} {selectedYear}
+                    </span>
+                  </h2>
+                  {selectedDept !== 'All Departments' && (
+                    <span className="text-xs bg-indigo-50 text-indigo-600 border border-indigo-100 px-2.5 py-1 rounded-full font-medium">
+                      {selectedDept}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'monthly' && <MonthlyTable data={monthlyData} />}
+              {activeTab === 'leave' && <LeaveTable data={leaveData} />}
+              {activeTab === 'absent' && <AbsentTable data={absentData} />}
+              {activeTab === 'calendar' && (
+                <CalendarView
+                  data={
+                    selectedDept === 'All Departments'
+                      ? mockCalendar
+                      : mockCalendar.filter((e) => e.department === selectedDept)
+                  }
+                />
+              )}
+
+              {activeTab !== 'calendar' &&
+                (activeTab === 'monthly'
+                  ? monthlyData
+                  : activeTab === 'leave'
+                    ? leaveData
+                    : absentData
+                ).length === 0 && (
+                  <div className="text-center py-12 text-slate-400 text-sm">
+                    {apiData === null ? 'No data available for this period.' : 'No records found for this department.'}
+                  </div>
+                )}
+            </>
+          )}
         </div>
       </div>
     </div>

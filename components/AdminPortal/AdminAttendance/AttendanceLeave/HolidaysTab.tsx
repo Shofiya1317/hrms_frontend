@@ -158,7 +158,7 @@ function WorkLocationCard({ wls }: { wls: IWorkLocationSchedule }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-8 gap-2http://vision.localhost:3000/attendance/policies">
+      <div className="grid grid-cols-8 gap-2">
         {dayOrder.map(day => {
           const location = wls.schedule[day as keyof typeof wls.schedule];
           const meta = LOCATION_META[location as keyof typeof LOCATION_META] || LOCATION_META.office;
@@ -258,6 +258,7 @@ function WorkScheduleCard({ ws }: { ws: IWorkSchedule }) {
 function DayCell({
   day, iso, holidays, calendarDay, isToday,
   onDayClick, onEdit, onConfirmDelete, deletingId, colIndex, workSchedule, workLocationSchedule,
+  viewOnly, attendance,
 }: {
   day: number; iso: string; holidays: IHoliday[]; calendarDay?: ICalendarDay; isToday: boolean;
   onDayClick: (iso: string) => void;
@@ -267,6 +268,8 @@ function DayCell({
   colIndex: number;
   workSchedule: IWorkSchedule | null;
   workLocationSchedule?: IWorkLocationSchedule | null;
+  viewOnly?: boolean;
+  attendance?: IAttendanceLog;
 }) {
   const [open, setOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -376,23 +379,42 @@ function DayCell({
                     </span>
                   </div>
                   {hh.description && <p className="text-[9px] text-slate-400 mb-2">{hh.description}</p>}
-                  <div className="flex gap-1.5">
-                    <button onClick={() => { setOpen(false); onEdit(hh); }}
-                      className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors">
-                      <Pencil size={9} /> Edit
-                    </button>
-                    <button onClick={() => { setOpen(false); onConfirmDelete(hh.id, hh.name); }}
-                      disabled={deletingId === hh.id}
-                      className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-colors disabled:opacity-50">
-                      {deletingId === hh.id ? <Loader2 size={9} className="animate-spin" /> : <><Trash2 size={9} /> Del</>}
-                    </button>
-                  </div>
+                  {!viewOnly && (
+                    <div className="flex gap-1.5">
+                      <button onClick={() => { setOpen(false); onEdit(hh); }}
+                        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors">
+                        <Pencil size={9} /> Edit
+                      </button>
+                      <button onClick={() => { setOpen(false); onConfirmDelete(hh.id, hh.name); }}
+                        disabled={deletingId === hh.id}
+                        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-colors disabled:opacity-50">
+                        {deletingId === hh.id ? <Loader2 size={9} className="animate-spin" /> : <><Trash2 size={9} /> Del</>}
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
 
-            {/* Add entry (only when no entry exists for this day yet) */}
-            {!h && (
+            {viewOnly && attendance && (() => {
+              const status = attendance.is_regularized ? 'regularized' : attendance.is_late ? 'late' : attendance.attendance_status;
+              const am = ATTENDANCE_META[status] ?? ATTENDANCE_META['absent'];
+              return (
+                <div className="border-t border-slate-100 pt-2 space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${am.dot}`} />
+                    <span className={`text-[10px] font-bold ${am.text}`}>{am.label}</span>
+                    {attendance.is_late && <span className="ml-auto text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700">Late {attendance.late_by_minutes}m</span>}
+                  </div>
+                  <div className="grid grid-cols-2 gap-1 text-[9px] text-slate-500">
+                    <span>In: <span className="font-semibold text-slate-700">{fmtTime(attendance.check_in_time)}</span></span>
+                    <span>Out: <span className="font-semibold text-slate-700">{fmtTime(attendance.check_out_time)}</span></span>
+                  </div>
+                  {attendance.total_worked_hours && <p className="text-[9px] text-slate-400">{attendance.total_worked_hours} hrs worked</p>}
+                </div>
+              );
+            })()}
+            {!viewOnly && !h && (
               <button onClick={() => { setOpen(false); onDayClick(iso); }}
                 className="w-full flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors border-t border-slate-100 pt-2.5 mt-0.5">
                 <Plus size={9} /> Add Entry
@@ -411,6 +433,7 @@ function DayCell({
 function MiniMonth({
   year, monthIdx, byDate, calendarData, filterType,
   onDayClick, onEdit, onConfirmDelete, deletingId, workSchedule, workLocationSchedule,
+  viewOnly, attendanceByDate,
 }: {
   year: number; monthIdx: number; byDate: Record<string, IHoliday[]>;
   calendarData?: IMonthlyCalendar;
@@ -421,6 +444,8 @@ function MiniMonth({
   deletingId: string | null;
   workSchedule: IWorkSchedule | null;
   workLocationSchedule?: IWorkLocationSchedule | null;
+  viewOnly?: boolean;
+  attendanceByDate?: Record<string, IAttendanceLog>;
 }) {
   const today      = new Date();
   const firstDow   = new Date(year, monthIdx, 1).getDay();
@@ -468,16 +493,32 @@ function MiniMonth({
         <div className="flex items-center justify-between mb-1">
           <span className="text-[11px] font-bold text-[#0f1f2e] uppercase tracking-wider">{MONTH_FULL[monthIdx]}</span>
           <div className="flex items-center gap-1">
-            {summary.holidays > 0 && (
-              <span className="text-[9px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded-full border border-teal-100">
-                {summary.holidays} holiday{summary.holidays > 1 ? 's' : ''}
-              </span>
-            )}
-            {summary.workOverrides > 0 && (
-              <span className="text-[9px] font-bold text-orange-700 bg-orange-50 px-1.5 py-0.5 rounded-full border border-orange-100">
-                {summary.workOverrides} override{summary.workOverrides > 1 ? 's' : ''}
-              </span>
-            )}
+            {viewOnly && attendanceByDate ? (() => {
+              let p = 0, a = 0, l = 0;
+              for (let d = 1; d <= totalDays; d++) {
+                const iso = `${year}-${String(monthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const att = attendanceByDate[iso];
+                if (!att) continue;
+                const s = att.is_regularized ? 'regularized' : att.is_late ? 'late' : att.attendance_status;
+                if (s === 'on_leave') l++; else if (s === 'absent') a++; else p++;
+              }
+              return (<>
+                {p > 0 && <span className="text-[9px] font-bold text-green-700 bg-green-50 px-1.5 py-0.5 rounded-full border border-green-100">{p}P</span>}
+                {l > 0 && <span className="text-[9px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-100">{l}L</span>}
+                {a > 0 && <span className="text-[9px] font-bold text-red-700 bg-red-50 px-1.5 py-0.5 rounded-full border border-red-100">{a}A</span>}
+              </>);
+            })() : (<>
+              {summary.holidays > 0 && (
+                <span className="text-[9px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded-full border border-teal-100">
+                  {summary.holidays} holiday{summary.holidays > 1 ? 's' : ''}
+                </span>
+              )}
+              {summary.workOverrides > 0 && (
+                <span className="text-[9px] font-bold text-orange-700 bg-orange-50 px-1.5 py-0.5 rounded-full border border-orange-100">
+                  {summary.workOverrides} override{summary.workOverrides > 1 ? 's' : ''}
+                </span>
+              )}
+            </>)}
           </div>
         </div>
         {/* Working/off summary */}
@@ -532,6 +573,8 @@ function MiniMonth({
               colIndex={i % 7}
               workSchedule={workSchedule}
               workLocationSchedule={workLocationSchedule}
+              viewOnly={viewOnly}
+              attendance={attendanceByDate?.[iso]}
             />
           );
         })}
@@ -543,7 +586,43 @@ function MiniMonth({
 // ─────────────────────────────────────────────
 // Main
 // ─────────────────────────────────────────────
-export default function HolidaysTab() {
+export interface IAttendanceLog {
+  id: string;
+  attendance_date: string;
+  attendance_status: string;
+  check_in_time: string | null;
+  check_out_time: string | null;
+  total_worked_hours: string | null;
+  is_late: boolean;
+  late_by_minutes: number;
+  is_regularized: boolean;
+  remarks: string | null;
+  shift_name?: string | null;
+}
+
+const ATTENDANCE_META: Record<string, { label: string; dot: string; text: string; bg: string; ring: string }> = {
+  present:     { label: 'Present',     dot: 'bg-green-500',   text: 'text-green-700',   bg: 'bg-green-50',   ring: 'ring-green-400'   },
+  late:        { label: 'Late',        dot: 'bg-amber-500',   text: 'text-amber-700',   bg: 'bg-amber-50',   ring: 'ring-amber-400'   },
+  on_leave:    { label: 'Leave',       dot: 'bg-blue-500',    text: 'text-blue-700',    bg: 'bg-blue-50',    ring: 'ring-blue-400'    },
+  absent:      { label: 'Absent',      dot: 'bg-red-500',     text: 'text-red-700',     bg: 'bg-red-50',     ring: 'ring-red-400'     },
+  regularized: { label: 'Regularized', dot: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50', ring: 'ring-emerald-400' },
+};
+
+function fmtTime(iso: string | null) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+export default function HolidaysTab({
+  viewOnly = false,
+  attendanceByDate,
+  onYearChange,
+}: {
+  viewOnly?: boolean;
+  attendanceByDate?: Record<string, IAttendanceLog>;
+  onYearChange?: (year: number) => void;
+} = {}) {
   const params    = useParams();
   const subdomain = params?.subdomain as string;
 
@@ -774,9 +853,9 @@ export default function HolidaysTab() {
           )}
           {/* Year nav */}
           <div className="flex items-center gap-1 bg-gray-100 rounded-xl px-2 py-1">
-            <button onClick={() => setYear(y => y - 1)} className="p-1 rounded-lg hover:bg-white transition-colors text-gray-500"><ChevronLeft size={13} /></button>
+            <button onClick={() => { setYear(y => { const n = y - 1; onYearChange?.(n); return n; }); }} className="p-1 rounded-lg hover:bg-white transition-colors text-gray-500"><ChevronLeft size={13} /></button>
             <span className="text-xs font-bold text-[#0f1f2e] px-1 min-w-[36px] text-center">{year}</span>
-            <button onClick={() => setYear(y => y + 1)} className="p-1 rounded-lg hover:bg-white transition-colors text-gray-500"><ChevronRight size={13} /></button>
+            <button onClick={() => { setYear(y => { const n = y + 1; onYearChange?.(n); return n; }); }} className="p-1 rounded-lg hover:bg-white transition-colors text-gray-500"><ChevronRight size={13} /></button>
           </div>
           {/* Type filter */}
           <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
@@ -788,14 +867,16 @@ export default function HolidaysTab() {
               </button>
             ))}
           </div>
-          <button onClick={() => { setImportIds(''); setImportError(null); setShowImport(true); }}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#0f766e] bg-[#e8f5ee] hover:bg-[#d4eddf] rounded-xl transition-colors">
-            <Download size={13} /> Import
-          </button>
-          <button onClick={() => openCreate()}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-[#0f766e] hover:bg-[#0d6460] rounded-xl transition-colors">
-            <Plus size={13} /> Add Entry
-          </button>
+          {!viewOnly && (<>
+            <button onClick={() => { setImportIds(''); setImportError(null); setShowImport(true); }}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#0f766e] bg-[#e8f5ee] hover:bg-[#d4eddf] rounded-xl transition-colors">
+              <Download size={13} /> Import
+            </button>
+            <button onClick={() => openCreate()}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-[#0f766e] hover:bg-[#0d6460] rounded-xl transition-colors">
+              <Plus size={13} /> Add Entry
+            </button>
+          </>)}
         </div>
       </div>
 
@@ -860,7 +941,7 @@ export default function HolidaysTab() {
             <span className="text-[10px] text-gray-500 font-medium">{l.label}</span>
           </div>
         ))}
-        <span className="text-[10px] text-gray-400 ml-auto hidden sm:block">Hover a day to add / edit / delete entries</span>
+        <span className="text-[10px] text-gray-400 ml-auto hidden sm:block">{viewOnly ? 'Hover a day to see attendance details' : 'Hover a day to add / edit / delete entries'}</span>
       </div>
 
       {/* ── Year Grid ── */}
@@ -884,13 +965,15 @@ export default function HolidaysTab() {
               deletingId={deletingId}
               workSchedule={workSchedule}
               workLocationSchedule={showLocationSchedule ? workLocationSchedule : null}
+              viewOnly={viewOnly}
+              attendanceByDate={attendanceByDate}
             />
           ))}
         </div>
       )}
 
       {/* ── Add / Edit Modal ── */}
-      {showModal && (
+      {!viewOnly && showModal && (
         <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col" style={{ maxHeight: 'calc(100vh - 4rem)' }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
@@ -1016,7 +1099,7 @@ export default function HolidaysTab() {
       )}
 
       {/* ── Delete Confirm ── */}
-      {confirmDeleteId && (
+      {!viewOnly && confirmDeleteId && (
         <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
             <div className="p-6 flex flex-col items-center text-center">
@@ -1040,7 +1123,7 @@ export default function HolidaysTab() {
       )}
 
       {/* ── Bulk Import ── */}
-      {showImport && (
+      {!viewOnly && showImport && (
         <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">

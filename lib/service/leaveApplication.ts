@@ -108,6 +108,19 @@ export const getLeaveApplications = (
   { bearerToken: token, isFetchToken: !token },
 );
 
+//get my leavessss
+
+export const getMyApplications = (
+  tenantId: string,
+  filters?: ILeaveApplicationFilters,
+  token?: string,
+) => get(
+  '/v1/leave-applications/my-leaves',
+  filters as Params,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
 export const getLeaveApplicationById = (
   id: string,
   tenantId: string,

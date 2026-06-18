@@ -24,13 +24,14 @@ export const signUp = (
     account_name: string,
     slug: string,
     email: string,
-    password: string
+    password: string,
+    phone_number?: string
   },
 ) => post(
   '/auth/signup',
   params,
   null,
-  params?.slug as string,
+  undefined,
   {
     isFetchToken: false,
   },
@@ -65,11 +66,12 @@ export const socialSignIn = (
 
 export const tokenVerify = (
   token: string,
+  slug?: string,
 ) => post(
   `/auth/${token}/confirm`,
   undefined,
   undefined,
-  undefined,
+  slug,
   {
     isFetchToken: false,
   },
@@ -210,6 +212,29 @@ export const acceptInvitationByAdmin = async (
   },
   undefined,
   slug,
+  {
+    isFetchToken: false,
+  },
+);
+
+export const acceptAccountInvitation = async (
+  token: string,
+  slug: string,
+  params: {
+    password: string,
+    confirm_password: string,
+    accept_terms_and_conditions: boolean
+  },
+) => post(
+  '/auth/acceptInvitation',
+  {
+    token,
+    password: params.password,
+    confirm_password: params.confirm_password,
+    accept_terms_and_conditions: params.accept_terms_and_conditions,
+  },
+  undefined,
+  undefined,
   {
     isFetchToken: false,
   },

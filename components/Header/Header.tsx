@@ -77,15 +77,16 @@ export const adminMenuItems: IMenuItem[] = [
     icon: <UsersRound size={16} />,
     menuItems: [
       { label: 'Employee Registry', path: '/employees/registry' },
+      { label: 'Employee Heirarchy', path: '/employees/organogram' },
       // { label: 'ID Management', path: '/employees/id_management' },
-      { label: 'Employee Documents', path: '/employees/documents' },
+      // { label: 'Employee Documents', path: '/employees/documents' },
     ],
   },
-  {
-    label: 'Workforce Analytics',
-    path: '/analytics',
-    icon: <BarChart3 size={16} />,
-  },
+  // {
+  //   label: 'Workforce Analytics',
+  //   path: '/analytics',
+  //   icon: <BarChart3 size={16} />,
+  // },
   { label: 'Reports', path: '/reports', icon: <FileText size={16} /> }, // 👈
 ];
 
@@ -100,11 +101,11 @@ export const employeeMenuItems: IMenuItem[] = [
     path: '',
     icon: <ClipboardCheck size={16} />,
     menuItems: [
-      { label: 'Overview', path: '/employee/attendance/overview' },
-      {
-        label: 'Check-in/Check-out',
-        path: '/employee/attendance/check-in-out',
-      },
+      // { label: 'Overview', path: '/employee/attendance/overview' },
+      // {
+      //   label: 'Check-in/Check-out',
+      //   path: '/employee/attendance/check-in-out',
+      // },
       { label: 'Monthly View', path: '/employee/attendance/monthly-view' },
     ],
   },

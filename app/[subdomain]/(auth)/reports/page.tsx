@@ -1,9 +1,9 @@
-import Report from '@/components/AdminPortal/Reports';
+import Reports from '@/components/AdminPortal/Reports';
 
 export default function ReportsPage() {
   return (
     <div>
-      <Report />
+      <Reports />
     </div>
   );
 }
