@@ -24,7 +24,6 @@ export const signUp = (
     account_name: string,
     slug: string,
     email: string,
-    password: string,
     phone_number?: string
   },
 ) => post(
@@ -190,6 +189,7 @@ export const acceptInvitation = async (
     confirm_password: params.confirm_password,
     name: params.name,
     phone_number: params.phone_number,
+    accept_terms_and_conditions: params.accept_terms_and_conditions,
   },
   undefined,
   slug,
@@ -209,6 +209,7 @@ export const acceptInvitationByAdmin = async (
     token,
     password: params.password,
     confirm_password: params.confirm_password,
+    accept_terms_and_conditions: params.accept_terms_and_conditions,
   },
   undefined,
   slug,

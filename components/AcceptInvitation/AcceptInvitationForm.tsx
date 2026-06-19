@@ -139,7 +139,7 @@ export default function AcceptInvitationForm({
       initialValues={{
         email: user?.email ?? '',
         name: user?.name ?? '',
-        company_name: account?.name ?? user?.account?.account_name ?? '',
+        company_name: account?.name ?? account?.company_name ?? account?.account_name ?? user?.account?.account_name ?? '',
         phone_number: user?.phone_number ?? '',
         password: '',
         confirm_password: '',
@@ -153,18 +153,18 @@ export default function AcceptInvitationForm({
       {({
         handleSubmit, errors, isSubmitting, setFieldValue,
       }) => (
-        <Form
-          onSubmit={handleSubmit}
-          style={{
-            width: isMobileOnly ? '330px' : '500px',
-            paddingTop: '80px',
-            height: '100vh',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            overflow: 'hidden',
-          }}
-        >
+          <Form
+            onSubmit={handleSubmit}
+            style={{
+              width: isMobileOnly ? '330px' : '500px',
+              paddingTop: '80px',
+              height: '100vh',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              overflow: 'hidden',
+            }}
+          >
           <div className="text-center mb-2 page-header-container">
             <h5 className="page-title">Complete Registration</h5>
             <span className="page-subtitle">Join and start exploring</span>

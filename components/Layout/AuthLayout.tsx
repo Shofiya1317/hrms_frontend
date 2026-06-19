@@ -33,6 +33,7 @@ export function AuthLayout({
   const isSignUp = [
     '/sign_up',
     '/accept_invitation',
+    '/accept-invitation',  // Add hyphenated version
     '/email_verify',
     '/terms_of_service',
     '/privacy_policy',
@@ -127,7 +128,7 @@ export function AuthLayout({
       {/* ── Main App (with Header) ── */}
       {isLanding && <LandingLayout>{children}</LandingLayout>}
 
-      {/* ── Auth Pages (Sign In / Sign Up) ── */}
+      {/* ── Auth Pages (Sign In / Sign Up / Accept Invitation) ── */}
       {(isSignUp || isSignIn) && (
         <div className="layout-containers relative grid min-h-screen overflow-hidden lg:grid-cols-2 hrms-auth-shell">
           {/* Left image panel — desktop only */}

@@ -365,10 +365,13 @@ function EmployeeProfileModal({
   );
 }
 
+import ProbationTracker from './ProbationTracker';
+
 export default function EmployeesRegistry() {
   const params = useParams();
   const subdomain = params?.subdomain as string;
 
+  const [activeTab, setActiveTab] = useState<'registry' | 'probation'>('registry');
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -521,17 +524,54 @@ export default function EmployeesRegistry() {
             </div>
             <div>
               <h1 className="text-xl sm:text-xl lg:text-xl font-bold text-gray-900">
-                Employees Registry
+                Employee Management
               </h1>
               <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                Manage and track all employee information in one place
+                Manage employees, track probation and monitor workforce
               </p>
             </div>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {/* Tabs */}
+        <div className="mb-6">
+          <div className="flex gap-2 border-b border-gray-200">
+            <button
+              onClick={() => setActiveTab('registry')}
+              className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${
+                activeTab === 'registry'
+                  ? 'border-[#0f766e] text-[#0f766e]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Users size={16} />
+                Employee Registry
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('probation')}
+              className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${
+                activeTab === 'probation'
+                  ? 'border-[#0f766e] text-[#0f766e]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Clock size={16} />
+                Probation Tracker
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'probation' ? (
+          <ProbationTracker />
+        ) : (
+          <>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           <StatCard
             title="Total Employees"
             value={stats.total}
@@ -902,6 +942,8 @@ export default function EmployeesRegistry() {
               </table>
             </div>
           </div>
+        )}
+          </>
         )}
       </div>
 

@@ -9,9 +9,8 @@ export const config = {
   ],
 };
 
-// In-memory cache for slug verification — prevents an API call on every request
 const slugCache = new Map<string, { success: boolean; message: string; ts: number }>();
-const SLUG_CACHE_TTL = 60_000; // 1 minute
+const SLUG_CACHE_TTL = 60_000;
 
 async function verifySlug(subdomain: string): Promise<{ success: boolean; message: string }> {
   const cached = slugCache.get(subdomain);
@@ -30,8 +29,9 @@ export default async function middleware(req: NextRequest) {
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set('x-href', url.href);
   const hostname = req.headers.get('host') ?? '';
-  const subdomain = hostname.split('.')[0];
-  // Helper function to preserve query params
+  const hostnameWithoutPort = hostname.split(':')[0];
+  const subdomain = hostnameWithoutPort.split('.')[0];
+
   const buildUrlWithQueryParams = (basePath: string) => {
     const newUrl = new URL(basePath, req.url);
     url.searchParams.forEach((value, key) => {
@@ -48,11 +48,17 @@ export default async function middleware(req: NextRequest) {
   }
 
   if (subdomain !== 'app' && ((subdomain === 'localhost' || subdomain === 'primeclm' || subdomain.length < 4))) {
+    if (subdomain === 'localhost' && (url.pathname.includes('accept-invitation') || url.pathname.includes('accept_invitation'))) {
+      const slugFromQuery = url.searchParams.get('slug');
+      if (slugFromQuery) {
+        return NextResponse.rewrite(buildUrlWithQueryParams(`/${slugFromQuery}${url.pathname}`));
+      }
+    }
     return NextResponse.rewrite(buildUrlWithQueryParams(`/${subdomain}/`));
   }
   const { success, message } = await verifySlug(subdomain);
 
-  const unProtectedUrlMatches: RegExp = /^\/(accept_invitation|reset_password|privacy_policy|forgot_password|update_password|update_password_email_verify|sign_up|terms_of_service|email_verify|invite|sign_in|confirm_account|contracts\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\/guest|templates\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\/guest)$/;
+  const unProtectedUrlMatches: RegExp = /^\/(accept_invitation|accept-invitation|reset_password|privacy_policy|forgot_password|update_password|update_password_email_verify|sign_up|terms_of_service|email_verify|invite|sign_in|confirm_account|contracts\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\/guest|templates\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\/guest)$/;
 
   if (success) {
     return NextResponse.rewrite(buildUrlWithQueryParams(`/${subdomain}/`));
@@ -79,7 +85,6 @@ export default async function middleware(req: NextRequest) {
       && url.pathname !== '/company_profile/company_information'
       && url.pathname !== '/dashboard'
     ) {
-      // return NextResponse.redirect(buildUrlWithQueryParams('/company_profile/company_information'));
       return NextResponse.redirect(buildUrlWithQueryParams('/sign_in'));
     }
     return NextResponse.rewrite(buildUrlWithQueryParams(`/${subdomain}${url.pathname}`));

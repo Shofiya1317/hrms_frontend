@@ -41,7 +41,7 @@ interface MasterOption {
   end_time_24hr?: string | null;
 }
 
-type EmployeeRole = 'EMPLOYEE' | 'HR_ADMIN';
+type EmployeeRole = 'EMPLOYEE';
 
 interface EmployeeFormState {
   firstName: string;
@@ -83,7 +83,7 @@ export default function AddEmployeeModal({
     firstName: '',
     lastName: '',
     email: '',
-    role: 'EMPLOYEE' as 'EMPLOYEE' | 'HR_ADMIN',
+    role: 'EMPLOYEE' as 'EMPLOYEE',
     employeeCode: '',
     departmentId: '',
     designationId: '',
@@ -231,7 +231,7 @@ export default function AddEmployeeModal({
 
       const payload: InviteEmployeeDto = {
         email,
-        role: form.role,
+        role: 'EMPLOYEE', // Always default to EMPLOYEE role
         employee_code: form.employeeCode.trim() || undefined,
         first_name: firstName,
         last_name: lastName,
@@ -495,44 +495,27 @@ export default function AddEmployeeModal({
               </div>
             </div>
 
-            {/* Row 4: Role + Employment Type */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="role"
-                  className="block text-xs font-semibold text-gray-600 mb-1.5"
-                >
-                  Role <span className="text-red-500">*</span>
-                </label>
-                <Select
-                  inputId="role"
-                  options={ROLES}
-                  value={ROLES.find((r) => r.value === form.role) ?? null}
-                  onChange={(opt) => handleChange('role', opt?.value ?? '')}
-                  styles={customStyles()}
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="employmentTypeId"
-                  className="block text-xs font-semibold text-gray-600 mb-1.5"
-                >
-                  Employment Type <span className="text-red-500">*</span>
-                </label>
-                <Select
-                  inputId="employmentTypeId"
-                  options={[
-                    { value: 'full_time', label: 'Full Time' },
-                    { value: 'part_time', label: 'Part Time' },
-                    { value: 'contract', label: 'Contract' },
-                    { value: 'probation', label: 'Probation' },
-                  ]}
-                  value={form.employmentType ? { value: form.employmentType, label: form.employmentType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) } : null}
-                  onChange={(opt) => handleChange('employmentType', opt?.value ?? '')}
-                  placeholder="Select employment type"
-                  styles={customStyles()}
-                />
-              </div>
+            {/* Row 4: Employment Type */}
+            <div>
+              <label
+                htmlFor="employmentTypeId"
+                className="block text-xs font-semibold text-gray-600 mb-1.5"
+              >
+                Employment Type <span className="text-red-500">*</span>
+              </label>
+              <Select
+                inputId="employmentTypeId"
+                options={[
+                  { value: 'full_time', label: 'Full Time' },
+                  // { value: 'part_time', label: 'Part Time' },
+                  // { value: 'contract', label: 'Contract' },
+                  { value: 'probation', label: 'Probation' },
+                ]}
+                value={form.employmentType ? { value: form.employmentType, label: form.employmentType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) } : null}
+                onChange={(opt) => handleChange('employmentType', opt?.value ?? '')}
+                placeholder="Select employment type"
+                styles={customStyles()}
+              />
             </div>
 
            

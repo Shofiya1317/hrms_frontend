@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { getAttendances } from '@/lib/service/attendance';
 import HolidaysTab, { IAttendanceLog } from '@/components/AdminPortal/AdminAttendance/AttendanceLeave/HolidaysTab';
 
-export default function MonthlyView() {
+export default function MonthlyView({ employeeId }: { employeeId?: string }) {
   const params = useParams();
   const subdomain = params?.subdomain as string;
 
@@ -13,10 +13,11 @@ export default function MonthlyView() {
   const [logs, setLogs] = useState<IAttendanceLog[]>([]);
 
   useEffect(() => {
-    if (!subdomain) return;
+    if (!subdomain || !employeeId) return;
     getAttendances(subdomain, {
       from_date: `${year}-01-01`,
       to_date:   `${year}-12-31`,
+      employee_id: employeeId,
       limit:     500,
     })
       .then(res => {
@@ -24,7 +25,7 @@ export default function MonthlyView() {
         setLogs(raw);
       })
       .catch(() => setLogs([]));
-  }, [subdomain, year]);
+  }, [subdomain, year, employeeId]);
 
   const attendanceByDate = useMemo(() => {
     const map: Record<string, IAttendanceLog> = {};

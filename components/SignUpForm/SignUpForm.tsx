@@ -27,7 +27,6 @@ import './SignUpForm.css';
 interface IField {
   fullname: string;
   email: string;
-  password: string;
   company_name: string;
   workspace_url: string;
   phone_number: string;
@@ -47,7 +46,6 @@ export const handleSignUpSubmit = async (
     account_name: values.company_name,
     slug: `${values.workspace_url}`,
     email: values.email,
-    password: values.password,
     phone_number: values.phone_number || undefined,
   });
   const { success, error } = res?.data as { error: string[]; success: boolean };
@@ -158,14 +156,6 @@ export default function SignUpForm() {
         'Invalid email format',
       )
       .required('Email address is required'),
-    password: string()
-      .min(8, 'Minimum 8 characters required')
-      .max(16, 'Do not more than 16 characters')
-      .matches(
-        /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,16}$/,
-        'Password Must contains uppercase,lowercase,special character and number',
-      )
-      .required('Password is required'),
     terms: boolean()
       .oneOf([true], 'Agree Terms and Conditions is required')
       .required('Agree Terms and Conditions is required'),
@@ -317,7 +307,6 @@ export default function SignUpForm() {
               workspace_url: '',
               phone_number: '',
               email: '',
-              password: '',
               terms: '',
             }}
             validationSchema={validationSchema}
