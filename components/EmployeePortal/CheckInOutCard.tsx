@@ -8,6 +8,7 @@ interface LocationData { lat: number; lng: number; address: string; accuracy?: n
 interface CheckInOutCardProps {
   apiKey: string; slug?: string; token: string;
   fullName: string; employeeId: string; designation: string; defaultLocation?: string;
+  onAttendanceUpdate?: () => void;
 }
 
 function pad(n: number) { return String(n).padStart(2, '0'); }
@@ -47,7 +48,7 @@ const STATUS: Record<string, { label: string; color: string; bg: string; dot: st
 };
 
 export default function CheckInOutCard({
-  apiKey, slug, token, fullName, employeeId, designation, defaultLocation = 'Unknown',
+  apiKey, slug, token, fullName, employeeId, designation, defaultLocation = 'Unknown', onAttendanceUpdate,
 }: CheckInOutCardProps) {
   const [now, setNow]                     = useState(new Date());
   const [isCheckedIn, setIsCheckedIn]     = useState(false);
@@ -83,13 +84,17 @@ export default function CheckInOutCard({
     else localStorage.removeItem('att_state');
   }, [isCheckedIn, attendanceId, checkInEpoch]);
 
-  useEffect(() => {
+  const fetchRecentAttendance = async () => {
     if (!employeeId) return;
     setLoadingRecent(true);
     getAttendances(apiKey || slug || '', { employee_id: employeeId, limit: 7 }, token)
       .then(r => setRecent(Array.isArray(r?.data?.data) ? r.data.data : []))
       .catch(() => {})
       .finally(() => setLoadingRecent(false));
+  };
+
+  useEffect(() => {
+    fetchRecentAttendance();
   }, [employeeId]);
 
   const showToast = (msg: string, type: 'success' | 'error' | 'info') => {
@@ -110,12 +115,18 @@ export default function CheckInOutCard({
         if (!res?.data?.data?.id) throw new Error('Check-in failed.');
         setAttendanceId(res.data.data.id); setIsCheckedIn(true); setCheckInEpoch(n.getTime()); setElapsed(0);
         showToast(`Checked in at ${fmtTime(n)}`, 'success');
+        // Refresh dashboard and recent attendance
+        if (onAttendanceUpdate) onAttendanceUpdate();
+        fetchRecentAttendance();
       } else {
         if (!attendanceId) throw new Error('No record found.');
         const res = await checkOut(attendanceId, { check_out_time: n.toISOString(), check_out_lat: locationData?.lat || 0, check_out_lng: locationData?.lng || 0, check_out_location_name: locationData?.address || defaultLocation, check_out_method: 'gps' }, apiKey, token);
         const s = res?.data?.data?.work_summary;
         showToast(s ? `Done · ${s.total_worked_hours}h worked` : 'Checked out.', 'info');
         setIsCheckedIn(false); setElapsed(0); setAttendanceId(null); setCheckInEpoch(null);
+        // Refresh dashboard and recent attendance
+        if (onAttendanceUpdate) onAttendanceUpdate();
+        fetchRecentAttendance();
       }
     } catch (e: any) { showToast(e?.message || 'Something went wrong.', 'error'); }
     finally { setIsLoading(false); setShowModal(false); setLocationData(null); }
@@ -173,23 +184,14 @@ export default function CheckInOutCard({
           />
         </div>
 
-        {/* Check-in / Check-out buttons */}
-        <div className="flex gap-2">
-          <button
-            onClick={openModal}
-            disabled={isCheckedIn || isLoading}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-[0.97] ${isCheckedIn ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-emerald-500 text-white shadow-[0_4px_14px_rgba(16,185,129,0.4)] hover:bg-emerald-600'}`}
-          >
-            <LogIn size={15} />Check in
-          </button>
-          <button
-            onClick={openModal}
-            disabled={!isCheckedIn || isLoading}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-[0.97] ${!isCheckedIn ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-rose-500 text-white shadow-[0_4px_14px_rgba(239,68,68,0.4)] hover:bg-rose-600'}`}
-          >
-            <LogOut size={15} />Check out
-          </button>
-        </div>
+        {/* Check-in / Check-out button */}
+        <button
+          onClick={openModal}
+          disabled={isLoading}
+          className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all active:scale-[0.97] ${isCheckedIn ? 'bg-rose-500 text-white shadow-[0_4px_14px_rgba(239,68,68,0.4)] hover:bg-rose-600' : 'bg-emerald-500 text-white shadow-[0_4px_14px_rgba(16,185,129,0.4)] hover:bg-emerald-600'}`}
+        >
+          {isCheckedIn ? <><LogOut size={15} />Check Out</> : <><LogIn size={15} />Check In</>}
+        </button>
       </div>
 
       {/* ══════════════════════════════════════════

@@ -518,6 +518,8 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
                   {leaveTypes.filter(lt => lt.balance > 0).map((lt) => {
                     const Icon = lt.icon;
                     const isSelected = selectedTypeId === lt.id;
+                    const isOptionalHoliday = lt.code?.toLowerCase().includes('optional') || lt.name?.toLowerCase().includes('optional');
+                    
                     return (
                       <button
                         key={lt.id}
@@ -538,7 +540,9 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
                         </div>
                         <div className="flex-1 text-left">
                           <p className="text-sm font-bold text-slate-800">{lt.name}</p>
-                          <p className="text-[10px] text-slate-500">{lt.code} · {lt.balance} days available</p>
+                          <p className="text-[10px] text-slate-500">
+                            {lt.code} · {lt.balance} {isOptionalHoliday ? 'optional holidays' : 'days'} available
+                          </p>
                         </div>
                         {isSelected && <CheckCircle2 size={16} className="text-emerald-500" />}
                       </button>
@@ -551,6 +555,23 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
                   </div>
                 )}
               </div>
+
+              {/* Optional Holiday Info Banner */}
+              {selectedLeaveType && (selectedLeaveType.code?.toLowerCase().includes('optional') || selectedLeaveType.name?.toLowerCase().includes('optional')) && (
+                <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <Info size={18} className="text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-blue-900 mb-1">Optional Holiday Information</p>
+                    <p className="text-xs text-blue-700">
+                      You can select from designated optional holiday dates throughout the year. 
+                      These are specific dates where you can choose to take a day off from the available optional holiday list.
+                    </p>
+                    <p className="text-xs text-blue-600 mt-2 font-medium">
+                      💡 Select dates from the company's optional holiday calendar when applying.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Half Day Toggle */}
               <div>

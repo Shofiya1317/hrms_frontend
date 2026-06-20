@@ -22,68 +22,38 @@ export default function ConfirmAccountPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token') || '';
-  const slug = searchParams.get('slug') || '';
 
   const [loading, setLoading] = useState(true);
   const [tokenValid, setTokenValid] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
 
-  // useEffect(() => {
-  //   const verifyToken = async () => {
-  //     if (!token || !slug) {
-  //       toast.error('Invalid confirmation link');
-  //       setLoading(false);
-  //       return;
-  //     }
-
-  //     try {
-  //       const res = await AuthService.tokenVerify(token, slug);
-  //       const { success } = res?.data as { success: boolean };
-        
-  //       if (success) {
-  //         setTokenValid(true);
-  //       } else {
-  //         toast.error('Invalid or expired token');
-  //         setTimeout(() => router.push('/sign_up'), 2000);
-  //       }
-  //     } catch (error) {
-  //       toast.error('Failed to verify token');
-  //       setTimeout(() => router.push('/sign_up'), 2000);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   verifyToken();
-  // }, [token, slug, router]);
-
-
   useEffect(() => {
-  const verifyToken = async () => {
-    if (!token) {
-      toast.error('Invalid confirmation link');
-      setLoading(false);
-      return;
-    }
-    try {
-      const res = await AuthService.getVerifyAdminToken(token); // same call accept-invitation uses for isAccount
-      const { success } = res?.data as { success: boolean };
-      if (success) {
-        setTokenValid(true);
-      } else {
-        toast.error('Invalid or expired token');
-        setTimeout(() => router.push('/sign_up'), 2000);
+    const verifyToken = async () => {
+      if (!token) {
+        toast.error('Invalid confirmation link');
+        setLoading(false);
+        return;
       }
-    } catch {
-      toast.error('Failed to verify token');
-      setTimeout(() => router.push('/sign_up'), 2000);
-    } finally {
-      setLoading(false);
-    }
-  };
-  verifyToken();
-}, [token, router]);
+      try {
+        const res = await AuthService.getVerifyAdminToken(token);
+        const { success } = res?.data as { success: boolean };
+        if (success) {
+          setTokenValid(true);
+        } else {
+          toast.error('Invalid or expired token');
+          setTimeout(() => router.push('/sign_up'), 2000);
+        }
+      } catch {
+        toast.error('Failed to verify token');
+        setTimeout(() => router.push('/sign_up'), 2000);
+      } finally {
+        setLoading(false);
+      }
+    };
+    verifyToken();
+  }, [token, router]);
+
   const validationSchema = object({
     password: string()
       .min(8, 'Password must be at least 8 characters')
@@ -103,14 +73,7 @@ export default function ConfirmAccountPage() {
 
   const onSubmit = async (values: IFields, { setSubmitting }: any) => {
     try {
-      // const res = await AuthService.acceptAccountInvitation(token, slug, {
-      //   password: values.password,
-      //   confirm_password: values.confirm_password,
-      //   accept_terms_and_conditions: values.accept_terms_and_conditions,
-      // });
-
-
-      const res = await AuthService.acceptAccountInvitation(token, slug, {
+      const res = await AuthService.acceptAccountInvitation(token, '', {
         password: values.password,
         confirm_password: values.confirm_password,
         accept_terms_and_conditions: values.accept_terms_and_conditions,

@@ -171,7 +171,13 @@ export default function CompanyInformationForm({
   const [countryOptions, setCountryOptions] = useState<Option[]>([]);
   const [stateOptions, setStateOptions] = useState<Option[]>([]);
   const [cityOptions, setCityOptions] = useState<Option[]>([]);
-  const [industryOptions, setIndustryOptions] = useState<Option[]>([]);
+  const [industryOptions, setIndustryOptions] = useState<Option[]>([
+    { value: 'technology', label: 'Technology' },
+    { value: 'healthcare', label: 'Healthcare' },
+    { value: 'finance', label: 'Finance' },
+    { value: 'manufacturing', label: 'Manufacturing' },
+    { value: 'retail', label: 'Retail' },
+  ]);
 
   /**
    * Populates stateOptions and cityOptions from account data.
@@ -218,16 +224,6 @@ export default function CompanyInformationForm({
       label: country.name,
     }));
     setCountryOptions(countries);
-
-    // Load industries from API
-    MastersService.getIndustries(slug).then((res) => {
-      const data = res?.data as IMastersListResponse<IIndustry>;
-      if (data?.success) {
-        setIndustryOptions(
-          data.data.map((i: any) => ({ value: i.id, label: i.name }))
-        );
-      }
-    });
 
     // Only pre-populate state/city options in Settings flow
     if (isSettings) {

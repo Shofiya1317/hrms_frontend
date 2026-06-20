@@ -257,35 +257,32 @@ export default function OrganisationSetupForm({
 
   const onSubmit = async (values: OrganisationSetup) => {
     try {
-      // Create the work schedule if user has configured it
-      let createdScheduleId: string | null = null;
-      
-      if (newSchedule.name.trim()) {
-        try {
-          const scheduleRes = await MastersService.createWorkSchedule(
-            { ...newSchedule, name: newSchedule.name.trim() },
-            slug
-          );
-          const scheduleData = scheduleRes?.data as {
-            success: boolean;
-            data?: IWorkSchedule;
-            error?: string;
-          };
-          if (scheduleData.success && scheduleData.data?.id) {
-            createdScheduleId = scheduleData.data.id;
-          }
-        } catch (err) {
-          console.error('Failed to create schedule:', err);
-        }
-      }
-
-      // Prepare the payload - work_location_ids can be strings (names)
-      const payload = {
-        work_location_ids: values.branches_locations,
+      // Prepare the payload with work_schedule as JSONB object
+      const payload: any = {
+        work_location: values.branches_locations,
         department_ids: values.departments,
         shift_ids: values.work_shifts,
-        work_schedule_ids: createdScheduleId ? [createdScheduleId] : values.work_schedules,
       };
+
+      // Add work_schedule as JSONB object if configured
+      if (newSchedule.name.trim()) {
+        payload.work_schedule = {
+          name: newSchedule.name.trim(),
+          description: newSchedule.description || '',
+          monday: newSchedule.monday,
+          tuesday: newSchedule.tuesday,
+          wednesday: newSchedule.wednesday,
+          thursday: newSchedule.thursday,
+          friday: newSchedule.friday,
+          saturday_week_1: newSchedule.saturday_week_1,
+          saturday_week_2: newSchedule.saturday_week_2,
+          saturday_week_3: newSchedule.saturday_week_3,
+          saturday_week_4: newSchedule.saturday_week_4,
+          saturday_week_5: newSchedule.saturday_week_5,
+          sunday: newSchedule.sunday,
+        };
+      }
+
       const res = await onboardingStep2(payload, slug);
       const { success, error } = res?.data as {
         success: boolean;
@@ -300,7 +297,7 @@ export default function OrganisationSetupForm({
         toast.error(errorMsg);
       }
     } catch (err: any) {
-      const errorMsg = err?.response?.data?.message || err?.message || 'Something went wrong';
+      const errorMsg = err?.response?.data?.error?.[0] || err?.response?.data?.message || err?.message || 'Something went wrong';
       toast.error(errorMsg);
     }
   };

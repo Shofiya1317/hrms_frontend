@@ -288,3 +288,79 @@ export const getMonthlyConsolidatedReport = (
   tenantId,
   { bearerToken: token, isFetchToken: !token },
 );
+
+export interface IMonthlySummaryFilters {
+  employee_id: string;
+  year: number;
+  month: number;
+}
+
+export interface IMonthlySummary {
+  month: number;
+  year: number;
+  month_name: string;
+  monthly_overview: {
+    working_days: number;
+    present_days: number;
+    absent_days: number;
+    late_arrivals: number;
+    half_days: number;
+    attendance_rate: string;
+  };
+  working_hours_summary: {
+    expected_hours: string;
+    worked_hours: string;
+    shortfall: string;
+    shortfall_type: 'deficit' | 'surplus';
+    overtime: string;
+  };
+  attendance_status_breakdown: Array<{
+    status: string;
+    count: number;
+  }>;
+  late_arrival_summary: {
+    total_late_arrivals: number;
+    total_late_minutes: number;
+    avg_late_minutes: number;
+    max_late_minutes: number;
+    late_days_details: Array<{
+      date: string;
+      late_by_minutes: number;
+    }>;
+  };
+  early_exit_summary: {
+    early_exits: number;
+    total_early_exit_minutes: number;
+    avg_early_exit_minutes: number;
+    early_exit_details: Array<{
+      date: string;
+      early_by_minutes: number;
+    }>;
+  };
+  leave_impact: {
+    approved_leave: number;
+    pending_leave: number;
+    total_leave_days: number;
+  };
+  regularization_summary: {
+    requested: number;
+    approved: number;
+    pending: number;
+  };
+  work_location_summary: {
+    wfh_days: number;
+    on_duty_days: number;
+    office_days: number;
+  };
+}
+
+export const getMonthlySummary = (
+  tenantId: string,
+  params: IMonthlySummaryFilters,
+  token?: string,
+) => get(
+  '/v1/attendance/dashboard/monthly-summary',
+  params as Params,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);

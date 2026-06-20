@@ -164,13 +164,14 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
         <CheckInOutCard
           apiKey={apiKey} token={token} fullName={fullName}
           employeeId={employeeId} designation={designation} defaultLocation={location}
+          onAttendanceUpdate={fetchAttendanceDashboard}
         />
  
         {/* ── Quick Stats ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Present Days', value: attendanceDashboard?.month_summary?.present_days ?? '--', sub: `of ${attendanceDashboard?.month_summary?.working_days ?? '--'} days`, gradFrom: '#86efac', gradTo: '#4ade80', shadow: 'rgba(74,222,128,0.25)', icon: CheckCircle2, iconColor: '#16a34a' },
-            { label: 'Working Hours', value: attendanceDashboard?.month_summary?.total_hours ?? '--', sub: 'this month', gradFrom: '#93c5fd', gradTo: '#818cf8', shadow: 'rgba(129,140,248,0.25)', icon: Clock, iconColor: '#4f46e5' },
+            { label: 'Present Days', value: attendanceDashboard?.week_stats?.present_days ?? '--', sub: `of ${attendanceDashboard?.week_stats?.working_days ?? '--'} days`, gradFrom: '#86efac', gradTo: '#4ade80', shadow: 'rgba(74,222,128,0.25)', icon: CheckCircle2, iconColor: '#16a34a' },
+            { label: 'Working Hours', value: attendanceDashboard?.week_stats?.total_hours ?? '--', sub: 'this week', gradFrom: '#93c5fd', gradTo: '#818cf8', shadow: 'rgba(129,140,248,0.25)', icon: Clock, iconColor: '#4f46e5' },
             { label: 'Leave Balance', value: leaveBalances.reduce((s, l) => s + l.balance, 0) || '--', sub: 'days remaining', gradFrom: '#fcd34d', gradTo: '#fb923c', shadow: 'rgba(251,146,60,0.25)', icon: Calendar, iconColor: '#d97706' },
             { label: 'Team Size', value: teamLoading ? '…' : teamCount || teamMembers.length, sub: 'reporting to you', gradFrom: '#c4b5fd', gradTo: '#e879f9', shadow: 'rgba(232,121,249,0.25)', icon: Users, iconColor: '#9333ea' },
           ].map((stat) => (
@@ -261,7 +262,7 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
                 </div>
                 <h3 className="text-sm font-bold text-slate-800">This Week</h3>
               </div>
-              <Link href="/employee/attendance/monthly" className="text-[10px] font-bold text-teal-600 bg-teal-50 px-2.5 py-1 rounded-full flex items-center gap-1 hover:bg-teal-100 transition-colors">
+              <Link href="/employee/attendance/monthly-view" className="text-[10px] font-bold text-teal-600 bg-teal-50 px-2.5 py-1 rounded-full flex items-center gap-1 hover:bg-teal-100 transition-colors">
                 Monthly <ArrowRight size={10} />
               </Link>
             </div>
