@@ -1,5 +1,5 @@
-import AdminAttendance from "@/components/AdminPortal/AdminAttendance/AttendanceDashboard";
+import AdminAttendance from '@/components/AdminPortal/AdminAttendance/AttendanceDashboard';
 
-export default function page(){
-    return <AdminAttendance />
+export default function page() {
+  return <AdminAttendance />;
 }

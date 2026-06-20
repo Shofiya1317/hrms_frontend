@@ -8,9 +8,9 @@ import { Params } from '../utils';
 // ─────────────────────────────────────────────
 
 export enum WFHStatus {
-  PENDING   = 'pending',
-  APPROVED  = 'approved',
-  REJECTED  = 'rejected',
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
   CANCELLED = 'cancelled',
 }
 

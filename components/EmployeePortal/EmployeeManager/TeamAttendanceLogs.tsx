@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { ChevronDown, ChevronLeft, ChevronRight, Search, CheckCircle2, XCircle, Clock, AlertTriangle, Loader2, TrendingUp, User, Calendar } from 'lucide-react';
+import {
+  ChevronDown, ChevronLeft, ChevronRight, Search, CheckCircle2, XCircle, Clock, AlertTriangle, Loader2, TrendingUp, User, Calendar,
+} from 'lucide-react';
 import { getAttendances } from '@/lib/service/attendance';
 
 type AttendanceStatus = 'present' | 'absent' | 'on_leave' | 'weekend' | 'holiday' | 'checked_in' | 'checked_out';
@@ -31,19 +33,34 @@ interface IAttendanceLog {
 }
 
 const STATUS_META: Record<AttendanceStatus, { label: string; bg: string; text: string; dot: string; icon: any }> = {
-  present:     { label: 'Present',    bg: 'bg-teal-50',   text: 'text-teal-700',   dot: 'bg-teal-500',   icon: CheckCircle2 },
-  absent:      { label: 'Absent',     bg: 'bg-red-50',    text: 'text-red-600',    dot: 'bg-red-400',    icon: XCircle },
-  on_leave:    { label: 'On Leave',   bg: 'bg-blue-50',   text: 'text-blue-600',   dot: 'bg-blue-500',   icon: Clock },
-  weekend:     { label: 'Weekend',    bg: 'bg-purple-50', text: 'text-purple-600', dot: 'bg-purple-500', icon: Clock },
-  holiday:     { label: 'Holiday',    bg: 'bg-amber-50',  text: 'text-amber-600',  dot: 'bg-amber-400',  icon: Clock },
-  checked_in:  { label: 'Checked In', bg: 'bg-cyan-50',   text: 'text-cyan-700',   dot: 'bg-cyan-500',   icon: Clock },
-  checked_out: { label: 'Completed',  bg: 'bg-teal-50',   text: 'text-teal-700',   dot: 'bg-teal-500',   icon: CheckCircle2 },
+  present: {
+    label: 'Present', bg: 'bg-teal-50', text: 'text-teal-700', dot: 'bg-teal-500', icon: CheckCircle2,
+  },
+  absent: {
+    label: 'Absent', bg: 'bg-red-50', text: 'text-red-600', dot: 'bg-red-400', icon: XCircle,
+  },
+  on_leave: {
+    label: 'On Leave', bg: 'bg-blue-50', text: 'text-blue-600', dot: 'bg-blue-500', icon: Clock,
+  },
+  weekend: {
+    label: 'Weekend', bg: 'bg-purple-50', text: 'text-purple-600', dot: 'bg-purple-500', icon: Clock,
+  },
+  holiday: {
+    label: 'Holiday', bg: 'bg-amber-50', text: 'text-amber-600', dot: 'bg-amber-400', icon: Clock,
+  },
+  checked_in: {
+    label: 'Checked In', bg: 'bg-cyan-50', text: 'text-cyan-700', dot: 'bg-cyan-500', icon: Clock,
+  },
+  checked_out: {
+    label: 'Completed', bg: 'bg-teal-50', text: 'text-teal-700', dot: 'bg-teal-500', icon: CheckCircle2,
+  },
 };
 
-const AVATAR_COLORS = ['bg-[#0f766e]','bg-blue-500','bg-violet-500','bg-rose-500','bg-amber-500','bg-cyan-500','bg-pink-500','bg-indigo-500'];
+const AVATAR_COLORS = ['bg-[#0f766e]', 'bg-blue-500', 'bg-violet-500', 'bg-rose-500', 'bg-amber-500', 'bg-cyan-500', 'bg-pink-500', 'bg-indigo-500'];
 
 function initials(name = '') {
-  return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  return name.split(' ').map((w) => w[0]).join('').slice(0, 2)
+    .toUpperCase();
 }
 function avatarColor(name = '') {
   let h = 0;
@@ -53,7 +70,7 @@ function avatarColor(name = '') {
 function fmtTime(iso: string | null) {
   if (!iso) return '—';
   const d = new Date(iso);
-  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 function fmtDate(iso: string) {
   const d = new Date(iso);
@@ -68,14 +85,14 @@ function fmtHours(mins: number) {
 function TortoiseIcon({ size = 16, className = '' }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-      <ellipse cx="12" cy="15" rx="8" ry="5" fill="currentColor" opacity="0.2"/>
-      <ellipse cx="12" cy="10" rx="6" ry="4.5" fill="currentColor"/>
-      <circle cx="10" cy="9" r="0.8" fill="white"/>
-      <circle cx="14" cy="9" r="0.8" fill="white"/>
-      <path d="M 8 14 Q 9 12, 10 14" stroke="currentColor" strokeWidth="0.8" fill="none" strokeLinecap="round"/>
-      <path d="M 14 14 Q 15 12, 16 14" stroke="currentColor" strokeWidth="0.8" fill="none" strokeLinecap="round"/>
-      <circle cx="6" cy="13" r="1.2" fill="currentColor"/>
-      <circle cx="18" cy="13" r="1.2" fill="currentColor"/>
+      <ellipse cx="12" cy="15" rx="8" ry="5" fill="currentColor" opacity="0.2" />
+      <ellipse cx="12" cy="10" rx="6" ry="4.5" fill="currentColor" />
+      <circle cx="10" cy="9" r="0.8" fill="white" />
+      <circle cx="14" cy="9" r="0.8" fill="white" />
+      <path d="M 8 14 Q 9 12, 10 14" stroke="currentColor" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+      <path d="M 14 14 Q 15 12, 16 14" stroke="currentColor" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+      <circle cx="6" cy="13" r="1.2" fill="currentColor" />
+      <circle cx="18" cy="13" r="1.2" fill="currentColor" />
     </svg>
   );
 }
@@ -106,7 +123,13 @@ function AttendanceRow({ log, isOpen, onToggle }: { log: IAttendanceLog; isOpen:
               <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-200">Regularized</span>
             )}
           </div>
-          <p className="text-[11px] text-gray-400 mt-0.5">{fmtDate(log.attendance_date)} · {log.shift_name}</p>
+          <p className="text-[11px] text-gray-400 mt-0.5">
+            {fmtDate(log.attendance_date)}
+            {' '}
+            ·
+            {' '}
+            {log.shift_name}
+          </p>
         </div>
         <div className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full ${meta.bg} ${meta.text} border ${meta.bg.replace('bg-', 'border-')}`}>
           <Icon size={12} />
@@ -124,7 +147,10 @@ function AttendanceRow({ log, isOpen, onToggle }: { log: IAttendanceLog; isOpen:
           </div>
         </div>
         <div className="hidden lg:block text-right">
-          <p className="text-xs font-bold text-[#0f766e]">{log.total_worked_hours}h</p>
+          <p className="text-xs font-bold text-[#0f766e]">
+            {log.total_worked_hours}
+            h
+          </p>
           <p className="text-[9px] text-gray-400">{fmtHours(log.total_worked_minutes)}</p>
         </div>
       </div>
@@ -142,7 +168,10 @@ function AttendanceRow({ log, isOpen, onToggle }: { log: IAttendanceLog; isOpen:
               {log.is_late && (
                 <div className="flex items-center gap-1 mt-2">
                   <TortoiseIcon size={14} className="text-amber-600" />
-                  <p className="text-[10px] font-bold text-amber-600">Late by {fmtHours(log.late_by_minutes)}</p>
+                  <p className="text-[10px] font-bold text-amber-600">
+                    Late by
+                    {fmtHours(log.late_by_minutes)}
+                  </p>
                 </div>
               )}
             </div>
@@ -155,7 +184,10 @@ function AttendanceRow({ log, isOpen, onToggle }: { log: IAttendanceLog; isOpen:
               </div>
               <p className="text-lg font-bold text-[#0f1f2e] font-mono">{fmtTime(log.check_out_time)}</p>
               {log.is_early_exit && (
-                <p className="text-[10px] font-bold text-orange-600 mt-2">Early by {fmtHours(log.early_exit_minutes)}</p>
+                <p className="text-[10px] font-bold text-orange-600 mt-2">
+                  Early by
+                  {fmtHours(log.early_exit_minutes)}
+                </p>
               )}
             </div>
             <div className="bg-white rounded-xl border border-gray-100 p-3">
@@ -165,7 +197,10 @@ function AttendanceRow({ log, isOpen, onToggle }: { log: IAttendanceLog; isOpen:
                 </div>
                 <p className="text-[10px] font-bold text-gray-500 uppercase">Worked</p>
               </div>
-              <p className="text-lg font-bold text-[#0f1f2e]">{log.total_worked_hours}h</p>
+              <p className="text-lg font-bold text-[#0f1f2e]">
+                {log.total_worked_hours}
+                h
+              </p>
               <p className="text-[10px] text-gray-400 mt-1">{fmtHours(log.total_worked_minutes)}</p>
             </div>
             <div className="bg-white rounded-xl border border-gray-100 p-3">
@@ -210,9 +245,9 @@ export default function TeamAttendanceLogs({ teamIds }: { teamIds: string[] }) {
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  useEffect(() => { 
+  useEffect(() => {
     if (subdomain) {
-      fetchLogs(); 
+      fetchLogs();
     }
   }, [subdomain, selectedDate]);
 
@@ -222,35 +257,31 @@ export default function TeamAttendanceLogs({ teamIds }: { teamIds: string[] }) {
       const params: any = {
         limit: 100,
       };
-      
+
       if (selectedDate) {
         params.from_date = selectedDate;
         params.to_date = selectedDate;
       }
-      
+
       // Add cache buster
       params._t = Date.now();
-      
+
       const res = await getAttendances(subdomain, params);
       const raw = Array.isArray(res?.data) ? res.data : (res?.data?.data ?? []);
       setLogs(raw.filter((l: IAttendanceLog) => teamIds.includes(l.employee_id)));
     } catch (error) {
       console.error('Error fetching team attendance:', error);
-    }
-    finally { setLoading(false); }
+    } finally { setLoading(false); }
   };
 
-  const filtered = useMemo(() =>
-    logs.filter(l =>
-      l.employee_name?.toLowerCase().includes(search.toLowerCase()) ||
-      l.employee_code?.toLowerCase().includes(search.toLowerCase())
-    ), [logs, search]);
+  const filtered = useMemo(() => logs.filter((l) => l.employee_name?.toLowerCase().includes(search.toLowerCase())
+      || l.employee_code?.toLowerCase().includes(search.toLowerCase())), [logs, search]);
 
   const stats = useMemo(() => ({
     total: logs.length,
-    present: logs.filter(l => l.attendance_status === 'present').length,
-    absent: logs.filter(l => l.attendance_status === 'absent').length,
-    late: logs.filter(l => l.is_late).length,
+    present: logs.filter((l) => l.attendance_status === 'present').length,
+    absent: logs.filter((l) => l.attendance_status === 'absent').length,
+    late: logs.filter((l) => l.is_late).length,
   }), [logs]);
 
   const changeDate = (offset: number) => {
@@ -274,12 +305,12 @@ export default function TeamAttendanceLogs({ teamIds }: { teamIds: string[] }) {
     setShowCalendar(false);
   };
 
-  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const MONTH_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const DAYS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
-  const prevMonth = () => calMonth === 0 ? (setCalYear(calYear - 1), setCalMonth(11)) : setCalMonth(calMonth - 1);
-  const nextMonth = () => calMonth === 11 ? (setCalYear(calYear + 1), setCalMonth(0)) : setCalMonth(calMonth + 1);
+  const prevMonth = () => (calMonth === 0 ? (setCalYear(calYear - 1), setCalMonth(11)) : setCalMonth(calMonth - 1));
+  const nextMonth = () => (calMonth === 11 ? (setCalYear(calYear + 1), setCalMonth(0)) : setCalMonth(calMonth + 1));
 
   const firstDow = new Date(calYear, calMonth, 1).getDay();
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
@@ -291,23 +322,40 @@ export default function TeamAttendanceLogs({ teamIds }: { teamIds: string[] }) {
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <p className="text-xs text-gray-400">
-          {selectedDate ? `Attendance for ${fmtDate(selectedDate)}` : 'All attendance records'} · {stats.total} team · {stats.present} present · {stats.absent} absent
+          {selectedDate ? `Attendance for ${fmtDate(selectedDate)}` : 'All attendance records'}
+          {' '}
+          ·
+          {stats.total}
+          {' '}
+          team ·
+          {stats.present}
+          {' '}
+          present ·
+          {stats.absent}
+          {' '}
+          absent
         </p>
         <div className="flex items-center gap-2 flex-wrap">
-          <button onClick={handleToday}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-[#0f766e] bg-[#e8f5ee] rounded-xl hover:bg-teal-100 transition-colors">
+          <button
+            onClick={handleToday}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-[#0f766e] bg-[#e8f5ee] rounded-xl hover:bg-teal-100 transition-colors"
+          >
             <Calendar size={12} />
             Today
           </button>
-          <button onClick={handleShowAll}
+          <button
+            onClick={handleShowAll}
             className={`px-3 py-1.5 text-[10px] font-bold rounded-xl transition-colors ${
               !selectedDate ? 'bg-[#0f766e] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}>
+            }`}
+          >
             Show All
           </button>
           <div className="relative">
-            <button onClick={() => setShowCalendar(!showCalendar)}
-              className="flex items-center gap-1.5 bg-gray-100 rounded-xl px-3 py-1.5 text-xs font-bold text-[#0f1f2e] hover:bg-gray-200 transition-colors">
+            <button
+              onClick={() => setShowCalendar(!showCalendar)}
+              className="flex items-center gap-1.5 bg-gray-100 rounded-xl px-3 py-1.5 text-xs font-bold text-[#0f1f2e] hover:bg-gray-200 transition-colors"
+            >
               <Calendar size={13} />
               {selectedDate ? fmtDate(selectedDate) : 'Select Date'}
             </button>
@@ -328,7 +376,7 @@ export default function TeamAttendanceLogs({ teamIds }: { teamIds: string[] }) {
                     </button>
                   </div>
                   <div className="grid grid-cols-7 gap-1 mb-2">
-                    {DAYS.map(d => <div key={d} className="text-center text-[9px] font-bold text-gray-400 py-1">{d}</div>)}
+                    {DAYS.map((d) => <div key={d} className="text-center text-[9px] font-bold text-gray-400 py-1">{d}</div>)}
                   </div>
                   <div className="grid grid-cols-7 gap-1">
                     {cells.map((day, i) => {
@@ -337,12 +385,15 @@ export default function TeamAttendanceLogs({ teamIds }: { teamIds: string[] }) {
                       const isSelected = selectedDate === dateStr;
                       const isToday = new Date().toDateString() === new Date(dateStr).toDateString();
                       return (
-                        <button key={i} onClick={() => handleDateClick(dateStr)}
+                        <button
+                          key={i}
+                          onClick={() => handleDateClick(dateStr)}
                           className={`aspect-square rounded-lg text-xs font-semibold transition-colors ${
-                            isSelected ? 'bg-[#0f766e] text-white' :
-                            isToday ? 'bg-teal-50 text-[#0f766e] border border-teal-200' :
-                            'text-gray-700 hover:bg-gray-100'
-                          }`}>
+                            isSelected ? 'bg-[#0f766e] text-white'
+                              : isToday ? 'bg-teal-50 text-[#0f766e] border border-teal-200'
+                                : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
                           {day}
                         </button>
                       );
@@ -354,18 +405,30 @@ export default function TeamAttendanceLogs({ teamIds }: { teamIds: string[] }) {
           </div>
           <div className="relative">
             <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..."
-              className="pl-7 pr-3 py-1.5 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20 focus:border-[#0f766e] transition-all w-36" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search..."
+              className="pl-7 pr-3 py-1.5 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20 focus:border-[#0f766e] transition-all w-36"
+            />
           </div>
         </div>
       </div>
       <div className="grid grid-cols-4 gap-2">
         {[
-          { label: 'Present', value: stats.present, color: 'text-teal-600', bg: 'bg-teal-50', dot: 'bg-teal-500' },
-          { label: 'Absent', value: stats.absent, color: 'text-red-500', bg: 'bg-red-50', dot: 'bg-red-400' },
-          { label: 'Late', value: stats.late, color: 'text-amber-600', bg: 'bg-amber-50', dot: 'bg-amber-400' },
-          { label: 'Total', value: stats.total, color: 'text-[#0f766e]', bg: 'bg-[#e8f5ee]', dot: 'bg-[#0f766e]' },
-        ].map(s => (
+          {
+            label: 'Present', value: stats.present, color: 'text-teal-600', bg: 'bg-teal-50', dot: 'bg-teal-500',
+          },
+          {
+            label: 'Absent', value: stats.absent, color: 'text-red-500', bg: 'bg-red-50', dot: 'bg-red-400',
+          },
+          {
+            label: 'Late', value: stats.late, color: 'text-amber-600', bg: 'bg-amber-50', dot: 'bg-amber-400',
+          },
+          {
+            label: 'Total', value: stats.total, color: 'text-[#0f766e]', bg: 'bg-[#e8f5ee]', dot: 'bg-[#0f766e]',
+          },
+        ].map((s) => (
           <div key={s.label} className={`${s.bg} rounded-xl px-3 py-2 border border-gray-100`}>
             <div className="flex items-center gap-1.5 mb-1">
               <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
@@ -384,7 +447,7 @@ export default function TeamAttendanceLogs({ teamIds }: { teamIds: string[] }) {
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          {filtered.map(log => (
+          {filtered.map((log) => (
             <AttendanceRow key={log.id} log={log} isOpen={expandedId === log.id} onToggle={() => setExpandedId(expandedId === log.id ? null : log.id)} />
           ))}
         </div>

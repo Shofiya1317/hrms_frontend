@@ -10,11 +10,21 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 const LOGS = [
-  { id: 1, name: 'Rahul Sharma', punchIn: '09:02', punchOut: '18:15', status: 'present' },
-  { id: 2, name: 'Priya Nair', punchIn: '08:55', punchOut: '18:00', status: 'present' },
-  { id: 3, name: 'Ananya Krishnan', punchIn: '10:22', punchOut: '19:00', status: 'late' },
-  { id: 4, name: 'Vikram Patel', punchIn: '09:10', punchOut: null, status: 'missing-out' },
-  { id: 5, name: 'Sneha Reddy', punchIn: null, punchOut: null, status: 'absent' },
+  {
+    id: 1, name: 'Rahul Sharma', punchIn: '09:02', punchOut: '18:15', status: 'present',
+  },
+  {
+    id: 2, name: 'Priya Nair', punchIn: '08:55', punchOut: '18:00', status: 'present',
+  },
+  {
+    id: 3, name: 'Ananya Krishnan', punchIn: '10:22', punchOut: '19:00', status: 'late',
+  },
+  {
+    id: 4, name: 'Vikram Patel', punchIn: '09:10', punchOut: null, status: 'missing-out',
+  },
+  {
+    id: 5, name: 'Sneha Reddy', punchIn: null, punchOut: null, status: 'absent',
+  },
 ];
 
 export default function AttendanceProcessing() {
@@ -29,7 +39,9 @@ export default function AttendanceProcessing() {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold text-[#0f1f2e]">Daily Attendance Grid · 20 Mar 2026</h3>
           <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors">
-            <CheckCircle size={14} /> Process Attendance
+            <CheckCircle size={14} />
+            {' '}
+            Process Attendance
           </button>
         </div>
 

@@ -12,11 +12,21 @@ interface Document {
 }
 
 const DOCUMENTS: Document[] = [
-  { name: 'Offer Letter - New Employee.pdf', tag: 'HR', size: '245 KB', date: 'Mar 2026', expiry: null },
-  { name: 'Aadhaar Card - Employee.pdf', tag: 'KYC', size: '1.2 MB', date: 'Jan 2026', expiry: 'Dec 2030' },
-  { name: 'PAN Card - Employee.pdf', tag: 'KYC', size: '890 KB', date: 'Jun 2025', expiry: null },
-  { name: 'NDA Agreement - Employee.pdf', tag: 'Legal', size: '320 KB', date: 'Sep 2025', expiry: 'Sep 2028' },
-  { name: 'Salary Slip - Feb 2026.pdf', tag: 'HR', size: '180 KB', date: 'Feb 2026', expiry: null },
+  {
+    name: 'Offer Letter - New Employee.pdf', tag: 'HR', size: '245 KB', date: 'Mar 2026', expiry: null,
+  },
+  {
+    name: 'Aadhaar Card - Employee.pdf', tag: 'KYC', size: '1.2 MB', date: 'Jan 2026', expiry: 'Dec 2030',
+  },
+  {
+    name: 'PAN Card - Employee.pdf', tag: 'KYC', size: '890 KB', date: 'Jun 2025', expiry: null,
+  },
+  {
+    name: 'NDA Agreement - Employee.pdf', tag: 'Legal', size: '320 KB', date: 'Sep 2025', expiry: 'Sep 2028',
+  },
+  {
+    name: 'Salary Slip - Feb 2026.pdf', tag: 'HR', size: '180 KB', date: 'Feb 2026', expiry: null,
+  },
 ];
 
 const tagColors: Record<string, string> = {
@@ -31,7 +41,9 @@ export default function DocumentManagement() {
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-[#0f1f2e]">Document Management</h3>
         <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors">
-          <Upload size={14} /> Upload Document
+          <Upload size={14} />
+          {' '}
+          Upload Document
         </button>
       </div>
       <div className="space-y-2">
@@ -44,8 +56,19 @@ export default function DocumentManagement() {
               <p className="text-sm font-semibold text-gray-800 truncate">{doc.name}</p>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${tagColors[doc.tag]}`}>{doc.tag}</span>
-                <span className="text-xs text-gray-400">{doc.size} · {doc.date}</span>
-                {doc.expiry && <span className="text-xs text-amber-600 font-medium">Expires {doc.expiry}</span>}
+                <span className="text-xs text-gray-400">
+                  {doc.size}
+                  {' '}
+                  ·
+                  {' '}
+                  {doc.date}
+                </span>
+                {doc.expiry && (
+                <span className="text-xs text-amber-600 font-medium">
+                  Expires
+                  {doc.expiry}
+                </span>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

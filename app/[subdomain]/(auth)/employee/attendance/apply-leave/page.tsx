@@ -28,9 +28,9 @@ export default async function Page() {
   }
 
   return (
-    <Leave 
-      apiKey={apiKey} 
-      token={token} 
+    <Leave
+      apiKey={apiKey}
+      token={token}
       employeeId={employeeId}
     />
   );

@@ -15,9 +15,9 @@ const MultiStepProgressBar = () => {
   ];
 
   const stepIndex = steps.indexOf(params?.slug as string);
-const stepPercentage = stepIndex > 0
-  ? ((stepIndex - 0.5) / (steps.length - 1)) * 100
-  : 0;
+  const stepPercentage = stepIndex > 0
+    ? ((stepIndex - 0.5) / (steps.length - 1)) * 100
+    : 0;
 
   return (
     <ProgressBar percent={stepPercentage}>

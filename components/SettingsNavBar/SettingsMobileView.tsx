@@ -20,7 +20,7 @@ export default function SettingsMobileView({ items, activeMenu }: Props) {
   const router = useRouter();
 
   const current = items.find(
-    (item) => item.text.toLowerCase().replaceAll(' ', '_') === activeMenu.toLowerCase().replaceAll(' ', '_')
+    (item) => item.text.toLowerCase().replaceAll(' ', '_') === activeMenu.toLowerCase().replaceAll(' ', '_'),
   ) ?? items[0];
 
   useEffect(() => {
@@ -78,9 +78,8 @@ export default function SettingsMobileView({ items, activeMenu }: Props) {
             <div className="w-9 h-1 bg-gray-300 rounded-full mx-auto mt-3 mb-4" />
 
             {items.map((item) => {
-              const isActive =
-                item.text.toLowerCase().replaceAll(' ', '_') ===
-                activeMenu.toLowerCase().replaceAll(' ', '_');
+              const isActive = item.text.toLowerCase().replaceAll(' ', '_')
+                === activeMenu.toLowerCase().replaceAll(' ', '_');
               return (
                 <button
                   key={item.text}
@@ -110,12 +109,14 @@ export default function SettingsMobileView({ items, activeMenu }: Props) {
             })}
           </div>
 
-          <style>{`
+          <style>
+            {`
             @keyframes smn-slide-up {
               from { transform: translateY(100%); }
               to   { transform: translateY(0); }
             }
-          `}</style>
+          `}
+          </style>
         </div>
       )}
     </>

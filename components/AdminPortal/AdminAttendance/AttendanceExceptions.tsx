@@ -3,11 +3,21 @@
 import { AlertTriangle } from 'lucide-react';
 
 const exceptions = [
-  { name: 'Vikram Patel', type: 'Missing Punch-Out', date: '20 Mar', severity: 'medium' },
-  { name: 'Ananya Krishnan', type: 'Late Arrival (1h 22m)', date: '20 Mar', severity: 'low' },
-  { name: 'Rohit Gupta', type: 'Absent – No Leave Applied', date: '19 Mar', severity: 'high' },
-  { name: 'Kavya Menon', type: 'Overtime (2h 15m)', date: '19 Mar', severity: 'low' },
-  { name: 'Arjun Das', type: 'Missing Punch-In', date: '18 Mar', severity: 'medium' },
+  {
+    name: 'Vikram Patel', type: 'Missing Punch-Out', date: '20 Mar', severity: 'medium',
+  },
+  {
+    name: 'Ananya Krishnan', type: 'Late Arrival (1h 22m)', date: '20 Mar', severity: 'low',
+  },
+  {
+    name: 'Rohit Gupta', type: 'Absent – No Leave Applied', date: '19 Mar', severity: 'high',
+  },
+  {
+    name: 'Kavya Menon', type: 'Overtime (2h 15m)', date: '19 Mar', severity: 'low',
+  },
+  {
+    name: 'Arjun Das', type: 'Missing Punch-In', date: '18 Mar', severity: 'medium',
+  },
 ];
 
 const SEV_COLOR: Record<string, string> = {
@@ -27,7 +37,11 @@ export default function AttendanceExceptions() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-bold text-[#0f1f2e]">Open Exceptions</h3>
-          <span className="text-xs font-semibold text-white bg-red-500 rounded-full px-2.5 py-1">{exceptions.length} open</span>
+          <span className="text-xs font-semibold text-white bg-red-500 rounded-full px-2.5 py-1">
+            {exceptions.length}
+            {' '}
+            open
+          </span>
         </div>
         <div className="space-y-2.5">
           {exceptions.map((ex, i) => (
@@ -37,7 +51,13 @@ export default function AttendanceExceptions() {
               </div>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-gray-800">{ex.name}</p>
-                <p className="text-xs text-gray-500">{ex.type} · {ex.date}</p>
+                <p className="text-xs text-gray-500">
+                  {ex.type}
+                  {' '}
+                  ·
+                  {' '}
+                  {ex.date}
+                </p>
               </div>
               <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${SEV_COLOR[ex.severity]}`}>{ex.severity}</span>
               <button className="text-xs font-semibold text-[#2D7A4F] hover:underline">Resolve</button>

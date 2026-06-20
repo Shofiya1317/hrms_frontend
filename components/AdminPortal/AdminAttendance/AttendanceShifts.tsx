@@ -3,10 +3,18 @@
 import { Clock, Plus } from 'lucide-react';
 
 const SHIFTS = [
-  { name: 'General Shift', time: '09:00 – 18:00', days: 'Mon–Fri', employees: 180, type: 'Fixed' },
-  { name: 'Morning Shift', time: '06:00 – 14:00', days: 'Mon–Sat', employees: 32, type: 'Rotational' },
-  { name: 'Evening Shift', time: '14:00 – 22:00', days: 'Mon–Sat', employees: 28, type: 'Rotational' },
-  { name: 'Night Shift', time: '22:00 – 06:00', days: 'Mon–Sun', employees: 8, type: 'Fixed' },
+  {
+    name: 'General Shift', time: '09:00 – 18:00', days: 'Mon–Fri', employees: 180, type: 'Fixed',
+  },
+  {
+    name: 'Morning Shift', time: '06:00 – 14:00', days: 'Mon–Sat', employees: 32, type: 'Rotational',
+  },
+  {
+    name: 'Evening Shift', time: '14:00 – 22:00', days: 'Mon–Sat', employees: 28, type: 'Rotational',
+  },
+  {
+    name: 'Night Shift', time: '22:00 – 06:00', days: 'Mon–Sun', employees: 8, type: 'Fixed',
+  },
 ];
 
 export default function AttendanceShifts() {
@@ -18,7 +26,9 @@ export default function AttendanceShifts() {
           <p className="text-sm text-gray-500 mt-0.5">Configure and manage employee shifts</p>
         </div>
         <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors">
-          <Plus size={14} /> Create Shift
+          <Plus size={14} />
+          {' '}
+          Create Shift
         </button>
       </div>
 
@@ -39,7 +49,11 @@ export default function AttendanceShifts() {
               <span className="text-sm font-semibold text-gray-700">{shift.time}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-500">{shift.employees} employees assigned</span>
+              <span className="text-xs text-gray-500">
+                {shift.employees}
+                {' '}
+                employees assigned
+              </span>
               <button className="text-xs font-semibold text-[#2D7A4F] hover:underline">Manage →</button>
             </div>
           </div>

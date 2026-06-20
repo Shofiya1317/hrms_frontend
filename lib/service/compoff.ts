@@ -6,11 +6,11 @@ import { Params } from '../utils';
 // ─────────────────────────────────────────────
 
 export enum CompOffStatus {
-  PENDING   = 'pending',
-  APPROVED  = 'approved',
-  REJECTED  = 'rejected',
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
   CANCELLED = 'cancelled',
-  EXPIRED   = 'expired',
+  EXPIRED = 'expired',
 }
 
 export interface ICompOffBalance {

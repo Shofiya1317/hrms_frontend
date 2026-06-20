@@ -23,7 +23,9 @@ export default function AttendanceUpload() {
         <div className="mt-4 flex flex-col gap-2 rounded-xl bg-gray-50 p-3 sm:flex-row sm:items-center sm:justify-between">
           <span className="text-xs text-gray-600">Need the template?</span>
           <button className="flex items-center gap-2 text-xs font-semibold text-[#2D7A4F] hover:underline">
-            <Download size={13} /> Download Template
+            <Download size={13} />
+            {' '}
+            Download Template
           </button>
         </div>
       </div>
@@ -32,9 +34,15 @@ export default function AttendanceUpload() {
         <h3 className="text-sm font-bold text-[#0f1f2e] mb-4">Upload History</h3>
         <div className="space-y-2">
           {[
-            { file: 'attendance_march_w3.xlsx', date: '18 Mar 2026', records: 248, status: 'success' },
-            { file: 'attendance_march_w2.xlsx', date: '11 Mar 2026', records: 245, status: 'success' },
-            { file: 'attendance_march_w1.xlsx', date: '04 Mar 2026', records: 241, status: 'error' },
+            {
+              file: 'attendance_march_w3.xlsx', date: '18 Mar 2026', records: 248, status: 'success',
+            },
+            {
+              file: 'attendance_march_w2.xlsx', date: '11 Mar 2026', records: 245, status: 'success',
+            },
+            {
+              file: 'attendance_march_w1.xlsx', date: '04 Mar 2026', records: 241, status: 'error',
+            },
           ].map((upload, i) => (
             <div key={i} className="flex flex-col gap-3 rounded-xl bg-gray-50 p-3 sm:flex-row sm:items-center">
               <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
@@ -42,7 +50,15 @@ export default function AttendanceUpload() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold text-gray-800">{upload.file}</p>
-                <p className="text-[10px] text-gray-400">{upload.date} · {upload.records} records</p>
+                <p className="text-[10px] text-gray-400">
+                  {upload.date}
+                  {' '}
+                  ·
+                  {' '}
+                  {upload.records}
+                  {' '}
+                  records
+                </p>
               </div>
               <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${upload.status === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                 {upload.status}

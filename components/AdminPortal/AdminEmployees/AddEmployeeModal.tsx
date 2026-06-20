@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { X, UserPlus, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import {
+  X, UserPlus, Loader2, CheckCircle, AlertCircle,
+} from 'lucide-react';
 import {
   createEmployee,
   updateEmployee,
@@ -67,8 +69,7 @@ const ROLES: { value: EmployeeRole; label: string }[] = [
   { value: 'HR_ADMIN', label: 'HR Admin' },
 ];
 
-const capitalize = (value: string) =>
-  value.charAt(0).toUpperCase() + value.slice(1);
+const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
 export default function AddEmployeeModal({
   onClose,
@@ -83,7 +84,7 @@ export default function AddEmployeeModal({
     firstName: '',
     lastName: '',
     email: '',
-    role: 'EMPLOYEE' as 'EMPLOYEE',
+    role: 'EMPLOYEE' as const,
     employeeCode: '',
     departmentId: '',
     designationId: '',
@@ -167,7 +168,7 @@ export default function AddEmployeeModal({
           fullName: e.name || 'Employee',
           department: '',
           jobTitle: e.work_email || '',
-        }))
+        })),
       );
     } catch (err) {
       console.error('Failed to load master data', err);
@@ -425,7 +426,9 @@ export default function AddEmployeeModal({
                   htmlFor="firstName"
                   className="block text-xs font-semibold text-gray-600 mb-1.5"
                 >
-                  First Name <span className="text-red-500">*</span>
+                  First Name
+                  {' '}
+                  <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="firstName"
@@ -442,7 +445,9 @@ export default function AddEmployeeModal({
                   htmlFor="lastName"
                   className="block text-xs font-semibold text-gray-600 mb-1.5"
                 >
-                  Last Name <span className="text-red-500">*</span>
+                  Last Name
+                  {' '}
+                  <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="lastName"
@@ -463,7 +468,9 @@ export default function AddEmployeeModal({
                   htmlFor="email"
                   className="block text-xs font-semibold text-gray-600 mb-1.5"
                 >
-                  Work Email <span className="text-red-500">*</span>
+                  Work Email
+                  {' '}
+                  <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="email"
@@ -501,7 +508,9 @@ export default function AddEmployeeModal({
                 htmlFor="employmentTypeId"
                 className="block text-xs font-semibold text-gray-600 mb-1.5"
               >
-                Employment Type <span className="text-red-500">*</span>
+                Employment Type
+                {' '}
+                <span className="text-red-500">*</span>
               </label>
               <Select
                 inputId="employmentTypeId"
@@ -511,15 +520,12 @@ export default function AddEmployeeModal({
                   // { value: 'contract', label: 'Contract' },
                   { value: 'probation', label: 'Probation' },
                 ]}
-                value={form.employmentType ? { value: form.employmentType, label: form.employmentType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) } : null}
+                value={form.employmentType ? { value: form.employmentType, label: form.employmentType.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) } : null}
                 onChange={(opt) => handleChange('employmentType', opt?.value ?? '')}
                 placeholder="Select employment type"
                 styles={customStyles()}
               />
             </div>
-
-           
-            
 
             {/* Row 5: Department + Reporting Manager */}
             <div className="grid grid-cols-2 gap-4">
@@ -528,7 +534,9 @@ export default function AddEmployeeModal({
                   htmlFor="departmentId"
                   className="block text-xs font-semibold text-gray-600 mb-1.5"
                 >
-                  Department <span className="text-red-500">*</span>
+                  Department
+                  {' '}
+                  <span className="text-red-500">*</span>
                 </label>
                 <Select
                   inputId="departmentId"
@@ -544,9 +552,7 @@ export default function AddEmployeeModal({
                       }))
                       .find((o) => o.value === form.departmentId) ?? null
                   }
-                  onChange={(opt) =>
-                    handleChange('departmentId', opt?.value ?? '')
-                  }
+                  onChange={(opt) => handleChange('departmentId', opt?.value ?? '')}
                   placeholder="Select department"
                   styles={customStyles()}
                 />
@@ -569,16 +575,16 @@ export default function AddEmployeeModal({
                       .map((m) => ({ value: m.id, label: m.fullName }))
                       .find((o) => o.value === form.managerId) ?? null
                   }
-                  onChange={(opt) =>
-                    handleChange('managerId', opt?.value ?? '')
-                  }
+                  onChange={(opt) => handleChange('managerId', opt?.value ?? '')}
                   placeholder="No manager / Top-level"
                   isClearable
                   styles={customStyles()}
                 />
                 {selectedManager ? (
                   <p className="text-xs text-[#2D7A4F] mt-1 font-medium">
-                    Reports to: {selectedManager.fullName || 'Selected manager'}
+                    Reports to:
+                    {' '}
+                    {selectedManager.fullName || 'Selected manager'}
                     {selectedManager.department
                       ? ` · ${selectedManager.department}`
                       : ''}
@@ -624,44 +630,41 @@ export default function AddEmployeeModal({
                     handleChange('designationId', opt?.value ?? '');
                   }}
                   components={{
-                    Option: (props: OptionProps<any>) =>
-                      props.data.isCustom ? (
-                        <div className="px-3 py-2">
-                          <div className="flex gap-2">
-                            <input
-                              className="flex-1 px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#2D7A4F]"
-                              placeholder="Designation name"
-                              value={newDesignationName}
-                              onChange={(e) =>
-                                setNewDesignationName(e.target.value)
-                              }
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  handleCreateDesignation();
-                                }
-                              }}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <button
-                              type="button"
-                              disabled={
-                                creatingDesignation ||
-                                !newDesignationName.trim()
-                              }
-                              onClick={(e) => {
-                                e.stopPropagation();
+                    Option: (props: OptionProps<any>) => (props.data.isCustom ? (
+                      <div className="px-3 py-2">
+                        <div className="flex gap-2">
+                          <input
+                            className="flex-1 px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#2D7A4F]"
+                            placeholder="Designation name"
+                            value={newDesignationName}
+                            onChange={(e) => setNewDesignationName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
                                 handleCreateDesignation();
-                              }}
-                              className="px-2 py-1 text-xs font-semibold text-white bg-[#2D7A4F] rounded-lg disabled:opacity-50"
-                            >
-                              {creatingDesignation ? '...' : 'Add'}
-                            </button>
-                          </div>
+                              }
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <button
+                            type="button"
+                            disabled={
+                                creatingDesignation
+                                || !newDesignationName.trim()
+                              }
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCreateDesignation();
+                            }}
+                            className="px-2 py-1 text-xs font-semibold text-white bg-[#2D7A4F] rounded-lg disabled:opacity-50"
+                          >
+                            {creatingDesignation ? '...' : 'Add'}
+                          </button>
                         </div>
-                      ) : (
-                        <components.Option {...props} />
-                      ),
+                      </div>
+                    ) : (
+                      <components.Option {...props} />
+                    )),
                   }}
                   placeholder="Select designation"
                   isClearable
@@ -800,7 +803,9 @@ export default function AddEmployeeModal({
                   htmlFor="joinDate"
                   className="block text-xs font-semibold text-gray-600 mb-1.5"
                 >
-                  Date of Joining <span className="text-red-500">*</span>
+                  Date of Joining
+                  {' '}
+                  <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="joinDate"

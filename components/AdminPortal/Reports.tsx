@@ -356,7 +356,7 @@ function generateDays(
   leaveDays: { day: number; type: 'casual' | 'sick' | 'earned' | 'lop' }[],
   lateDays: number[],
   totalDays: number,
-  today = 26
+  today = 26,
 ): Record<number, DayRecord> {
   const result: Record<number, DayRecord> = {};
   const holidays = [1]; // May 1 = Labour Day
@@ -423,7 +423,7 @@ const mockCalendar: CalendarEmployee[] = [
       [12, 26],
       [{ day: 25, type: 'casual' }],
       [5, 13, 20],
-      31
+      31,
     ),
   },
   {
@@ -439,7 +439,7 @@ const mockCalendar: CalendarEmployee[] = [
       [],
       [{ day: 26, type: 'sick' }],
       [9],
-      31
+      31,
     ),
   },
   {
@@ -455,7 +455,7 @@ const mockCalendar: CalendarEmployee[] = [
         { day: 26, type: 'lop' },
       ],
       [6, 12],
-      31
+      31,
     ),
   },
   {
@@ -471,7 +471,7 @@ const mockCalendar: CalendarEmployee[] = [
       [20],
       [{ day: 26, type: 'earned' }],
       [],
-      31
+      31,
     ),
   },
   {
@@ -484,7 +484,7 @@ const mockCalendar: CalendarEmployee[] = [
       [7, 21],
       [{ day: 26, type: 'casual' }],
       [5, 9, 13, 20],
-      31
+      31,
     ),
   },
   {
@@ -500,7 +500,7 @@ const mockCalendar: CalendarEmployee[] = [
         { day: 26, type: 'sick' },
       ],
       [6],
-      31
+      31,
     ),
   },
   {
@@ -516,7 +516,7 @@ const mockCalendar: CalendarEmployee[] = [
       [],
       [],
       [],
-      31
+      31,
     ),
   },
 ];
@@ -550,32 +550,39 @@ function Avatar({
 }
 
 function TrendBadge({ trend }: { trend: 'up' | 'down' | 'stable' }) {
-  if (trend === 'up')
+  if (trend === 'up') {
     return (
       <span className="flex items-center gap-0.5 text-emerald-600 text-xs font-medium">
-        <TrendingUp size={13} /> Better
+        <TrendingUp size={13} />
+        {' '}
+        Better
       </span>
     );
-  if (trend === 'down')
+  }
+  if (trend === 'down') {
     return (
       <span className="flex items-center gap-0.5 text-rose-500 text-xs font-medium">
-        <TrendingDown size={13} /> Worse
+        <TrendingDown size={13} />
+        {' '}
+        Worse
       </span>
     );
+  }
   return (
     <span className="flex items-center gap-0.5 text-slate-400 text-xs font-medium">
-      <Minus size={13} /> Same
+      <Minus size={13} />
+      {' '}
+      Same
     </span>
   );
 }
 
 function PctBar({ value }: { value: number }) {
-  const color =
-    value >= 95
-      ? 'bg-emerald-500'
-      : value >= 80
-        ? 'bg-amber-400'
-        : 'bg-rose-500';
+  const color = value >= 95
+    ? 'bg-emerald-500'
+    : value >= 80
+      ? 'bg-amber-400'
+      : 'bg-rose-500';
   return (
     <div className="flex min-w-[120px] items-center gap-2">
       <div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-100 sm:w-24">
@@ -587,7 +594,8 @@ function PctBar({ value }: { value: number }) {
       <span
         className={`text-xs font-semibold ${value >= 95 ? 'text-emerald-600' : value >= 80 ? 'text-amber-600' : 'text-rose-500'}`}
       >
-        {value}%
+        {value}
+        %
       </span>
     </div>
   );
@@ -877,7 +885,10 @@ function MonthlyTable({ data }: { data: MonthlyRecord[] }) {
                 <span className="font-semibold text-slate-700">
                   {r.present}
                 </span>
-                <span className="text-slate-400 text-xs">/{r.workingDays}</span>
+                <span className="text-slate-400 text-xs">
+                  /
+                  {r.workingDays}
+                </span>
               </td>
               <td className="py-3 pr-4">
                 <span
@@ -981,7 +992,8 @@ function LeaveTable({ data }: { data: LeaveRecord[] }) {
                   {r.totalAllowed - r.totalTaken}
                 </span>
                 <span className="text-slate-400 text-xs">
-                  /{r.totalAllowed}
+                  /
+                  {r.totalAllowed}
                 </span>
               </td>
             </tr>
@@ -1109,25 +1121,23 @@ function DayModal({ data, onClose }: { data: ModalData; onClose: () => void }) {
     year: 'numeric',
   });
 
-  const statusLabel =
-    record.status === 'present'
-      ? record.late
-        ? 'Present (Late)'
-        : 'Present'
-      : record.status === 'leave'
-        ? LEAVE_LABELS[record.leaveType ?? 'casual']
-        : record.status.charAt(0).toUpperCase() + record.status.slice(1);
+  const statusLabel = record.status === 'present'
+    ? record.late
+      ? 'Present (Late)'
+      : 'Present'
+    : record.status === 'leave'
+      ? LEAVE_LABELS[record.leaveType ?? 'casual']
+      : record.status.charAt(0).toUpperCase() + record.status.slice(1);
 
-  const statusColor =
-    record.status === 'present'
-      ? record.late
-        ? 'text-amber-600 bg-amber-50 border-amber-200'
-        : 'text-emerald-700 bg-emerald-50 border-emerald-200'
-      : record.status === 'absent'
-        ? 'text-rose-600 bg-rose-50 border-rose-200'
-        : record.status === 'leave'
-          ? 'text-amber-700 bg-amber-50 border-amber-200'
-          : 'text-violet-600 bg-violet-50 border-violet-200';
+  const statusColor = record.status === 'present'
+    ? record.late
+      ? 'text-amber-600 bg-amber-50 border-amber-200'
+      : 'text-emerald-700 bg-emerald-50 border-emerald-200'
+    : record.status === 'absent'
+      ? 'text-rose-600 bg-rose-50 border-rose-200'
+      : record.status === 'leave'
+        ? 'text-amber-700 bg-amber-50 border-amber-200'
+        : 'text-violet-600 bg-violet-50 border-violet-200';
 
   return (
     <div
@@ -1241,7 +1251,9 @@ function DayModal({ data, onClose }: { data: ModalData; onClose: () => void }) {
 
           {record.status === 'leave' && (
             <div className="rounded-xl bg-amber-50 px-4 py-3 text-center text-sm font-medium leading-5 text-amber-600">
-              {LEAVE_LABELS[record.leaveType ?? 'casual']} applied
+              {LEAVE_LABELS[record.leaveType ?? 'casual']}
+              {' '}
+              applied
             </div>
           )}
         </div>
@@ -1265,12 +1277,11 @@ function CalendarView({ data }: { data: CalendarEmployee[] }) {
   function handleCell(emp: CalendarEmployee, day: number) {
     const rec = emp.days[day];
     if (
-      !rec ||
-      rec.status === 'weekend' ||
-      rec.status === 'future' ||
-      rec.status === 'holiday'
-    )
-      return;
+      !rec
+      || rec.status === 'weekend'
+      || rec.status === 'future'
+      || rec.status === 'holiday'
+    ) { return; }
     setModal({ employee: emp, day, record: rec });
   }
 
@@ -1337,10 +1348,9 @@ function CalendarView({ data }: { data: CalendarEmployee[] }) {
                   const rec = emp.days[day];
                   if (!rec) return <td key={i} />;
                   const style = STATUS_STYLES[rec.status];
-                  const isClickable =
-                    rec.status !== 'weekend' &&
-                    rec.status !== 'future' &&
-                    rec.status !== 'holiday';
+                  const isClickable = rec.status !== 'weekend'
+                    && rec.status !== 'future'
+                    && rec.status !== 'holiday';
                   return (
                     <td key={i} className="px-0.5 py-1.5">
                       <button
@@ -1447,7 +1457,8 @@ export default function Reports() {
     id: emp.employee_id,
     name: emp.employee_name,
     department: emp.department || 'N/A',
-    avatar: (emp.employee_name as string)?.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() || 'NA',
+    avatar: (emp.employee_name as string)?.split(' ').map((w: string) => w[0]).join('').slice(0, 2)
+      .toUpperCase() || 'NA',
     present: emp.monthly_overview?.present_days ?? 0,
     absent: emp.monthly_overview?.absent_days ?? 0,
     late: emp.monthly_overview?.late_arrivals ?? 0,
@@ -1495,14 +1506,15 @@ export default function Reports() {
           <div className="flex items-center gap-1.5 rounded-lg border border-slate-100 bg-white px-3 py-2 text-xs text-slate-400 sm:col-span-2 lg:ml-auto">
             <Users size={13} />
             <span>
-              {loading ? '...' : 
-                activeTab === 'monthly'
+              {loading ? '...'
+                : activeTab === 'monthly'
                   ? monthlyData.length
                   : activeTab === 'leave'
                     ? leaveData.length
                     : activeTab === 'absent'
                       ? absentData.length
-                      : mockCalendar.length}{' '}
+                      : mockCalendar.length}
+              {' '}
               employees
             </span>
           </div>
@@ -1567,9 +1579,12 @@ export default function Reports() {
                       ? 'Attendance Breakdown'
                       : activeTab === 'leave'
                         ? 'Leave Breakdown'
-                        : 'Absence Log'}{' '}
+                        : 'Absence Log'}
+                    {' '}
                     <span className="font-normal text-slate-400">
-                      — {apiData?.period_label || `${selectedMonth} ${selectedYear}`}
+                      —
+                      {' '}
+                      {apiData?.period_label || `${selectedMonth} ${selectedYear}`}
                     </span>
                   </h2>
                   {selectedDept !== 'All Departments' && (
@@ -1586,7 +1601,11 @@ export default function Reports() {
                     Daily Attendance Calendar
                     <span className="font-normal text-slate-400">
                       {' '}
-                      — {selectedMonth} {selectedYear}
+                      —
+                      {' '}
+                      {selectedMonth}
+                      {' '}
+                      {selectedYear}
                     </span>
                   </h2>
                   {selectedDept !== 'All Departments' && (
@@ -1610,8 +1629,8 @@ export default function Reports() {
                 />
               )}
 
-              {activeTab !== 'calendar' &&
-                (activeTab === 'monthly'
+              {activeTab !== 'calendar'
+                && (activeTab === 'monthly'
                   ? monthlyData
                   : activeTab === 'leave'
                     ? leaveData
@@ -1620,7 +1639,7 @@ export default function Reports() {
                   <div className="text-center py-12 text-slate-400 text-sm">
                     {apiData === null ? 'No data available for this period.' : 'No records found for this department.'}
                   </div>
-                )}
+              )}
             </>
           )}
         </div>

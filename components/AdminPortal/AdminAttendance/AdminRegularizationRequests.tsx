@@ -13,9 +13,15 @@ import {
 import { regularizeAttendance, IRegularizeAttendancePayload } from '@/lib/service/attendance';
 
 const STATUS_META: Record<RegularizationStatus, { label: string; bg: string; text: string; dot: string; border: string; icon: any }> = {
-  [RegularizationStatus.PENDING]:  { label: 'Pending',  bg: 'bg-amber-50',  text: 'text-amber-700',  dot: 'bg-amber-400',  border: 'border-amber-200',  icon: Clock },
-  [RegularizationStatus.APPROVED]: { label: 'Approved', bg: 'bg-teal-50',   text: 'text-teal-700',   dot: 'bg-teal-500',   border: 'border-teal-200',   icon: CheckCircle2 },
-  [RegularizationStatus.REJECTED]: { label: 'Rejected', bg: 'bg-red-50',    text: 'text-red-600',    dot: 'bg-red-400',    border: 'border-red-200',    icon: XCircle },
+  [RegularizationStatus.PENDING]: {
+    label: 'Pending', bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400', border: 'border-amber-200', icon: Clock,
+  },
+  [RegularizationStatus.APPROVED]: {
+    label: 'Approved', bg: 'bg-teal-50', text: 'text-teal-700', dot: 'bg-teal-500', border: 'border-teal-200', icon: CheckCircle2,
+  },
+  [RegularizationStatus.REJECTED]: {
+    label: 'Rejected', bg: 'bg-red-50', text: 'text-red-600', dot: 'bg-red-400', border: 'border-red-200', icon: XCircle,
+  },
 };
 
 function fmtDate(iso: string) {
@@ -26,7 +32,7 @@ function fmtDate(iso: string) {
 function fmtTime(iso: string | null) {
   if (!iso) return '—';
   const d = new Date(iso);
-  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
 function ReviewDrawer({ req, onClose, onDone }: { req: IRegularization; onClose: () => void; onDone: () => void }) {
@@ -37,7 +43,7 @@ function ReviewDrawer({ req, onClose, onDone }: { req: IRegularization; onClose:
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const meta = STATUS_META[req.status];
-  
+
   // Extract employee name with multiple fallbacks
   let employeeName = 'Employee';
   if (req.employee_name && typeof req.employee_name === 'string' && req.employee_name.trim()) {
@@ -47,7 +53,7 @@ function ReviewDrawer({ req, onClose, onDone }: { req: IRegularization; onClose:
   } else if (req.employee?.first_name || req.employee?.last_name) {
     employeeName = `${req.employee.first_name || ''} ${req.employee.last_name || ''}`.trim();
   }
-  
+
   const employeeCode = req.employee_code || req.employee?.employee_code || 'N/A';
 
   const handleSubmit = async () => {
@@ -68,7 +74,7 @@ function ReviewDrawer({ req, onClose, onDone }: { req: IRegularization; onClose:
         };
         await regularizeAttendance(req.attendance_log_id, regularizePayload, subdomain);
       }
-      
+
       // Then update the regularization request status
       const payload: IReviewRegularizationPayload = {
         status: action,
@@ -97,7 +103,10 @@ function ReviewDrawer({ req, onClose, onDone }: { req: IRegularization; onClose:
           <div className="mb-4">
             <p className="text-sm font-bold text-[#0f1f2e]">{employeeName}</p>
             <p className="text-[10px] text-gray-400 mt-0.5">
-              {employeeCode} • {fmtDate(req.attendance_date)}
+              {employeeCode}
+              {' '}
+              •
+              {fmtDate(req.attendance_date)}
             </p>
             <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full mt-2 ${meta.bg} ${meta.text}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
@@ -108,13 +117,19 @@ function ReviewDrawer({ req, onClose, onDone }: { req: IRegularization; onClose:
             <div className="bg-gray-50 rounded-xl px-3 py-2">
               <p className="text-[9px] text-gray-400 font-medium uppercase tracking-wide">Original Times</p>
               <p className="text-xs font-bold text-gray-600 mt-0.5">
-                {fmtTime(req.original_check_in)} – {fmtTime(req.original_check_out)}
+                {fmtTime(req.original_check_in)}
+                {' '}
+                –
+                {fmtTime(req.original_check_out)}
               </p>
             </div>
             <div className="bg-teal-50 rounded-xl px-3 py-2 border border-teal-200">
               <p className="text-[9px] text-teal-600 font-medium uppercase tracking-wide">Requested Times</p>
               <p className="text-xs font-bold text-teal-700 mt-0.5">
-                {fmtTime(req.requested_check_in)} – {fmtTime(req.requested_check_out)}
+                {fmtTime(req.requested_check_in)}
+                {' '}
+                –
+                {fmtTime(req.requested_check_out)}
               </p>
             </div>
             <div className="bg-gray-50 rounded-xl px-3 py-2">
@@ -132,7 +147,7 @@ function ReviewDrawer({ req, onClose, onDone }: { req: IRegularization; onClose:
         {req.status === RegularizationStatus.PENDING && (
           <div className="px-5 py-4 space-y-4 flex-1">
             <div className="grid grid-cols-2 gap-2">
-              {(['approved', 'rejected'] as const).map(a => (
+              {(['approved', 'rejected'] as const).map((a) => (
                 <button
                   key={a}
                   onClick={() => setAction(a)}
@@ -152,11 +167,13 @@ function ReviewDrawer({ req, onClose, onDone }: { req: IRegularization; onClose:
             {action === 'rejected' && (
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Rejection Reason <span className="text-red-500">*</span>
+                  Rejection Reason
+                  {' '}
+                  <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   value={rejectionReason}
-                  onChange={e => setRejectionReason(e.target.value)}
+                  onChange={(e) => setRejectionReason(e.target.value)}
                   rows={3}
                   placeholder="Enter reason for rejection..."
                   className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20 focus:border-[#0f766e] transition-all resize-none"
@@ -178,15 +195,21 @@ function ReviewDrawer({ req, onClose, onDone }: { req: IRegularization; onClose:
             >
               {saving ? (
                 <>
-                  <Loader2 size={14} className="animate-spin" /> Submitting...
+                  <Loader2 size={14} className="animate-spin" />
+                  {' '}
+                  Submitting...
                 </>
               ) : action === 'approved' ? (
                 <>
-                  <CheckCircle2 size={14} /> Approve Request
+                  <CheckCircle2 size={14} />
+                  {' '}
+                  Approve Request
                 </>
               ) : (
                 <>
-                  <XCircle size={14} /> Reject Request
+                  <XCircle size={14} />
+                  {' '}
+                  Reject Request
                 </>
               )}
             </button>
@@ -200,7 +223,7 @@ function ReviewDrawer({ req, onClose, onDone }: { req: IRegularization; onClose:
 function RequestRow({ req, onSelect }: { req: IRegularization; onSelect: () => void }) {
   const meta = STATUS_META[req.status];
   const Icon = meta.icon;
-  
+
   // Extract employee name with multiple fallbacks
   let employeeName = 'Employee';
   if (req.employee_name && typeof req.employee_name === 'string' && req.employee_name.trim()) {
@@ -210,7 +233,7 @@ function RequestRow({ req, onSelect }: { req: IRegularization; onSelect: () => v
   } else if (req.employee?.first_name || req.employee?.last_name) {
     employeeName = `${req.employee.first_name || ''} ${req.employee.last_name || ''}`.trim();
   }
-  
+
   const employeeCode = req.employee_code || req.employee?.employee_code || '';
 
   return (
@@ -219,7 +242,8 @@ function RequestRow({ req, onSelect }: { req: IRegularization; onSelect: () => v
       className="group flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-50 last:border-0"
     >
       <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-400 to-teal-600 text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0">
-        {employeeName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+        {employeeName.split(' ').map((w) => w[0]).join('').slice(0, 2)
+          .toUpperCase()}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
@@ -241,7 +265,10 @@ function RequestRow({ req, onSelect }: { req: IRegularization; onSelect: () => v
           </span>
           <span className="text-gray-300">·</span>
           <span className="text-[10px] text-gray-500">
-            {fmtTime(req.requested_check_in)} – {fmtTime(req.requested_check_out)}
+            {fmtTime(req.requested_check_in)}
+            {' '}
+            –
+            {fmtTime(req.requested_check_out)}
           </span>
         </div>
       </div>
@@ -281,16 +308,15 @@ export default function AdminRegularizationRequests() {
 
   const filtered = useMemo(() => {
     let list = requests;
-    if (statusFilter !== 'ALL') list = list.filter(r => r.status === statusFilter);
+    if (statusFilter !== 'ALL') list = list.filter((r) => r.status === statusFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
-        r =>
-          r.employee_name?.toLowerCase().includes(q) ||
-          r.employee_code?.toLowerCase().includes(q) ||
-          r.employee?.employee_code?.toLowerCase().includes(q) ||
-          r.employee?.name?.toLowerCase().includes(q) ||
-          r.remarks?.toLowerCase().includes(q)
+        (r) => r.employee_name?.toLowerCase().includes(q)
+          || r.employee_code?.toLowerCase().includes(q)
+          || r.employee?.employee_code?.toLowerCase().includes(q)
+          || r.employee?.name?.toLowerCase().includes(q)
+          || r.remarks?.toLowerCase().includes(q),
       );
     }
     return list;
@@ -299,31 +325,36 @@ export default function AdminRegularizationRequests() {
   const stats = useMemo(
     () => ({
       total: requests.length,
-      pending: requests.filter(r => r.status === RegularizationStatus.PENDING).length,
-      approved: requests.filter(r => r.status === RegularizationStatus.APPROVED).length,
-      rejected: requests.filter(r => r.status === RegularizationStatus.REJECTED).length,
+      pending: requests.filter((r) => r.status === RegularizationStatus.PENDING).length,
+      approved: requests.filter((r) => r.status === RegularizationStatus.APPROVED).length,
+      rejected: requests.filter((r) => r.status === RegularizationStatus.REJECTED).length,
     }),
-    [requests]
+    [requests],
   );
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <p className="text-xs text-gray-400">
-          {stats.total} requests · {stats.pending} pending approval
+          {stats.total}
+          {' '}
+          requests ·
+          {stats.pending}
+          {' '}
+          pending approval
         </p>
         <div className="flex items-center gap-2 flex-wrap">
           <div className="relative">
             <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Search..."
               className="pl-7 pr-3 py-1.5 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20 focus:border-[#0f766e] transition-all w-36"
             />
           </div>
           <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
-            {(['ALL', RegularizationStatus.PENDING, RegularizationStatus.APPROVED, RegularizationStatus.REJECTED] as const).map(s => (
+            {(['ALL', RegularizationStatus.PENDING, RegularizationStatus.APPROVED, RegularizationStatus.REJECTED] as const).map((s) => (
               <button
                 key={s}
                 onClick={() => setStatusFilter(s)}
@@ -340,11 +371,19 @@ export default function AdminRegularizationRequests() {
 
       <div className="grid grid-cols-4 gap-2">
         {[
-          { label: 'Total', value: stats.total, color: 'text-[#0f766e]', bg: 'bg-[#e8f5ee]', dot: 'bg-[#0f766e]' },
-          { label: 'Pending', value: stats.pending, color: 'text-amber-600', bg: 'bg-amber-50', dot: 'bg-amber-400' },
-          { label: 'Approved', value: stats.approved, color: 'text-teal-600', bg: 'bg-teal-50', dot: 'bg-teal-500' },
-          { label: 'Rejected', value: stats.rejected, color: 'text-red-500', bg: 'bg-red-50', dot: 'bg-red-400' },
-        ].map(s => (
+          {
+            label: 'Total', value: stats.total, color: 'text-[#0f766e]', bg: 'bg-[#e8f5ee]', dot: 'bg-[#0f766e]',
+          },
+          {
+            label: 'Pending', value: stats.pending, color: 'text-amber-600', bg: 'bg-amber-50', dot: 'bg-amber-400',
+          },
+          {
+            label: 'Approved', value: stats.approved, color: 'text-teal-600', bg: 'bg-teal-50', dot: 'bg-teal-500',
+          },
+          {
+            label: 'Rejected', value: stats.rejected, color: 'text-red-500', bg: 'bg-red-50', dot: 'bg-red-400',
+          },
+        ].map((s) => (
           <div key={s.label} className={`${s.bg} rounded-xl px-3 py-2 border border-gray-100`}>
             <div className="flex items-center gap-1.5 mb-1">
               <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
@@ -366,8 +405,8 @@ export default function AdminRegularizationRequests() {
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          {[RegularizationStatus.PENDING, RegularizationStatus.APPROVED, RegularizationStatus.REJECTED].map(status => {
-            const group = filtered.filter(r => r.status === status);
+          {[RegularizationStatus.PENDING, RegularizationStatus.APPROVED, RegularizationStatus.REJECTED].map((status) => {
+            const group = filtered.filter((r) => r.status === status);
             if (!group.length) return null;
             const meta = STATUS_META[status];
             return (
@@ -381,7 +420,7 @@ export default function AdminRegularizationRequests() {
                     {group.length}
                   </span>
                 </div>
-                {group.map(req => (
+                {group.map((req) => (
                   <RequestRow key={req.id} req={req} onSelect={() => setSelectedRequest(req)} />
                 ))}
               </div>

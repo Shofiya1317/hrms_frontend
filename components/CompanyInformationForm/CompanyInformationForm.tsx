@@ -71,11 +71,11 @@ const handleCompanyProfileSubmit = async (
     setFieldError,
   }: FormikHelpers<CompanyInformation>,
   router: AppRouterInstance,
-  isSettings: boolean
+  isSettings: boolean,
 ) => {
   if (
-    values?.phone_number?.length > 0 &&
-    !isValidPhoneNumber(values?.phone_number)
+    values?.phone_number?.length > 0
+    && !isValidPhoneNumber(values?.phone_number)
   ) {
     setFieldError('phone_number', 'Must be valid Phone Number');
     return;
@@ -139,7 +139,7 @@ const handleCompanyProfileSubmit = async (
 
     if (success) {
       toast.success(
-        message || (isSettings ? 'Company Information Updated' : 'Company Information Registered')
+        message || (isSettings ? 'Company Information Updated' : 'Company Information Registered'),
       );
       if (!isSettings) {
         router.push('/company_profile/organisation_setup');
@@ -190,27 +190,25 @@ export default function CompanyInformationForm({
     const allCountries = Country.getAllCountries();
 
     // Match by name first, then fall back to isoCode match
-    const matchedCountry =
-      (allCountries as any[]).find((c) => c.name === acct.country) ??
-      (allCountries as any[]).find((c) => c.isoCode === acct.country);
+    const matchedCountry = (allCountries as any[]).find((c) => c.name === acct.country)
+      ?? (allCountries as any[]).find((c) => c.isoCode === acct.country);
 
     if (!matchedCountry) return;
 
     const states = State.getStatesOfCountry(matchedCountry.isoCode).map(
-      (s: any) => ({ value: s.isoCode, label: s.name })
+      (s: any) => ({ value: s.isoCode, label: s.name }),
     );
     setStateOptions(states);
 
     if (acct.state) {
       // Match state by label (full name) OR by isoCode
-      const matchedState =
-        states.find((s) => s.label === acct.state) ??
-        states.find((s) => s.value === acct.state);
+      const matchedState = states.find((s) => s.label === acct.state)
+        ?? states.find((s) => s.value === acct.state);
 
       if (matchedState) {
         const cities = City.getCitiesOfState(
           matchedCountry.isoCode,
-          matchedState.value
+          matchedState.value,
         ).map((c: any) => ({ value: c.name, label: c.name }));
         setCityOptions(cities);
       }
@@ -261,7 +259,7 @@ export default function CompanyInformationForm({
     company_website_url: string()
       .matches(
         /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(\/[a-zA-Z0-9\-_/]*)?$/,
-        'Enter a valid website URL'
+        'Enter a valid website URL',
       )
       .nullable(),
     phone_number: string().nullable(),
@@ -270,8 +268,7 @@ export default function CompanyInformationForm({
       .test(
         'tax-id-format',
         'Invalid Tax ID format',
-        (value) =>
-          !value || /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(value)
+        (value) => !value || /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(value),
       ),
     sectors: array().nullable(),
     standards: array().nullable(),
@@ -282,11 +279,11 @@ export default function CompanyInformationForm({
 
   const onSubmit = async (
     values: CompanyInformation,
-    formikHelpers: FormikHelpers<CompanyInformation>
+    formikHelpers: FormikHelpers<CompanyInformation>,
   ) => {
     if (
-      values?.phone_number?.length > 0 &&
-      !isValidPhoneNumber(values?.phone_number)
+      values?.phone_number?.length > 0
+      && !isValidPhoneNumber(values?.phone_number)
     ) {
       formikHelpers.setFieldError('phone_number', 'Must be valid Phone Number');
       return;
@@ -297,7 +294,7 @@ export default function CompanyInformationForm({
       slug,
       formikHelpers,
       router,
-      isSettings
+      isSettings,
     );
   };
 
@@ -331,9 +328,8 @@ export default function CompanyInformationForm({
     return { width: '700px' };
   };
 
-  const getSelectedOption = (value: string, options: Option[]) =>
-    options.find((option) => option.value === value || option.label === value) ||
-    null;
+  const getSelectedOption = (value: string, options: Option[]) => options.find((option) => option.value === value || option.label === value)
+    || null;
 
   // ─── Render ─────────────────────────────────────────────────────────────────
 
@@ -386,8 +382,7 @@ export default function CompanyInformationForm({
                     field={{
                       name: 'industry',
                       value: values.industry,
-                      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-                        setFieldValue('industry', e.target.value),
+                      onChange: (e: React.ChangeEvent<HTMLInputElement>) => setFieldValue('industry', e.target.value),
                     }}
                     error={errors.industry as string}
                     isSideBySide={!!isSettings}
@@ -397,9 +392,7 @@ export default function CompanyInformationForm({
                       name="industry"
                       options={industryOptions}
                       value={getSelectedOption(values.industry, industryOptions)}
-                      onChange={(option: Option | null) =>
-                        setFieldValue('industry', option?.value || '')
-                      }
+                      onChange={(option: Option | null) => setFieldValue('industry', option?.value || '')}
                       placeholder="Select industry..."
                       className="react-select-container"
                       classNamePrefix="react-select"
@@ -419,8 +412,7 @@ export default function CompanyInformationForm({
                     field={{
                       name: 'company_size',
                       value: values.company_size,
-                      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-                        setFieldValue('company_size', e.target.value),
+                      onChange: (e: React.ChangeEvent<HTMLInputElement>) => setFieldValue('company_size', e.target.value),
                     }}
                     error={errors.company_size as string}
                     isSideBySide={!!isSettings}
@@ -431,11 +423,9 @@ export default function CompanyInformationForm({
                       options={companySizeOptions}
                       value={getSelectedOption(
                         values.company_size,
-                        companySizeOptions
+                        companySizeOptions,
                       )}
-                      onChange={(option: Option | null) =>
-                        setFieldValue('company_size', option?.value || '')
-                      }
+                      onChange={(option: Option | null) => setFieldValue('company_size', option?.value || '')}
                       placeholder="Select company size..."
                       className="react-select-container"
                       classNamePrefix="react-select"
@@ -451,8 +441,7 @@ export default function CompanyInformationForm({
                     field={{
                       name: 'timezone',
                       value: values.timezone,
-                      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-                        setFieldValue('timezone', e.target.value),
+                      onChange: (e: React.ChangeEvent<HTMLInputElement>) => setFieldValue('timezone', e.target.value),
                     }}
                     error={errors.timezone as string}
                     isSideBySide={!!isSettings}
@@ -462,9 +451,7 @@ export default function CompanyInformationForm({
                       name="timezone"
                       options={TIMEZONE_OPTIONS}
                       value={getSelectedOption(values.timezone, TIMEZONE_OPTIONS)}
-                      onChange={(option: Option | null) =>
-                        setFieldValue('timezone', option?.value || '')
-                      }
+                      onChange={(option: Option | null) => setFieldValue('timezone', option?.value || '')}
                       placeholder="Select timezone..."
                       className="react-select-container"
                       classNamePrefix="react-select"
@@ -484,8 +471,7 @@ export default function CompanyInformationForm({
                     field={{
                       name: 'country',
                       value: values.country,
-                      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-                        setFieldValue('country', e.target.value),
+                      onChange: (e: React.ChangeEvent<HTMLInputElement>) => setFieldValue('country', e.target.value),
                     }}
                     error={errors.country as string}
                     isSideBySide={!!isSettings}
@@ -503,7 +489,7 @@ export default function CompanyInformationForm({
                         setCityOptions([]);
                         if (option?.value) {
                           const states = State.getStatesOfCountry(
-                            option.value
+                            option.value,
                           ).map((state: any) => ({
                             value: state.isoCode,
                             label: state.name,
@@ -527,8 +513,7 @@ export default function CompanyInformationForm({
                     field={{
                       name: 'state',
                       value: values.state,
-                      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-                        setFieldValue('state', e.target.value),
+                      onChange: (e: React.ChangeEvent<HTMLInputElement>) => setFieldValue('state', e.target.value),
                     }}
                     error={errors.state as string}
                     isSideBySide={!!isSettings}
@@ -544,12 +529,12 @@ export default function CompanyInformationForm({
                         setCityOptions([]);
                         if (option?.value && values.country) {
                           const selectedCountry = countryOptions.find(
-                            (c) => c.label === values.country
+                            (c) => c.label === values.country,
                           );
                           if (selectedCountry) {
                             const cities = City.getCitiesOfState(
                               selectedCountry.value,
-                              option.value
+                              option.value,
                             ).map((city: any) => ({
                               value: city.name,
                               label: city.name,
@@ -575,8 +560,7 @@ export default function CompanyInformationForm({
                     field={{
                       name: 'city',
                       value: values.city,
-                      onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-                        setFieldValue('city', e.target.value),
+                      onChange: (e: React.ChangeEvent<HTMLInputElement>) => setFieldValue('city', e.target.value),
                     }}
                     error={errors.city as string}
                     isSideBySide={!!isSettings}
@@ -586,9 +570,7 @@ export default function CompanyInformationForm({
                       name="city"
                       options={cityOptions}
                       value={getSelectedOption(values.city, cityOptions)}
-                      onChange={(option: Option | null) =>
-                        setFieldValue('city', option?.label || '')
-                      }
+                      onChange={(option: Option | null) => setFieldValue('city', option?.label || '')}
                       isDisabled={!values.state}
                       placeholder="Select city..."
                       className="react-select-container"

@@ -42,7 +42,9 @@ export default async function page({
 
     if (isAccount) {
       const res = await AuthService.verifyAccountInvitation(searchParams.token, slug);
-      const { success, error, user, account } = (res?.data || {}) as {
+      const {
+        success, error, user, account,
+      } = (res?.data || {}) as {
         success: boolean;
         error?: string[];
         user: IUser;
@@ -64,14 +66,14 @@ export default async function page({
           token={searchParams.token}
           user={user || ({} as IUser)}
           account={account}
-          isAccount={true}
+          isAccount
         />
       );
     }
 
     const res = await AuthService.verifyInvitation(searchParams.token, slug);
     const responseData = res?.data as any;
-    
+
     if (responseData?.success === false || res?.status === 400 || res?.status === 404) {
       return (
         <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '50vh' }}>

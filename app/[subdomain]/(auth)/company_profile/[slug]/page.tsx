@@ -61,7 +61,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
       case 1:
         return <CompanyInformationForm token={token} slug={slug} account={user?.account} />;
       case 2:
-        return <OrganisationSetupForm slug={slug} account={user?.account}/>;
+        return <OrganisationSetupForm slug={slug} account={user?.account} />;
       default:
         return <div>Access Denied</div>;
     }

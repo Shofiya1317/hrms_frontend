@@ -1,25 +1,49 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Save, Shield, Building2, Settings, Activity, Clock, Calendar, Trash2 } from 'lucide-react';
+import {
+  Plus, Save, Shield, Building2, Settings, Activity, Clock, Calendar, Trash2,
+} from 'lucide-react';
 
 const TABS = ['Organization', 'Office Timings', 'RBAC', 'Policies', 'Integrations', 'Audit Logs'];
 
 const ROLES = [
-  { name: 'Super Admin', users: 1, permissions: 'Full access', color: 'bg-red-100 text-red-700' },
-  { name: 'HR Admin', users: 3, permissions: 'Employees, Attendance, Payroll', color: 'bg-purple-100 text-purple-700' },
-  { name: 'Finance Admin', users: 2, permissions: 'Payroll, Reports', color: 'bg-amber-100 text-amber-700' },
-  { name: 'Manager', users: 12, permissions: 'Team Attendance, Leave Approvals', color: 'bg-blue-100 text-blue-700' },
-  { name: 'Employee', users: 230, permissions: 'Self-service only', color: 'bg-green-100 text-green-700' },
+  {
+    name: 'Super Admin', users: 1, permissions: 'Full access', color: 'bg-red-100 text-red-700',
+  },
+  {
+    name: 'HR Admin', users: 3, permissions: 'Employees, Attendance, Payroll', color: 'bg-purple-100 text-purple-700',
+  },
+  {
+    name: 'Finance Admin', users: 2, permissions: 'Payroll, Reports', color: 'bg-amber-100 text-amber-700',
+  },
+  {
+    name: 'Manager', users: 12, permissions: 'Team Attendance, Leave Approvals', color: 'bg-blue-100 text-blue-700',
+  },
+  {
+    name: 'Employee', users: 230, permissions: 'Self-service only', color: 'bg-green-100 text-green-700',
+  },
 ];
 
 const AUDIT_LOGS = [
-  { action: 'Employee Created', user: 'admin@impactree.in', target: 'Arjun Mehta (EMP-2026-001)', time: '20 Mar 2026, 10:32 AM', type: 'create' },
-  { action: 'Leave Approved', user: 'priya.n@impactree.in', target: 'Sneha Reddy – Sick Leave', time: '20 Mar 2026, 09:15 AM', type: 'update' },
-  { action: 'Payroll Processed', user: 'admin@impactree.in', target: 'February 2026 – 247 employees', time: '28 Feb 2026, 06:00 PM', type: 'process' },
-  { action: 'Role Changed', user: 'admin@impactree.in', target: 'Kavya Menon – HR Executive', time: '01 Mar 2026, 11:00 AM', type: 'update' },
-  { action: 'Device Added', user: 'admin@impactree.in', target: 'Mumbai Sales Office Biometric', time: '15 Feb 2026, 02:30 PM', type: 'create' },
-  { action: 'Policy Updated', user: 'admin@impactree.in', target: 'Grace Time: 5min → 10min', time: '10 Feb 2026, 04:00 PM', type: 'update' },
+  {
+    action: 'Employee Created', user: 'admin@impactree.in', target: 'Arjun Mehta (EMP-2026-001)', time: '20 Mar 2026, 10:32 AM', type: 'create',
+  },
+  {
+    action: 'Leave Approved', user: 'priya.n@impactree.in', target: 'Sneha Reddy – Sick Leave', time: '20 Mar 2026, 09:15 AM', type: 'update',
+  },
+  {
+    action: 'Payroll Processed', user: 'admin@impactree.in', target: 'February 2026 – 247 employees', time: '28 Feb 2026, 06:00 PM', type: 'process',
+  },
+  {
+    action: 'Role Changed', user: 'admin@impactree.in', target: 'Kavya Menon – HR Executive', time: '01 Mar 2026, 11:00 AM', type: 'update',
+  },
+  {
+    action: 'Device Added', user: 'admin@impactree.in', target: 'Mumbai Sales Office Biometric', time: '15 Feb 2026, 02:30 PM', type: 'create',
+  },
+  {
+    action: 'Policy Updated', user: 'admin@impactree.in', target: 'Grace Time: 5min → 10min', time: '10 Feb 2026, 04:00 PM', type: 'update',
+  },
 ];
 
 const LOG_TYPE_COLOR: Record<string, string> = {
@@ -128,7 +152,9 @@ function OfficeTImingsTab() {
             onClick={handleSave}
             className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-xl transition-all ${saved ? 'bg-green-600' : 'bg-[#2D7A4F] hover:bg-[#1e5c3a]'}`}
           >
-            <Save size={14} /> {saved ? 'Saved!' : 'Save Changes'}
+            <Save size={14} />
+            {' '}
+            {saved ? 'Saved!' : 'Save Changes'}
           </button>
         </div>
       </div>
@@ -141,7 +167,11 @@ function OfficeTImingsTab() {
           </div>
           <h4 className="text-sm font-bold text-[#0f1f2e]">Office Hours</h4>
           <span className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full bg-[#e8f5ee] text-[#2D7A4F]">
-            Net: {totalWorkHours} / day
+            Net:
+            {' '}
+            {totalWorkHours}
+            {' '}
+            / day
           </span>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -183,9 +213,30 @@ function OfficeTImingsTab() {
           </div>
         </div>
         <div className="mt-4 p-3 rounded-xl bg-gray-50 flex flex-wrap gap-4 text-xs text-gray-600">
-          <span>🕘 Office: <strong className="text-gray-800">{officeStart} – {officeEnd}</strong></span>
-          <span>🍽 Lunch: <strong className="text-gray-800">{lunchStart} – {lunchEnd}</strong></span>
-          <span>⏱ Net working: <strong className="text-[#2D7A4F]">{totalWorkHours}</strong></span>
+          <span>
+            🕘 Office:
+            <strong className="text-gray-800">
+              {officeStart}
+              {' '}
+              –
+              {' '}
+              {officeEnd}
+            </strong>
+          </span>
+          <span>
+            🍽 Lunch:
+            <strong className="text-gray-800">
+              {lunchStart}
+              {' '}
+              –
+              {' '}
+              {lunchEnd}
+            </strong>
+          </span>
+          <span>
+            ⏱ Net working:
+            <strong className="text-[#2D7A4F]">{totalWorkHours}</strong>
+          </span>
         </div>
       </div>
 
@@ -196,7 +247,11 @@ function OfficeTImingsTab() {
             <Calendar size={15} className="text-blue-600" />
           </div>
           <h4 className="text-sm font-bold text-[#0f1f2e]">Working Days & Weekly Offs</h4>
-          <span className="ml-auto text-xs text-gray-500">{workingDays.length} working days / week</span>
+          <span className="ml-auto text-xs text-gray-500">
+            {workingDays.length}
+            {' '}
+            working days / week
+          </span>
         </div>
         <div className="flex flex-wrap gap-2 mb-4">
           {DAYS_OF_WEEK.map((day) => {
@@ -256,15 +311,24 @@ function OfficeTImingsTab() {
               <Calendar size={15} className="text-purple-600" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-[#0f1f2e]">Public Holidays — {selectedYear}</h4>
-              <p className="text-[10px] text-gray-500">{holidays.length} holidays configured</p>
+              <h4 className="text-sm font-bold text-[#0f1f2e]">
+                Public Holidays —
+                {selectedYear}
+              </h4>
+              <p className="text-[10px] text-gray-500">
+                {holidays.length}
+                {' '}
+                holidays configured
+              </p>
             </div>
           </div>
           <button
             onClick={() => setShowAddHoliday(!showAddHoliday)}
             className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors"
           >
-            <Plus size={14} /> Add Holiday
+            <Plus size={14} />
+            {' '}
+            Add Holiday
           </button>
         </div>
 
@@ -410,7 +474,9 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-sm font-bold text-[#0f1f2e]">Company Details</h3>
               <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors">
-                <Save size={14} /> Save Changes
+                <Save size={14} />
+                {' '}
+                Save Changes
               </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -441,15 +507,25 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-[#0f1f2e]">Office Locations</h3>
               <button className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors">
-                <Plus size={14} /> Add Location
+                <Plus size={14} />
+                {' '}
+                Add Location
               </button>
             </div>
             <div className="space-y-2">
               {[
-                { city: 'Bangalore', type: 'HQ', employees: 180, address: 'Koramangala, Bangalore – 560034' },
-                { city: 'Mumbai', type: 'Branch', employees: 42, address: 'BKC, Mumbai – 400051' },
-                { city: 'Pune', type: 'Branch', employees: 18, address: 'Hinjewadi, Pune – 411057' },
-                { city: 'Delhi', type: 'Branch', employees: 8, address: 'Connaught Place, Delhi – 110001' },
+                {
+                  city: 'Bangalore', type: 'HQ', employees: 180, address: 'Koramangala, Bangalore – 560034',
+                },
+                {
+                  city: 'Mumbai', type: 'Branch', employees: 42, address: 'BKC, Mumbai – 400051',
+                },
+                {
+                  city: 'Pune', type: 'Branch', employees: 18, address: 'Hinjewadi, Pune – 411057',
+                },
+                {
+                  city: 'Delhi', type: 'Branch', employees: 8, address: 'Connaught Place, Delhi – 110001',
+                },
               ].map((loc) => (
                 <div key={loc.city} className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
                   <div className="w-9 h-9 rounded-xl bg-[#e8f5ee] flex items-center justify-center flex-shrink-0">
@@ -460,7 +536,11 @@ export default function SettingsPage() {
                     <p className="text-xs text-gray-500">{loc.address}</p>
                   </div>
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${loc.type === 'HQ' ? 'bg-[#e8f5ee] text-[#2D7A4F]' : 'bg-gray-100 text-gray-600'}`}>{loc.type}</span>
-                  <span className="text-xs text-gray-500">{loc.employees} emp</span>
+                  <span className="text-xs text-gray-500">
+                    {loc.employees}
+                    {' '}
+                    emp
+                  </span>
                 </div>
               ))}
             </div>
@@ -471,7 +551,9 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-[#0f1f2e]">Departments</h3>
               <button className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors">
-                <Plus size={14} /> Add Department
+                <Plus size={14} />
+                {' '}
+                Add Department
               </button>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -493,7 +575,9 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-[#0f1f2e]">Role-Based Access Control</h3>
             <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors">
-              <Plus size={14} /> Create Role
+              <Plus size={14} />
+              {' '}
+              Create Role
             </button>
           </div>
           <div className="space-y-3">
@@ -506,7 +590,11 @@ export default function SettingsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
                       <h4 className="text-sm font-bold text-[#0f1f2e]">{role.name}</h4>
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${role.color}`}>{role.users} users</span>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${role.color}`}>
+                        {role.users}
+                        {' '}
+                        users
+                      </span>
                     </div>
                     <p className="text-xs text-gray-500 mt-0.5">{role.permissions}</p>
                   </div>
@@ -565,7 +653,9 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-sm font-bold text-[#0f1f2e]">Policy Configuration</h3>
               <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors">
-                <Save size={14} /> Save All
+                <Save size={14} />
+                {' '}
+                Save All
               </button>
             </div>
             <div className="space-y-6">
@@ -577,7 +667,7 @@ export default function SettingsPage() {
                     { label: 'Standard Work Hours', value: '9' },
                     { label: 'Overtime Threshold', value: '9 hours' },
                     { label: 'Half-Day Minimum Hours', value: '4.5' },
-                  ]
+                  ],
                 },
                 {
                   section: 'Leave Policies',
@@ -586,7 +676,7 @@ export default function SettingsPage() {
                     { label: 'Sick Leave Days', value: '12' },
                     { label: 'Leave Carry Forward Limit', value: '5 days' },
                     { label: 'Leave Encashment', value: 'Enabled' },
-                  ]
+                  ],
                 },
                 {
                   section: 'Payroll Rules',
@@ -595,7 +685,7 @@ export default function SettingsPage() {
                     { label: 'PF Contribution Rate', value: '12%' },
                     { label: 'ESI Threshold', value: '₹21,000/month' },
                     { label: 'Professional Tax (KA)', value: '₹200/month' },
-                  ]
+                  ],
                 },
               ].map((section) => (
                 <div key={section.section}>
@@ -624,12 +714,24 @@ export default function SettingsPage() {
           <h3 className="text-sm font-bold text-[#0f1f2e]">Connected Integrations</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
-              { name: 'Biometric Devices', desc: 'ZKTeco / Suprema fingerprint scanners', status: 'connected', icon: '🔐' },
-              { name: 'Email (SMTP)', desc: 'Payslip & notification delivery', status: 'connected', icon: '📧' },
-              { name: 'SMS Gateway', desc: 'OTP and alert notifications', status: 'pending', icon: '📱' },
-              { name: 'Tally / Zoho Books', desc: 'Payroll accounting integration', status: 'coming-soon', icon: '📊' },
-              { name: 'Google Workspace', desc: 'SSO and calendar sync', status: 'coming-soon', icon: '🔗' },
-              { name: 'Slack / Teams', desc: 'Leave and attendance notifications', status: 'coming-soon', icon: '💬' },
+              {
+                name: 'Biometric Devices', desc: 'ZKTeco / Suprema fingerprint scanners', status: 'connected', icon: '🔐',
+              },
+              {
+                name: 'Email (SMTP)', desc: 'Payslip & notification delivery', status: 'connected', icon: '📧',
+              },
+              {
+                name: 'SMS Gateway', desc: 'OTP and alert notifications', status: 'pending', icon: '📱',
+              },
+              {
+                name: 'Tally / Zoho Books', desc: 'Payroll accounting integration', status: 'coming-soon', icon: '📊',
+              },
+              {
+                name: 'Google Workspace', desc: 'SSO and calendar sync', status: 'coming-soon', icon: '🔗',
+              },
+              {
+                name: 'Slack / Teams', desc: 'Leave and attendance notifications', status: 'coming-soon', icon: '💬',
+              },
             ].map((integration) => (
               <div key={integration.name} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-2xl flex-shrink-0">
@@ -640,9 +742,10 @@ export default function SettingsPage() {
                   <p className="text-xs text-gray-500 mt-0.5">{integration.desc}</p>
                 </div>
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 ${
-                  integration.status === 'connected' ? 'bg-green-100 text-green-700' :
-                  integration.status === 'pending'? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'
-                }`}>
+                  integration.status === 'connected' ? 'bg-green-100 text-green-700'
+                    : integration.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'
+                }`}
+                >
                   {integration.status === 'coming-soon' ? 'Coming Soon' : integration.status}
                 </span>
               </div>
@@ -659,7 +762,9 @@ export default function SettingsPage() {
               <h3 className="text-sm font-bold text-[#0f1f2e]">System Audit Logs</h3>
             </div>
             <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors">
-              <Settings size={14} /> Filter
+              <Settings size={14} />
+              {' '}
+              Filter
             </button>
           </div>
           <div className="divide-y divide-gray-50">
@@ -671,7 +776,10 @@ export default function SettingsPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-800">{log.action}</p>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    <span className="font-medium text-gray-700">{log.user}</span> · {log.target}
+                    <span className="font-medium text-gray-700">{log.user}</span>
+                    {' '}
+                    ·
+                    {log.target}
                   </p>
                 </div>
                 <span className="text-[10px] text-gray-400 font-medium flex-shrink-0 text-right">{log.time}</span>

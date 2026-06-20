@@ -16,11 +16,11 @@ export default function MonthlyView({ employeeId }: { employeeId?: string }) {
     if (!subdomain || !employeeId) return;
     getAttendances(subdomain, {
       from_date: `${year}-01-01`,
-      to_date:   `${year}-12-31`,
+      to_date: `${year}-12-31`,
       employee_id: employeeId,
-      limit:     500,
+      limit: 500,
     })
-      .then(res => {
+      .then((res) => {
         const raw = Array.isArray(res?.data) ? res.data : (res?.data?.data ?? []);
         setLogs(raw);
       })
@@ -29,7 +29,7 @@ export default function MonthlyView({ employeeId }: { employeeId?: string }) {
 
   const attendanceByDate = useMemo(() => {
     const map: Record<string, IAttendanceLog> = {};
-    logs.forEach(l => { map[l.attendance_date] = l; });
+    logs.forEach((l) => { map[l.attendance_date] = l; });
     return map;
   }, [logs]);
 

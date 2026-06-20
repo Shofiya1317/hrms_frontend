@@ -153,18 +153,18 @@ export default function AcceptInvitationForm({
       {({
         handleSubmit, errors, isSubmitting, setFieldValue,
       }) => (
-          <Form
-            onSubmit={handleSubmit}
-            style={{
-              width: isMobileOnly ? '330px' : '500px',
-              paddingTop: '80px',
-              height: '100vh',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              overflow: 'hidden',
-            }}
-          >
+        <Form
+          onSubmit={handleSubmit}
+          style={{
+            width: isMobileOnly ? '330px' : '500px',
+            paddingTop: '80px',
+            height: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            overflow: 'hidden',
+          }}
+        >
           <div className="text-center mb-2 page-header-container">
             <h5 className="page-title">Complete Registration</h5>
             <span className="page-subtitle">Join and start exploring</span>
@@ -182,35 +182,35 @@ export default function AcceptInvitationForm({
             />
           </div>
           {!isAccount && (
-          <div className="">
-            <FormikField
-              name="email"
-              errors={errors}
-              validationSchema={validationSchema}
-              label="Email Address"
-              type="text"
-              placeholder="Enter your Email Address"
-              isCustomRequired
-              disabled
-            />
-          </div>
+            <div className="">
+              <FormikField
+                name="email"
+                errors={errors}
+                validationSchema={validationSchema}
+                label="Email Address"
+                type="text"
+                placeholder="Enter your Email Address"
+                isCustomRequired
+                disabled
+              />
+            </div>
           )}
           {!isAccount && (
-          <div className="">
-            <FormikField
-              name="name"
-              errors={errors}
-              validationSchema={validationSchema}
-              label="Enter Your Name"
-              type="text"
-              placeholder="Enter your Name"
-              isCustomRequired
-              onChange={(e) => {
-                const value = e.target.value.replace(/[^a-zA-Z\s]/g, '');
-                setFieldValue('name', value);
-              }}
-            />
-          </div>
+            <div className="">
+              <FormikField
+                name="name"
+                errors={errors}
+                validationSchema={validationSchema}
+                label="Enter Your Name"
+                type="text"
+                placeholder="Enter your Name"
+                isCustomRequired
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+                  setFieldValue('name', value);
+                }}
+              />
+            </div>
           )}
           {/* {!isAccount && (
             <FormikField
@@ -226,15 +226,15 @@ export default function AcceptInvitationForm({
           )} */}
 
           {!isAccount && (
-          <div className="">
-            <FormikPhoneNumber
-              name="phone_number"
-              label="Phone Number"
-              errors={errors?.phone_number}
-              validationSchema={validationSchema}
-              isCustomRequired={false}
-            />
-          </div>
+            <div className="">
+              <FormikPhoneNumber
+                name="phone_number"
+                label="Phone Number"
+                errors={errors?.phone_number}
+                validationSchema={validationSchema}
+                isCustomRequired={false}
+              />
+            </div>
           )}
           <div className="">
             <FormikField

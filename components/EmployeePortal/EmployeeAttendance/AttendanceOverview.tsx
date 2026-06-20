@@ -162,8 +162,7 @@ const QUICK_STATS = [
 export default function AttendanceOverviewPage() {
   const currentTime = new Date();
   const hour = currentTime.getHours();
-  const greeting =
-    hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   const GreetIcon = hour < 12 ? Sun : hour < 17 ? Zap : Moon;
 
   return (
@@ -276,7 +275,7 @@ export default function AttendanceOverviewPage() {
                   </p>
                 </div>
                 <div
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0`}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: stat.bg }}
                 >
                   <TrendingUp size={14} style={{ color: stat.color }} />

@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { 
-  RotateCcw, CheckCircle2, Info, Plus, X, 
-  Calendar, Clock, AlertCircle, ChevronRight, 
+import {
+  RotateCcw, CheckCircle2, Info, Plus, X,
+  Calendar, Clock, AlertCircle, ChevronRight,
   Sun, Moon, Zap, Send, FileText, Users,
-  Briefcase, Home, MapPin, Train
+  Briefcase, Home, MapPin, Train,
 } from 'lucide-react';
 
 type RegType = 'missed_checkin' | 'missed_checkout' | 'late_entry' | 'wfh' | 'field_work' | 'travel';
@@ -24,12 +24,24 @@ interface RegRequest {
 }
 
 const REG_TYPES: { key: RegType; label: string; description: string; icon: any; color: string; bg: string }[] = [
-  { key: 'missed_checkin', label: 'Missed Check-in', description: 'Forgot to punch in', icon: Clock, color: '#f59e0b', bg: '#fffbeb' },
-  { key: 'missed_checkout', label: 'Missed Check-out', description: 'Forgot to punch out', icon: Clock, color: '#f59e0b', bg: '#fffbeb' },
-  { key: 'late_entry', label: 'Late Entry', description: 'Arrived late due to valid reason', icon: AlertCircle, color: '#ef4444', bg: '#fef2f2' },
-  { key: 'wfh', label: 'Work From Home', description: 'Worked from home that day', icon: Home, color: '#3b82f6', bg: '#eff6ff' },
-  { key: 'field_work', label: 'Field Work', description: 'Was on field / client site', icon: MapPin, color: '#8b5cf6', bg: '#f5f3ff' },
-  { key: 'travel', label: 'Official Travel', description: 'Travelling for work', icon: Train, color: '#2D7A4F', bg: '#e8f5ee' },
+  {
+    key: 'missed_checkin', label: 'Missed Check-in', description: 'Forgot to punch in', icon: Clock, color: '#f59e0b', bg: '#fffbeb',
+  },
+  {
+    key: 'missed_checkout', label: 'Missed Check-out', description: 'Forgot to punch out', icon: Clock, color: '#f59e0b', bg: '#fffbeb',
+  },
+  {
+    key: 'late_entry', label: 'Late Entry', description: 'Arrived late due to valid reason', icon: AlertCircle, color: '#ef4444', bg: '#fef2f2',
+  },
+  {
+    key: 'wfh', label: 'Work From Home', description: 'Worked from home that day', icon: Home, color: '#3b82f6', bg: '#eff6ff',
+  },
+  {
+    key: 'field_work', label: 'Field Work', description: 'Was on field / client site', icon: MapPin, color: '#8b5cf6', bg: '#f5f3ff',
+  },
+  {
+    key: 'travel', label: 'Official Travel', description: 'Travelling for work', icon: Train, color: '#2D7A4F', bg: '#e8f5ee',
+  },
 ];
 
 const PAST_REQUESTS: RegRequest[] = [
@@ -117,7 +129,7 @@ export default function RegularizePage() {
   };
 
   const selectedTypeData = REG_TYPES.find((t) => t.key === selectedType)!;
-  const pendingCount = requests.filter(r => r.status === 'pending').length;
+  const pendingCount = requests.filter((r) => r.status === 'pending').length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -194,7 +206,7 @@ export default function RegularizePage() {
             <p className="text-2xl font-bold text-gray-800">{pendingCount}</p>
             <p className="text-xs text-gray-500 mt-1">Pending Requests</p>
           </div>
-          
+
           <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <div className="w-8 h-8 rounded-lg bg-[#e8f5ee] flex items-center justify-center">
@@ -202,10 +214,10 @@ export default function RegularizePage() {
               </div>
               <span className="text-xs font-medium text-[#2D7A4F] bg-[#e8f5ee] px-2 py-0.5 rounded-full">This Year</span>
             </div>
-            <p className="text-2xl font-bold text-gray-800">{requests.filter(r => r.status === 'approved').length}</p>
+            <p className="text-2xl font-bold text-gray-800">{requests.filter((r) => r.status === 'approved').length}</p>
             <p className="text-xs text-gray-500 mt-1">Approved Requests</p>
           </div>
-          
+
           <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
@@ -227,7 +239,7 @@ export default function RegularizePage() {
             <div className="flex-1">
               <p className="text-sm font-bold text-amber-800 mb-2">How Regularization Works</p>
               <p className="text-sm text-amber-700 leading-relaxed">
-                Submit a request with corrected punch times and a reason. Your manager will review and approve/reject. 
+                Submit a request with corrected punch times and a reason. Your manager will review and approve/reject.
                 Once approved, your attendance record is automatically updated and any flags (late, absent) are removed.
               </p>
             </div>
@@ -244,8 +256,8 @@ export default function RegularizePage() {
                 </div>
                 <h3 className="text-lg font-bold text-gray-800">New Regularization Request</h3>
               </div>
-              <button 
-                onClick={() => setShowForm(false)} 
+              <button
+                onClick={() => setShowForm(false)}
                 className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <X size={18} className="text-gray-400" />
@@ -353,10 +365,18 @@ export default function RegularizePage() {
                 <Info size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <p className="text-sm text-blue-800 font-medium">
-                    Request will be sent to <strong>Priya Nair (Manager)</strong> for review.
+                    Request will be sent to
+                    {' '}
+                    <strong>Priya Nair (Manager)</strong>
+                    {' '}
+                    for review.
                   </p>
                   <p className="text-xs text-blue-600 mt-1">
-                    Once approved, your attendance for {date ? formatDate(date) : 'the selected date'} will be updated automatically.
+                    Once approved, your attendance for
+                    {' '}
+                    {date ? formatDate(date) : 'the selected date'}
+                    {' '}
+                    will be updated automatically.
                   </p>
                 </div>
               </div>
@@ -381,10 +401,12 @@ export default function RegularizePage() {
               <span className="text-sm font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{requests.length}</span>
             </div>
             <Link href="/employee/attendance/regularize/history" className="text-sm font-semibold text-[#2D7A4F] hover:underline flex items-center gap-1">
-              View all <ChevronRight size={14} />
+              View all
+              {' '}
+              <ChevronRight size={14} />
             </Link>
           </div>
-          
+
           <div className="grid grid-cols-1 gap-4">
             {requests.map((req) => {
               const sc = STATUS_CONFIG[req.status];
@@ -403,10 +425,18 @@ export default function RegularizePage() {
                       <div>
                         <p className="text-base font-bold text-gray-800">{typeData.label}</p>
                         <p className="text-sm text-gray-500 mt-1">
-                          {formatDate(req.date)} · {req.correctedIn} – {req.correctedOut}
+                          {formatDate(req.date)}
+                          {' '}
+                          ·
+                          {req.correctedIn}
+                          {' '}
+                          –
+                          {req.correctedOut}
                         </p>
                         <p className="text-xs text-gray-400 mt-1">
-                          Submitted on {formatDate(req.submittedOn)}
+                          Submitted on
+                          {' '}
+                          {formatDate(req.submittedOn)}
                         </p>
                       </div>
                     </div>
@@ -417,16 +447,20 @@ export default function RegularizePage() {
                       {sc.label}
                     </span>
                   </div>
-                  
+
                   <div className="mt-4 pt-4 border-t border-gray-100">
                     <p className="text-sm text-gray-700">
-                      <span className="font-semibold text-gray-800">Reason:</span> {req.reason}
+                      <span className="font-semibold text-gray-800">Reason:</span>
+                      {' '}
+                      {req.reason}
                     </p>
                     {req.managerNote && (
                       <div className="mt-3 flex items-start gap-2 bg-red-50 rounded-lg p-3">
                         <AlertCircle size={14} className="text-red-500 flex-shrink-0 mt-0.5" />
                         <p className="text-sm text-red-700">
-                          <span className="font-semibold">Manager note:</span> {req.managerNote}
+                          <span className="font-semibold">Manager note:</span>
+                          {' '}
+                          {req.managerNote}
                         </p>
                       </div>
                     )}

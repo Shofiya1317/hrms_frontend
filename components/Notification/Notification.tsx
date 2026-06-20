@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Bell, Search, Calendar, Clock, Megaphone, Users, FileText, AlertCircle } from 'lucide-react';
+import {
+  Bell, Search, Calendar, Clock, Megaphone, Users, FileText, AlertCircle,
+} from 'lucide-react';
 
 // Simplified notification type
 type Notification = {
@@ -74,11 +76,11 @@ export default function SimpleNotificationPage({ userRole = 'employee' }) {
   const stats = { total: notifications.length, unread: unreadCount };
 
   // Filter notifications
-  const filteredNotifications = notifications.filter(notification => {
+  const filteredNotifications = notifications.filter((notification) => {
     const matchesCategory = categoryFilter === 'all' || notification.category === categoryFilter;
-    const matchesSearch = searchQuery === '' || 
-      notification.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      notification.message.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = searchQuery === ''
+      || notification.title.toLowerCase().includes(searchQuery.toLowerCase())
+      || notification.message.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -97,7 +99,11 @@ export default function SimpleNotificationPage({ userRole = 'employee' }) {
             <div className="bg-white rounded-lg border border-gray-200 p-3">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-600">
-                  You have <span className="font-semibold text-teal-600">{stats.unread}</span> new notifications
+                  You have
+                  {' '}
+                  <span className="font-semibold text-teal-600">{stats.unread}</span>
+                  {' '}
+                  new notifications
                 </p>
                 <Bell className="text-teal-600" size={20} />
               </div>

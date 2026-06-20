@@ -1,30 +1,58 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Download, Play, CheckCircle, AlertCircle, Plus } from 'lucide-react';
+import {
+  Download, Play, CheckCircle, AlertCircle, Plus,
+} from 'lucide-react';
 
 const TABS = ['Salary Structure', 'Processing', 'Compliance', 'Payslips', 'Reimbursements', 'Reports'];
 
 const SALARY_COMPONENTS = [
-  { component: 'Basic Salary', type: 'Fixed', percentage: '40% of CTC', taxable: true },
-  { component: 'HRA', type: 'Fixed', percentage: '20% of Basic', taxable: false },
-  { component: 'Special Allowance', type: 'Fixed', percentage: '20% of CTC', taxable: true },
-  { component: 'Performance Bonus', type: 'Variable', percentage: 'Up to 15% of CTC', taxable: true },
-  { component: 'PF Contribution', type: 'Deduction', percentage: '12% of Basic', taxable: false },
-  { component: 'Professional Tax', type: 'Deduction', percentage: '₹200/month', taxable: false },
+  {
+    component: 'Basic Salary', type: 'Fixed', percentage: '40% of CTC', taxable: true,
+  },
+  {
+    component: 'HRA', type: 'Fixed', percentage: '20% of Basic', taxable: false,
+  },
+  {
+    component: 'Special Allowance', type: 'Fixed', percentage: '20% of CTC', taxable: true,
+  },
+  {
+    component: 'Performance Bonus', type: 'Variable', percentage: 'Up to 15% of CTC', taxable: true,
+  },
+  {
+    component: 'PF Contribution', type: 'Deduction', percentage: '12% of Basic', taxable: false,
+  },
+  {
+    component: 'Professional Tax', type: 'Deduction', percentage: '₹200/month', taxable: false,
+  },
 ];
 
 const PAYROLL_RUNS = [
-  { month: 'February 2026', employees: 247, gross: '₹1.24 Cr', net: '₹1.09 Cr', status: 'processed', date: '28 Feb 2026' },
-  { month: 'January 2026', employees: 246, gross: '₹1.23 Cr', net: '₹1.08 Cr', status: 'processed', date: '31 Jan 2026' },
-  { month: 'December 2025', employees: 244, gross: '₹1.21 Cr', net: '₹1.07 Cr', status: 'processed', date: '31 Dec 2025' },
+  {
+    month: 'February 2026', employees: 247, gross: '₹1.24 Cr', net: '₹1.09 Cr', status: 'processed', date: '28 Feb 2026',
+  },
+  {
+    month: 'January 2026', employees: 246, gross: '₹1.23 Cr', net: '₹1.08 Cr', status: 'processed', date: '31 Jan 2026',
+  },
+  {
+    month: 'December 2025', employees: 244, gross: '₹1.21 Cr', net: '₹1.07 Cr', status: 'processed', date: '31 Dec 2025',
+  },
 ];
 
 const REIMBURSEMENTS = [
-  { name: 'Rahul Sharma', type: 'Travel', amount: '₹4,200', date: '15 Mar 2026', status: 'pending' },
-  { name: 'Priya Nair', type: 'Medical', amount: '₹8,500', date: '12 Mar 2026', status: 'approved' },
-  { name: 'Kavya Menon', type: 'Internet', amount: '₹1,200', date: '10 Mar 2026', status: 'approved' },
-  { name: 'Arjun Das', type: 'Travel', amount: '₹3,800', date: '08 Mar 2026', status: 'pending' },
+  {
+    name: 'Rahul Sharma', type: 'Travel', amount: '₹4,200', date: '15 Mar 2026', status: 'pending',
+  },
+  {
+    name: 'Priya Nair', type: 'Medical', amount: '₹8,500', date: '12 Mar 2026', status: 'approved',
+  },
+  {
+    name: 'Kavya Menon', type: 'Internet', amount: '₹1,200', date: '10 Mar 2026', status: 'approved',
+  },
+  {
+    name: 'Arjun Das', type: 'Travel', amount: '₹3,800', date: '08 Mar 2026', status: 'pending',
+  },
 ];
 
 export default function PayrollPage() {
@@ -72,7 +100,9 @@ export default function PayrollPage() {
             <div className="p-4 border-b border-gray-100 flex items-center justify-between">
               <h3 className="text-sm font-bold text-[#0f1f2e]">Salary Components</h3>
               <button className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors">
-                <Plus size={14} /> Add Component
+                <Plus size={14} />
+                {' '}
+                Add Component
               </button>
             </div>
             <div className="overflow-x-auto">
@@ -90,9 +120,12 @@ export default function PayrollPage() {
                       <td className="px-4 py-3 text-sm font-semibold text-gray-800">{comp?.component}</td>
                       <td className="px-4 py-3">
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                          comp?.type === 'Fixed' ? 'bg-blue-100 text-blue-700' :
-                          comp?.type === 'Variable'? 'bg-purple-100 text-purple-700' : 'bg-red-100 text-red-700'
-                        }`}>{comp?.type}</span>
+                          comp?.type === 'Fixed' ? 'bg-blue-100 text-blue-700'
+                            : comp?.type === 'Variable' ? 'bg-purple-100 text-purple-700' : 'bg-red-100 text-red-700'
+                        }`}
+                        >
+                          {comp?.type}
+                        </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">{comp?.percentage}</td>
                       <td className="px-4 py-3">
@@ -114,7 +147,9 @@ export default function PayrollPage() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-[#0f1f2e]">Run Payroll · March 2026</h3>
               <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors">
-                <Play size={14} /> Run Payroll
+                <Play size={14} />
+                {' '}
+                Run Payroll
               </button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
@@ -149,11 +184,20 @@ export default function PayrollPage() {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-bold text-gray-800">{run?.month}</p>
-                    <p className="text-xs text-gray-500">{run?.employees} employees · Processed {run?.date}</p>
+                    <p className="text-xs text-gray-500">
+                      {run?.employees}
+                      {' '}
+                      employees · Processed
+                      {' '}
+                      {run?.date}
+                    </p>
                   </div>
                   <div className="text-right hidden md:block">
                     <p className="text-sm font-bold text-gray-800">{run?.gross}</p>
-                    <p className="text-xs text-gray-400">Gross · Net: {run?.net}</p>
+                    <p className="text-xs text-gray-400">
+                      Gross · Net:
+                      {run?.net}
+                    </p>
                   </div>
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-700">{run?.status}</span>
                   <button className="p-1.5 rounded-lg text-gray-400 hover:text-[#2D7A4F] hover:bg-[#e8f5ee] transition-colors">
@@ -168,10 +212,18 @@ export default function PayrollPage() {
       {activeTab === 'Compliance' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
-            { title: 'Provident Fund (PF)', desc: 'Employee & employer contribution at 12% of basic salary', status: 'Compliant', detail: 'Last filed: Feb 2026', color: 'green' },
-            { title: 'ESI (Employee State Insurance)', desc: 'Applicable for employees earning ≤ ₹21,000/month', status: 'Compliant', detail: 'Last filed: Feb 2026', color: 'green' },
-            { title: 'TDS (Tax Deducted at Source)', desc: 'Monthly TDS computation and quarterly filing', status: 'Due Soon', detail: 'Q4 filing due: 31 Mar 2026', color: 'amber' },
-            { title: 'Professional Tax', desc: '₹200/month per employee (Karnataka slab)', status: 'Compliant', detail: 'Last filed: Feb 2026', color: 'green' },
+            {
+              title: 'Provident Fund (PF)', desc: 'Employee & employer contribution at 12% of basic salary', status: 'Compliant', detail: 'Last filed: Feb 2026', color: 'green',
+            },
+            {
+              title: 'ESI (Employee State Insurance)', desc: 'Applicable for employees earning ≤ ₹21,000/month', status: 'Compliant', detail: 'Last filed: Feb 2026', color: 'green',
+            },
+            {
+              title: 'TDS (Tax Deducted at Source)', desc: 'Monthly TDS computation and quarterly filing', status: 'Due Soon', detail: 'Q4 filing due: 31 Mar 2026', color: 'amber',
+            },
+            {
+              title: 'Professional Tax', desc: '₹200/month per employee (Karnataka slab)', status: 'Compliant', detail: 'Last filed: Feb 2026', color: 'green',
+            },
           ]?.map((comp) => (
             <div key={comp?.title} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <div className="flex items-start justify-between mb-3">
@@ -195,7 +247,9 @@ export default function PayrollPage() {
             <h3 className="text-sm font-bold text-[#0f1f2e]">Payslip Generation</h3>
             <div className="flex gap-2">
               <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors">
-                <Download size={14} /> Bulk Download
+                <Download size={14} />
+                {' '}
+                Bulk Download
               </button>
             </div>
           </div>
@@ -210,11 +264,21 @@ export default function PayrollPage() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {[
-                  { name: 'Rahul Sharma', month: 'Feb 2026', gross: '₹1,04,167', deductions: '₹14,200', net: '₹89,967' },
-                  { name: 'Priya Nair', month: 'Feb 2026', gross: '₹83,333', deductions: '₹11,800', net: '₹71,533' },
-                  { name: 'Ananya Krishnan', month: 'Feb 2026', gross: '₹62,500', deductions: '₹9,200', net: '₹53,300' },
-                  { name: 'Vikram Patel', month: 'Feb 2026', gross: '₹41,667', deductions: '₹6,400', net: '₹35,267' },
-                  { name: 'Deepa Iyer', month: 'Feb 2026', gross: '₹91,667', deductions: '₹13,100', net: '₹78,567' },
+                  {
+                    name: 'Rahul Sharma', month: 'Feb 2026', gross: '₹1,04,167', deductions: '₹14,200', net: '₹89,967',
+                  },
+                  {
+                    name: 'Priya Nair', month: 'Feb 2026', gross: '₹83,333', deductions: '₹11,800', net: '₹71,533',
+                  },
+                  {
+                    name: 'Ananya Krishnan', month: 'Feb 2026', gross: '₹62,500', deductions: '₹9,200', net: '₹53,300',
+                  },
+                  {
+                    name: 'Vikram Patel', month: 'Feb 2026', gross: '₹41,667', deductions: '₹6,400', net: '₹35,267',
+                  },
+                  {
+                    name: 'Deepa Iyer', month: 'Feb 2026', gross: '₹91,667', deductions: '₹13,100', net: '₹78,567',
+                  },
                 ]?.map((slip) => (
                   <tr key={slip?.name} className="hover:bg-gray-50/50">
                     <td className="px-4 py-3 text-sm font-semibold text-gray-800">{slip?.name}</td>
@@ -240,18 +304,26 @@ export default function PayrollPage() {
           <div className="p-4 border-b border-gray-100 flex items-center justify-between">
             <h3 className="text-sm font-bold text-[#0f1f2e]">Expense Reimbursements</h3>
             <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors">
-              <Plus size={14} /> New Claim
+              <Plus size={14} />
+              {' '}
+              New Claim
             </button>
           </div>
           <div className="divide-y divide-gray-50">
             {REIMBURSEMENTS?.map((r, i) => (
               <div key={i} className="flex items-center gap-4 p-4 hover:bg-gray-50/50 transition-colors">
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#2D7A4F] to-[#1e5c3a] flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-xs font-bold">{r?.name?.split(' ')?.map(n => n?.[0])?.join('')}</span>
+                  <span className="text-white text-xs font-bold">{r?.name?.split(' ')?.map((n) => n?.[0])?.join('')}</span>
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-gray-800">{r?.name}</p>
-                  <p className="text-xs text-gray-500">{r?.type} · {r?.date}</p>
+                  <p className="text-xs text-gray-500">
+                    {r?.type}
+                    {' '}
+                    ·
+                    {' '}
+                    {r?.date}
+                  </p>
                 </div>
                 <span className="text-sm font-bold text-gray-800">{r?.amount}</span>
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${r?.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
@@ -287,7 +359,9 @@ export default function PayrollPage() {
                 <p className="text-xs text-gray-500 mt-0.5">{report?.desc}</p>
               </div>
               <button className="flex items-center gap-1.5 text-xs font-semibold text-[#2D7A4F] hover:underline flex-shrink-0">
-                <Download size={13} /> Export
+                <Download size={13} />
+                {' '}
+                Export
               </button>
             </div>
           ))}

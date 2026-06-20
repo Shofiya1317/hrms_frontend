@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { LogIn, LogOut, CheckCircle2, Loader2, XCircle, MapPin, AlertCircle } from 'lucide-react';
+import {
+  LogIn, LogOut, CheckCircle2, Loader2, XCircle, MapPin, AlertCircle,
+} from 'lucide-react';
 import { checkIn, checkOut, getAttendances } from '@/lib/service/attendance';
 
 interface LocationData { lat: number; lng: number; address: string; accuracy?: number; }
@@ -33,37 +35,53 @@ async function fetchLocation(): Promise<LocationData | null> {
   try {
     const p = await gp({ enableHighAccuracy: true, maximumAge: 0, timeout: 12000 }).catch(() => gp({ enableHighAccuracy: false, maximumAge: 0, timeout: 8000 }));
     const { latitude: lat, longitude: lng, accuracy } = p.coords;
-    return { lat, lng, address: await reverseGeocode(lat, lng), accuracy: Math.round(accuracy) };
+    return {
+      lat, lng, address: await reverseGeocode(lat, lng), accuracy: Math.round(accuracy),
+    };
   } catch { return null; }
 }
 
 const STATUS: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-  present:  { label: 'Present',  color: '#16a34a', bg: '#f0fdf4', dot: '#22c55e' },
-  absent:   { label: 'Absent',   color: '#dc2626', bg: '#fef2f2', dot: '#ef4444' },
-  late:     { label: 'Late',     color: '#d97706', bg: '#fffbeb', dot: '#f59e0b' },
-  half_day: { label: 'Half Day', color: '#7c3aed', bg: '#f5f3ff', dot: '#8b5cf6' },
-  week_off: { label: 'Week Off', color: '#64748b', bg: '#f8fafc', dot: '#94a3b8' },
-  holiday:  { label: 'Holiday',  color: '#0891b2', bg: '#ecfeff', dot: '#06b6d4' },
-  on_leave: { label: 'On Leave', color: '#2563eb', bg: '#eff6ff', dot: '#3b82f6' },
+  present: {
+    label: 'Present', color: '#16a34a', bg: '#f0fdf4', dot: '#22c55e',
+  },
+  absent: {
+    label: 'Absent', color: '#dc2626', bg: '#fef2f2', dot: '#ef4444',
+  },
+  late: {
+    label: 'Late', color: '#d97706', bg: '#fffbeb', dot: '#f59e0b',
+  },
+  half_day: {
+    label: 'Half Day', color: '#7c3aed', bg: '#f5f3ff', dot: '#8b5cf6',
+  },
+  week_off: {
+    label: 'Week Off', color: '#64748b', bg: '#f8fafc', dot: '#94a3b8',
+  },
+  holiday: {
+    label: 'Holiday', color: '#0891b2', bg: '#ecfeff', dot: '#06b6d4',
+  },
+  on_leave: {
+    label: 'On Leave', color: '#2563eb', bg: '#eff6ff', dot: '#3b82f6',
+  },
 };
 
 export default function CheckInOutCard({
   apiKey, slug, token, fullName, employeeId, designation, defaultLocation = 'Unknown', onAttendanceUpdate,
 }: CheckInOutCardProps) {
-  const [now, setNow]                     = useState(new Date());
-  const [isCheckedIn, setIsCheckedIn]     = useState(false);
-  const [checkInEpoch, setCheckInEpoch]   = useState<number | null>(null);
-  const [elapsed, setElapsed]             = useState(0);
-  const [attendanceId, setAttendanceId]   = useState<string | null>(null);
-  const [showModal, setShowModal]         = useState(false);
-  const [locationData, setLocationData]   = useState<LocationData | null>(null);
+  const [now, setNow] = useState(new Date());
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
+  const [checkInEpoch, setCheckInEpoch] = useState<number | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+  const [attendanceId, setAttendanceId] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [locationData, setLocationData] = useState<LocationData | null>(null);
   const [isFetchingLoc, setIsFetchingLoc] = useState(false);
-  const [isLoading, setIsLoading]         = useState(false);
-  const [toast, setToast]                 = useState<{ msg: string; type: 'success' | 'error' | 'info' } | null>(null);
-  const [recent, setRecent]               = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [recent, setRecent] = useState<any[]>([]);
   const [loadingRecent, setLoadingRecent] = useState(false);
 
-  const pct      = Math.min((elapsed / (8 * 3600)) * 100, 100);
+  const pct = Math.min((elapsed / (8 * 3600)) * 100, 100);
   const timerStr = `${pad(Math.floor(elapsed / 3600))}:${pad(Math.floor((elapsed % 3600) / 60))}:${pad(elapsed % 60)}`;
 
   useEffect(() => {
@@ -88,7 +106,7 @@ export default function CheckInOutCard({
     if (!employeeId) return;
     setLoadingRecent(true);
     getAttendances(apiKey || slug || '', { employee_id: employeeId, limit: 7 }, token)
-      .then(r => setRecent(Array.isArray(r?.data?.data) ? r.data.data : []))
+      .then((r) => setRecent(Array.isArray(r?.data?.data) ? r.data.data : []))
       .catch(() => {})
       .finally(() => setLoadingRecent(false));
   };
@@ -111,7 +129,9 @@ export default function CheckInOutCard({
     const n = new Date(); setIsLoading(true);
     try {
       if (!isCheckedIn) {
-        const res = await checkIn({ attendance_date: toDateString(n), check_in_time: n.toISOString(), check_in_lat: locationData?.lat || 0, check_in_lng: locationData?.lng || 0, check_in_location_name: locationData?.address || defaultLocation, check_in_method: 'gps', check_in_device_info: getDeviceInfo() }, apiKey || '', token);
+        const res = await checkIn({
+          attendance_date: toDateString(n), check_in_time: n.toISOString(), check_in_lat: locationData?.lat || 0, check_in_lng: locationData?.lng || 0, check_in_location_name: locationData?.address || defaultLocation, check_in_method: 'gps', check_in_device_info: getDeviceInfo(),
+        }, apiKey || '', token);
         if (!res?.data?.data?.id) throw new Error('Check-in failed.');
         setAttendanceId(res.data.data.id); setIsCheckedIn(true); setCheckInEpoch(n.getTime()); setElapsed(0);
         showToast(`Checked in at ${fmtTime(n)}`, 'success');
@@ -120,7 +140,9 @@ export default function CheckInOutCard({
         fetchRecentAttendance();
       } else {
         if (!attendanceId) throw new Error('No record found.');
-        const res = await checkOut(attendanceId, { check_out_time: n.toISOString(), check_out_lat: locationData?.lat || 0, check_out_lng: locationData?.lng || 0, check_out_location_name: locationData?.address || defaultLocation, check_out_method: 'gps' }, apiKey, token);
+        const res = await checkOut(attendanceId, {
+          check_out_time: n.toISOString(), check_out_lat: locationData?.lat || 0, check_out_lng: locationData?.lng || 0, check_out_location_name: locationData?.address || defaultLocation, check_out_method: 'gps',
+        }, apiKey, token);
         const s = res?.data?.data?.work_summary;
         showToast(s ? `Done · ${s.total_worked_hours}h worked` : 'Checked out.', 'info');
         setIsCheckedIn(false); setElapsed(0); setAttendanceId(null); setCheckInEpoch(null);
@@ -128,8 +150,7 @@ export default function CheckInOutCard({
         if (onAttendanceUpdate) onAttendanceUpdate();
         fetchRecentAttendance();
       }
-    } catch (e: any) { showToast(e?.message || 'Something went wrong.', 'error'); }
-    finally { setIsLoading(false); setShowModal(false); setLocationData(null); }
+    } catch (e: any) { showToast(e?.message || 'Something went wrong.', 'error'); } finally { setIsLoading(false); setShowModal(false); setLocationData(null); }
   };
 
   return (
@@ -190,7 +211,17 @@ export default function CheckInOutCard({
           disabled={isLoading}
           className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all active:scale-[0.97] ${isCheckedIn ? 'bg-rose-500 text-white shadow-[0_4px_14px_rgba(239,68,68,0.4)] hover:bg-rose-600' : 'bg-emerald-500 text-white shadow-[0_4px_14px_rgba(16,185,129,0.4)] hover:bg-emerald-600'}`}
         >
-          {isCheckedIn ? <><LogOut size={15} />Check Out</> : <><LogIn size={15} />Check In</>}
+          {isCheckedIn ? (
+            <>
+              <LogOut size={15} />
+              Check Out
+            </>
+          ) : (
+            <>
+              <LogIn size={15} />
+              Check In
+            </>
+          )}
         </button>
       </div>
 
@@ -217,7 +248,7 @@ export default function CheckInOutCard({
           <div className="flex-1 flex flex-col gap-2 overflow-hidden">
             {recent.map((item, idx) => {
               const s = STATUS[item.attendance_status] || STATUS.present;
-              const inTime  = item.check_in_time  ? new Date(item.check_in_time) : null;
+              const inTime = item.check_in_time ? new Date(item.check_in_time) : null;
               const outTime = item.check_out_time ? new Date(item.check_out_time) : null;
               const workedH = Math.floor((item.total_worked_minutes || 0) / 60);
               const workedM = (item.total_worked_minutes || 0) % 60;
@@ -229,7 +260,7 @@ export default function CheckInOutCard({
                   className={`flex items-center gap-4 px-4 rounded-2xl transition-all ${isToday ? 'py-3.5 shadow-sm border' : 'py-2.5 border'}`}
                   style={{
                     backgroundColor: isToday ? s.bg : '#fafafa',
-                    borderColor: isToday ? s.color + '30' : '#f1f5f9',
+                    borderColor: isToday ? `${s.color}30` : '#f1f5f9',
                   }}
                 >
                   {/* Day + Date */}
@@ -282,7 +313,12 @@ export default function CheckInOutCard({
                     <p className={`text-lg font-black tabular-nums leading-none ${isToday ? '' : 'text-slate-600'}`} style={isToday ? { color: s.color } : {}}>
                       {workedH}
                       <span className="text-xs font-semibold">h</span>
-                      {workedM > 0 && <>{workedM}<span className="text-xs font-semibold">m</span></>}
+                      {workedM > 0 && (
+                      <>
+                        {workedM}
+                        <span className="text-xs font-semibold">m</span>
+                      </>
+                      )}
                     </p>
                     {isToday && <p className="text-[9px] text-slate-400 mt-0.5">today</p>}
                   </div>
@@ -295,10 +331,14 @@ export default function CheckInOutCard({
 
       {/* ── Confirm Modal ── */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/20 backdrop-blur-sm animate-in fade-in duration-150"
-          onClick={() => !isLoading && setShowModal(false)}>
-          <div className="w-full max-w-sm rounded-t-3xl bg-white shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-200"
-            onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/20 backdrop-blur-sm animate-in fade-in duration-150"
+          onClick={() => !isLoading && setShowModal(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-t-3xl bg-white shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Accent */}
             <div className={`h-1 w-full ${isCheckedIn ? 'bg-rose-500' : 'bg-emerald-500'}`} />
             <div className="p-6">
@@ -324,29 +364,44 @@ export default function CheckInOutCard({
                 <MapPin size={13} className="text-slate-400 mt-0.5 flex-shrink-0" />
                 <div className="min-w-0">
                   {isFetchingLoc
-                    ? <div className="flex items-center gap-1.5 text-xs text-slate-400"><Loader2 size={11} className="animate-spin" />Detecting location…</div>
+                    ? (
+                      <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                        <Loader2 size={11} className="animate-spin" />
+                        Detecting location…
+                      </div>
+                    )
                     : locationData
-                      ? <>
+                      ? (
+                        <>
                           <p className="text-xs font-semibold text-slate-800 leading-snug">{locationData.address}</p>
                           {locationData.accuracy && (
                             <p className={`text-[10px] mt-0.5 font-medium ${locationData.accuracy <= 50 ? 'text-emerald-600' : locationData.accuracy <= 200 ? 'text-amber-600' : 'text-red-500'}`}>
-                              ± {locationData.accuracy}m accuracy
+                              ±
+                              {' '}
+                              {locationData.accuracy}
+                              m accuracy
                             </p>
                           )}
                         </>
-                      : <p className="text-xs text-slate-400">Location unavailable</p>
-                  }
+                      )
+                      : <p className="text-xs text-slate-400">Location unavailable</p>}
                 </div>
               </div>
 
               {/* Actions */}
               <div className="flex gap-2.5">
-                <button onClick={() => setShowModal(false)} disabled={isLoading}
-                  className="flex-1 rounded-2xl border border-slate-200 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all active:scale-95">
+                <button
+                  onClick={() => setShowModal(false)}
+                  disabled={isLoading}
+                  className="flex-1 rounded-2xl border border-slate-200 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all active:scale-95"
+                >
                   Cancel
                 </button>
-                <button onClick={handleConfirm} disabled={isLoading}
-                  className={`flex-1 flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold text-white transition-all active:scale-95 ${isCheckedIn ? 'bg-rose-500 shadow-[0_4px_14px_rgba(239,68,68,0.4)]' : 'bg-emerald-500 shadow-[0_4px_14px_rgba(16,185,129,0.4)]'}`}>
+                <button
+                  onClick={handleConfirm}
+                  disabled={isLoading}
+                  className={`flex-1 flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold text-white transition-all active:scale-95 ${isCheckedIn ? 'bg-rose-500 shadow-[0_4px_14px_rgba(239,68,68,0.4)]' : 'bg-emerald-500 shadow-[0_4px_14px_rgba(16,185,129,0.4)]'}`}
+                >
                   {isLoading ? <Loader2 size={14} className="animate-spin" /> : isCheckedIn ? 'Confirm check out' : 'Confirm check in'}
                 </button>
               </div>

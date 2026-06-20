@@ -28,9 +28,9 @@ export default async function Page() {
   }
 
   return (
-    <CompOff 
-      apiKey={apiKey} 
-      token={token} 
+    <CompOff
+      apiKey={apiKey}
+      token={token}
       employeeId={employeeId}
     />
   );

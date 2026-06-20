@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Loader2, Users, Calendar, ClipboardList, Gift, Home } from 'lucide-react';
+import {
+  Loader2, Users, Calendar, ClipboardList, Gift, Home,
+} from 'lucide-react';
 import { getMyTeam, ITeamMember } from '@/lib/service/employee';
 import TeamLeaveRequests from '@/components/EmployeePortal/EmployeeManager/TeamLeaveRequests';
 import TeamAttendanceLogs from '@/components/EmployeePortal/EmployeeManager/TeamAttendanceLogs';
@@ -19,23 +21,23 @@ type Tab =
   | 'comp-off'
   | 'wfh-requests'
   | 'onduty-requests';
-  
+
 const TABS: { id: Tab; label: string; icon: any }[] = [
-  { id: 'leave-requests',  label: 'Leave Requests',  icon: Calendar      },
+  { id: 'leave-requests', label: 'Leave Requests', icon: Calendar },
   { id: 'attendance-logs', label: 'Attendance Logs', icon: ClipboardList },
-  { id: 'regularization',  label: 'Regularization',  icon: Users         },
-  { id: 'comp-off',        label: 'Comp Off',        icon: Gift          },
-  { id: 'wfh-requests',    label: 'WFH Requests',    icon: Home          },
-  { id: 'onduty-requests', label: 'On-Duty Requests', icon: Home          },
+  { id: 'regularization', label: 'Regularization', icon: Users },
+  { id: 'comp-off', label: 'Comp Off', icon: Gift },
+  { id: 'wfh-requests', label: 'WFH Requests', icon: Home },
+  { id: 'onduty-requests', label: 'On-Duty Requests', icon: Home },
 ];
 
 export default function MyTeamPage() {
-  const params    = useParams();
+  const params = useParams();
   const subdomain = params?.subdomain as string;
 
   const [activeTab, setActiveTab] = useState<Tab>('leave-requests');
-  const [team,      setTeam]      = useState<ITeamMember[]>([]);
-  const [loading,   setLoading]   = useState(true);
+  const [team, setTeam] = useState<ITeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (subdomain) fetchTeam();
@@ -44,17 +46,16 @@ export default function MyTeamPage() {
   const fetchTeam = async () => {
     setLoading(true);
     try {
-      const res  = await getMyTeam(subdomain);
+      const res = await getMyTeam(subdomain);
       // Response structure: { data: { children: [...] } }
       const teamData = res?.data?.data ?? res?.data;
       setTeam(teamData?.children ?? []);
-    } catch (error) { 
+    } catch (error) {
       console.error('Error fetching team:', error);
-    }
-    finally { setLoading(false); }
+    } finally { setLoading(false); }
   };
 
-  const teamIds = team.map(t => t.id);
+  const teamIds = team.map((t) => t.id);
 
   return (
     <div className="space-y-4 p-3 sm:p-4 lg:p-6">
@@ -87,7 +88,7 @@ export default function MyTeamPage() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           {/* Tabs */}
           <div className="flex items-center gap-1 p-2 border-b border-gray-100 overflow-x-auto">
-            {TABS.map(tab => {
+            {TABS.map((tab) => {
               const Icon = tab.icon;
               return (
                 <button
@@ -108,11 +109,11 @@ export default function MyTeamPage() {
 
           {/* Tab Content */}
           <div className="p-4">
-            {activeTab === 'leave-requests'  && <TeamLeaveRequests  teamIds={teamIds} />}
+            {activeTab === 'leave-requests' && <TeamLeaveRequests teamIds={teamIds} />}
             {activeTab === 'attendance-logs' && <TeamAttendanceLogs teamIds={teamIds} />}
-            {activeTab === 'regularization'  && <TeamRegularization teamIds={teamIds} />}
-            {activeTab === 'comp-off'        && <TeamCompOffRequests />}
-            {activeTab === 'wfh-requests'    && <TeamWFHRequests />}
+            {activeTab === 'regularization' && <TeamRegularization teamIds={teamIds} />}
+            {activeTab === 'comp-off' && <TeamCompOffRequests />}
+            {activeTab === 'wfh-requests' && <TeamWFHRequests />}
             {activeTab === 'onduty-requests' && <TeamOnDutyRequests />}
           </div>
         </div>

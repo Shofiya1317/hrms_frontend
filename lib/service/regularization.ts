@@ -137,7 +137,6 @@ export const deleteRegularization = (
   { bearerToken: token, isFetchToken: !token },
 );
 
-
 export interface ITeamRegularizationFilters {
   status?: RegularizationStatus;
   from_date?: string;

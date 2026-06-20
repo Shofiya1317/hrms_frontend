@@ -1,15 +1,31 @@
 'use client';
 
-import { Download, TrendingUp, TrendingDown, Users, Calendar, Clock, AlertCircle } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import {
+  Download, TrendingUp, TrendingDown, Users, Calendar, Clock, AlertCircle,
+} from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+} from 'recharts';
 
 const weeklyData = [
-  { day: 'Mon', present: 142, absent: 18, late: 8 },
-  { day: 'Tue', present: 148, absent: 12, late: 5 },
-  { day: 'Wed', present: 151, absent: 9, late: 3 },
-  { day: 'Thu', present: 145, absent: 15, late: 7 },
-  { day: 'Fri', present: 138, absent: 22, late: 11 },
-  { day: 'Sat', present: 62, absent: 8, late: 2 },
+  {
+    day: 'Mon', present: 142, absent: 18, late: 8,
+  },
+  {
+    day: 'Tue', present: 148, absent: 12, late: 5,
+  },
+  {
+    day: 'Wed', present: 151, absent: 9, late: 3,
+  },
+  {
+    day: 'Thu', present: 145, absent: 15, late: 7,
+  },
+  {
+    day: 'Fri', present: 138, absent: 22, late: 11,
+  },
+  {
+    day: 'Sat', present: 62, absent: 8, late: 2,
+  },
 ];
 
 const STAT_CARDS = [
@@ -61,7 +77,7 @@ export default function AttendanceDashboard() {
 
         {/* Stats Cards - Redesigned */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {STAT_CARDS.map(card => (
+          {STAT_CARDS.map((card) => (
             <div
               key={card.label}
               className="bg-white border border-slate-200 rounded-xl p-3 hover:shadow-md hover:border-teal-200 transition-all duration-200"
@@ -79,7 +95,7 @@ export default function AttendanceDashboard() {
                     {card.sub}
                   </p>
                 </div>
-                
+
                 {/* Right side - Icon */}
                 <div className={`w-8 h-8 rounded-lg ${card.bgCls} flex items-center justify-center flex-shrink-0`}>
                   <card.icon size={16} className={card.iconCls} />
@@ -106,7 +122,7 @@ export default function AttendanceDashboard() {
                   Present vs Absent vs Late · This week
                 </p>
               </div>
-              
+
               {/* Legend */}
               <div className="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-lg">
                 <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
@@ -125,28 +141,35 @@ export default function AttendanceDashboard() {
             </div>
 
             <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={weeklyData} barSize={24} barGap={4} margin={{ top: 8, right: 8, left: -24, bottom: 4 }}>
+              <BarChart
+                data={weeklyData}
+                barSize={24}
+                barGap={4}
+                margin={{
+                  top: 8, right: 8, left: -24, bottom: 4,
+                }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                <XAxis 
-                  dataKey="day" 
-                  tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 500 }} 
-                  axisLine={false} 
-                  tickLine={false} 
+                <XAxis
+                  dataKey="day"
+                  tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 500 }}
+                  axisLine={false}
+                  tickLine={false}
                 />
-                <YAxis 
-                  tick={{ fontSize: 10, fill: '#94a3b8' }} 
-                  axisLine={false} 
-                  tickLine={false} 
+                <YAxis
+                  tick={{ fontSize: 10, fill: '#94a3b8' }}
+                  axisLine={false}
+                  tickLine={false}
                 />
-                <Tooltip 
-                  contentStyle={{ 
-                    borderRadius: 10, 
-                    border: '1px solid #e2e8f0', 
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: 10,
+                    border: '1px solid #e2e8f0',
                     background: 'white',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                     fontSize: 12,
-                    padding: '8px 12px'
-                  }} 
+                    padding: '8px 12px',
+                  }}
                 />
                 <Bar dataKey="present" fill="#0f766e" radius={[6, 6, 0, 0]} name="Present" />
                 <Bar dataKey="absent" fill="#fbbf24" radius={[6, 6, 0, 0]} name="Absent" />

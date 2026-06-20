@@ -1,5 +1,5 @@
-import AttendanceUpload from "@/components/AdminPortal/AdminAttendance/AttendanceUpload"
+import AttendanceUpload from '@/components/AdminPortal/AdminAttendance/AttendanceUpload';
 
-export default function page(){
-    return <AttendanceUpload />
+export default function page() {
+  return <AttendanceUpload />;
 }

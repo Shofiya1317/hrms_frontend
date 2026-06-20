@@ -1,21 +1,31 @@
 'use client';
 
 import { useState } from 'react';
-import { CalendarDays, CheckCircle2, Clock3, Calendar } from 'lucide-react';
-import RequestsTab  from './RequestsTab';
-import BalancesTab  from './BalancesTab';
-import HolidaysTab  from './HolidaysTab';
+import {
+  CalendarDays, CheckCircle2, Clock3, Calendar,
+} from 'lucide-react';
+import RequestsTab from './RequestsTab';
+import BalancesTab from './BalancesTab';
+import HolidaysTab from './HolidaysTab';
 import LeaveTypesTab from './LeaveTypesTab';
 import LeavePolicyTab from './LeavePolicy';
 
-const TABS = ['Requests', 'Leave Types', 'Balances', 'Holidays','Leave policy',] as const;
+const TABS = ['Requests', 'Leave Types', 'Balances', 'Holidays', 'Leave policy'] as const;
 type Tab = typeof TABS[number];
 
 const SUMMARY_DATA = [
-  { label: 'Total Requests', value: 4, icon: CalendarDays, bg: 'bg-indigo-50', text: 'text-indigo-600' },
-  { label: 'Pending',        value: 2, icon: Clock3,       bg: 'bg-amber-50',  text: 'text-amber-600' },
-  { label: 'Approved',       value: 1, icon: CheckCircle2, bg: 'bg-teal-50',   text: 'text-teal-600' },
-  { label: 'Holidays 2026',  value: 8, icon: Calendar,     bg: 'bg-blue-50',   text: 'text-blue-600' },
+  {
+    label: 'Total Requests', value: 4, icon: CalendarDays, bg: 'bg-indigo-50', text: 'text-indigo-600',
+  },
+  {
+    label: 'Pending', value: 2, icon: Clock3, bg: 'bg-amber-50', text: 'text-amber-600',
+  },
+  {
+    label: 'Approved', value: 1, icon: CheckCircle2, bg: 'bg-teal-50', text: 'text-teal-600',
+  },
+  {
+    label: 'Holidays 2026', value: 8, icon: Calendar, bg: 'bg-blue-50', text: 'text-blue-600',
+  },
 ];
 
 // function SummaryStrip() {
@@ -55,7 +65,7 @@ export default function AttendanceLeave({ apiKey, token }: AttendanceLeaveProps)
         {/* <SummaryStrip /> */}
 
         <div className="grid grid-cols-2 sm:flex sm:gap-2 gap-2">
-          {TABS.map(t => (
+          {TABS.map((t) => (
             <button
               key={t}
               onClick={() => setSubTab(t)}
@@ -70,11 +80,11 @@ export default function AttendanceLeave({ apiKey, token }: AttendanceLeaveProps)
           ))}
         </div>
 
-        {subTab === 'Requests'    && <RequestsTab />}
+        {subTab === 'Requests' && <RequestsTab />}
         {subTab === 'Leave Types' && <LeaveTypesTab apiKey={apiKey} token={token} />}
-        {subTab === 'Balances'    && <BalancesTab />}
-        {subTab === 'Holidays'    && <HolidaysTab />}
-        {subTab === 'Leave policy'    && <LeavePolicyTab apiKey={apiKey} token={token} />}
+        {subTab === 'Balances' && <BalancesTab />}
+        {subTab === 'Holidays' && <HolidaysTab />}
+        {subTab === 'Leave policy' && <LeavePolicyTab apiKey={apiKey} token={token} />}
       </div>
     </div>
   );

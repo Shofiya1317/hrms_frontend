@@ -79,4 +79,3 @@ export interface IWorkSchedule {
   saturday_week_5: boolean;
   sunday: boolean;
 }
-

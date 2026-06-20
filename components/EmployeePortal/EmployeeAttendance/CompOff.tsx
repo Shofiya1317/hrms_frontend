@@ -23,9 +23,15 @@ import {
 // ─────────────────────────────────────────────
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string; border: string; icon: React.ReactNode }> = {
-  [CompOffStatus.PENDING]:  { label: 'Pending',  color: '#b45309', bg: '#fffbeb', border: '#fde68a', icon: <Clock size={10} /> },
-  [CompOffStatus.APPROVED]: { label: 'Approved', color: '#0f766e', bg: '#f0fdf9', border: '#99f6e4', icon: <CheckCircle2 size={10} /> },
-  [CompOffStatus.REJECTED]: { label: 'Rejected', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', icon: <XCircle size={10} /> },
+  [CompOffStatus.PENDING]: {
+    label: 'Pending', color: '#b45309', bg: '#fffbeb', border: '#fde68a', icon: <Clock size={10} />,
+  },
+  [CompOffStatus.APPROVED]: {
+    label: 'Approved', color: '#0f766e', bg: '#f0fdf9', border: '#99f6e4', icon: <CheckCircle2 size={10} />,
+  },
+  [CompOffStatus.REJECTED]: {
+    label: 'Rejected', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', icon: <XCircle size={10} />,
+  },
 };
 
 // ─────────────────────────────────────────────
@@ -70,7 +76,9 @@ function StatCard({
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const meta = STATUS_META[status] ?? { label: status, color: '#64748b', bg: '#f8fafc', border: '#e2e8f0', icon: null };
+  const meta = STATUS_META[status] ?? {
+    label: status, color: '#64748b', bg: '#f8fafc', border: '#e2e8f0', icon: null,
+  };
   return (
     <span
       className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full border"
@@ -93,17 +101,19 @@ interface ApplyModalProps {
   onSuccess: () => void;
 }
 
-function ApplyModal({ tenantId, token, onClose, onSuccess }: ApplyModalProps) {
+function ApplyModal({
+  tenantId, token, onClose, onSuccess,
+}: ApplyModalProps) {
   const [form, setForm] = useState({
     worked_date: '',
-   // comp_off_date: '',
+    // comp_off_date: '',
     worked_hours: '',
     reason: '',
   });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
-  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+  const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const handleSubmit = async () => {
     if (!form.worked_date || !form.worked_hours || !form.reason.trim()) {
@@ -123,23 +133,23 @@ function ApplyModal({ tenantId, token, onClose, onSuccess }: ApplyModalProps) {
         tenantId,
         token,
       );
-      
+
       console.log('Comp Off API Response:', response);
-      
+
       // Check if the response indicates an error
       const responseData = response?.data as any;
       const status = response?.status;
-      
+
       // Handle error responses (status 400, 404, etc. or success: false)
       if (status && (status >= 400 || responseData?.success === false)) {
-        const errorMsg = Array.isArray(responseData?.error) 
-          ? responseData.error[0] 
+        const errorMsg = Array.isArray(responseData?.error)
+          ? responseData.error[0]
           : responseData?.error || responseData?.message || 'Failed to submit comp off request.';
         setErr(errorMsg);
         setSaving(false);
         return;
       }
-      
+
       // If we reach here, it's successful
       onSuccess();
     } catch (e: any) {
@@ -174,10 +184,14 @@ function ApplyModal({ tenantId, token, onClose, onSuccess }: ApplyModalProps) {
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Date Worked <span className="text-red-500">*</span></label>
+                <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                  Date Worked
+                  <span className="text-red-500">*</span>
+                </label>
                 <input
-                  type="date" value={form.worked_date}
-                  onChange={e => set('worked_date', e.target.value)}
+                  type="date"
+                  value={form.worked_date}
+                  onChange={(e) => set('worked_date', e.target.value)}
                   className="mt-1 w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
                 />
               </div>
@@ -192,20 +206,30 @@ function ApplyModal({ tenantId, token, onClose, onSuccess }: ApplyModalProps) {
             </div>
 
             <div>
-              <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Hours Worked <span className="text-red-500">*</span></label>
+              <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                Hours Worked
+                <span className="text-red-500">*</span>
+              </label>
               <input
-                type="number" min="0.5" step="0.5" value={form.worked_hours}
-                onChange={e => set('worked_hours', e.target.value)}
+                type="number"
+                min="0.5"
+                step="0.5"
+                value={form.worked_hours}
+                onChange={(e) => set('worked_hours', e.target.value)}
                 placeholder="e.g. 4 or 8.5"
                 className="mt-1 w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
               />
             </div>
 
             <div>
-              <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Reason <span className="text-red-500">*</span></label>
+              <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                Reason
+                <span className="text-red-500">*</span>
+              </label>
               <textarea
-                rows={3} value={form.reason}
-                onChange={e => set('reason', e.target.value)}
+                rows={3}
+                value={form.reason}
+                onChange={(e) => set('reason', e.target.value)}
                 placeholder="Describe why you worked extra (e.g. project deadline, holiday deployment...)"
                 className="mt-1 w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all resize-none"
               />
@@ -231,16 +255,24 @@ function ApplyModal({ tenantId, token, onClose, onSuccess }: ApplyModalProps) {
           {/* Actions */}
           <div className="flex gap-2.5 mt-5">
             <button
-              onClick={onClose} disabled={saving}
+              onClick={onClose}
+              disabled={saving}
               className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-all"
             >
               Cancel
             </button>
             <button
-              onClick={handleSubmit} disabled={saving}
+              onClick={handleSubmit}
+              disabled={saving}
               className="flex-1 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-sm font-bold text-white disabled:opacity-60 transition-all flex items-center justify-center gap-2"
             >
-              {saving ? <><Loader2 size={14} className="animate-spin" /> Submitting…</> : 'Submit Claim'}
+              {saving ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  {' '}
+                  Submitting…
+                </>
+              ) : 'Submit Claim'}
             </button>
           </div>
         </div>
@@ -294,18 +326,18 @@ export default function CompOffPage({ apiKey, token, employeeId }: CompOffPagePr
       const raw = Array.isArray(balRes?.data?.data?.comp_offs)
         ? balRes.data.data.comp_offs
         : Array.isArray(listRes?.data?.data)
-        ? listRes.data.data
-        : Array.isArray(listRes?.data)
-        ? listRes.data
-        : [];
+          ? listRes.data.data
+          : Array.isArray(listRes?.data)
+            ? listRes.data
+            : [];
       setCompOffs(raw);
 
       // Available (unused approved ones)
       const avail = Array.isArray(availRes?.data?.data)
         ? availRes.data.data
         : Array.isArray(availRes?.data)
-        ? availRes.data
-        : [];
+          ? availRes.data
+          : [];
       setAvailable(avail);
     } catch (e: any) {
       setError(e?.response?.data?.message || 'Failed to load comp off data.');
@@ -324,7 +356,7 @@ export default function CompOffPage({ apiKey, token, employeeId }: CompOffPagePr
     showToast('Comp off request submitted successfully!', 'success');
     fetchAll();
   };
-  
+
   const handleApplyError = (errorMsg: string) => {
     setShowApplyModal(false);
     showToast(errorMsg, 'error');
@@ -333,14 +365,14 @@ export default function CompOffPage({ apiKey, token, employeeId }: CompOffPagePr
   // Derived stats
   const stats = useMemo(() => ({
     balance: balance?.comp_off_balance ?? 0,
-    pending:  compOffs.filter(c => c.status === CompOffStatus.PENDING).length,
-    approved: compOffs.filter(c => c.status === CompOffStatus.APPROVED).length,
-    availed:  compOffs.filter(c => c.is_availed).length,
+    pending: compOffs.filter((c) => c.status === CompOffStatus.PENDING).length,
+    approved: compOffs.filter((c) => c.status === CompOffStatus.APPROVED).length,
+    availed: compOffs.filter((c) => c.is_availed).length,
   }), [compOffs, balance]);
 
-  const pendingList  = useMemo(() => compOffs.filter(c => c.status === CompOffStatus.PENDING),  [compOffs]);
-  const approvedList = useMemo(() => compOffs.filter(c => c.status === CompOffStatus.APPROVED && !c.is_availed), [compOffs]);
-  const historyList  = useMemo(() => compOffs.filter(c => c.status === CompOffStatus.REJECTED || c.is_availed), [compOffs]);
+  const pendingList = useMemo(() => compOffs.filter((c) => c.status === CompOffStatus.PENDING), [compOffs]);
+  const approvedList = useMemo(() => compOffs.filter((c) => c.status === CompOffStatus.APPROVED && !c.is_availed), [compOffs]);
+  const historyList = useMemo(() => compOffs.filter((c) => c.status === CompOffStatus.REJECTED || c.is_availed), [compOffs]);
 
   // ── Render ─────────────────────────────────
 
@@ -364,7 +396,9 @@ export default function CompOffPage({ apiKey, token, employeeId }: CompOffPagePr
           <p className="text-xs text-slate-400 mt-1">Please try again</p>
         </div>
         <button onClick={fetchAll} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 transition-all">
-          <RefreshCw size={14} /> Retry
+          <RefreshCw size={14} />
+          {' '}
+          Retry
         </button>
       </div>
     );
@@ -376,23 +410,27 @@ export default function CompOffPage({ apiKey, token, employeeId }: CompOffPagePr
       {toast && (
         <div className={`fixed bottom-6 right-6 z-50 flex items-start gap-3 px-4 py-3 rounded-xl shadow-lg border max-w-md animate-in slide-in-from-right-2 duration-300 ${
           toast.type === 'success' ? 'bg-white border-emerald-200' : 'bg-white border-red-200'
-        }`}>
+        }`}
+        >
           <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
             toast.type === 'success' ? 'bg-emerald-50' : 'bg-red-50'
-          }`}>
-            {toast.type === 'success' 
-              ? <CheckCircle2 size={16} className="text-emerald-600" /> 
+          }`}
+          >
+            {toast.type === 'success'
+              ? <CheckCircle2 size={16} className="text-emerald-600" />
               : <XCircle size={16} className="text-red-600" />}
           </div>
           <div className="flex-1 min-w-0">
             <p className={`text-sm font-semibold ${
               toast.type === 'success' ? 'text-emerald-900' : 'text-red-900'
-            }`}>
+            }`}
+            >
               {toast.type === 'success' ? 'Success' : 'Error'}
             </p>
             <p className={`text-xs mt-0.5 leading-relaxed ${
               toast.type === 'success' ? 'text-emerald-700' : 'text-red-700'
-            }`}>
+            }`}
+            >
               {toast.msg}
             </p>
           </div>
@@ -422,13 +460,17 @@ export default function CompOffPage({ apiKey, token, employeeId }: CompOffPagePr
             onClick={fetchAll}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-all"
           >
-            <RefreshCw size={12} /> Refresh
+            <RefreshCw size={12} />
+            {' '}
+            Refresh
           </button>
           <button
             onClick={() => setShowApplyModal(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-sm font-semibold text-white transition-all shadow-sm shadow-purple-200"
           >
-            <Gift size={14} /> Apply Comp Off
+            <Gift size={14} />
+            {' '}
+            Apply Comp Off
           </button>
         </div>
       </div>
@@ -480,7 +522,12 @@ export default function CompOffPage({ apiKey, token, employeeId }: CompOffPagePr
             <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
               {['Apply with details', 'Manager reviews', 'On approval — credited', 'Use as leave'].map((step, i, arr) => (
                 <React.Fragment key={step}>
-                  <span className="bg-white/70 px-2.5 py-1 rounded-lg text-purple-800 font-medium">{i + 1}. {step}</span>
+                  <span className="bg-white/70 px-2.5 py-1 rounded-lg text-purple-800 font-medium">
+                    {i + 1}
+                    .
+                    {' '}
+                    {step}
+                  </span>
                   {i < arr.length - 1 && <span className="text-purple-300">→</span>}
                 </React.Fragment>
               ))}
@@ -497,7 +544,7 @@ export default function CompOffPage({ apiKey, token, employeeId }: CompOffPagePr
           dot="bg-amber-400 animate-pulse"
           icon={<Clock size={13} className="text-amber-500" />}
         >
-          {pendingList.map(item => <CompOffCard key={item.id} item={item} />)}
+          {pendingList.map((item) => <CompOffCard key={item.id} item={item} />)}
         </Section>
       )}
 
@@ -509,7 +556,7 @@ export default function CompOffPage({ apiKey, token, employeeId }: CompOffPagePr
           dot="bg-teal-400"
           icon={<CheckCircle2 size={13} className="text-teal-500" />}
         >
-          {approvedList.map(item => <CompOffCard key={item.id} item={item} />)}
+          {approvedList.map((item) => <CompOffCard key={item.id} item={item} />)}
         </Section>
       )}
 
@@ -525,7 +572,9 @@ export default function CompOffPage({ apiKey, token, employeeId }: CompOffPagePr
             onClick={() => setShowApplyModal(true)}
             className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 transition-all"
           >
-            <Gift size={13} /> Apply Now
+            <Gift size={13} />
+            {' '}
+            Apply Now
           </button>
         </div>
       )}
@@ -537,13 +586,15 @@ export default function CompOffPage({ apiKey, token, employeeId }: CompOffPagePr
           count={historyList.length}
           dot="bg-slate-300"
           icon={<Calendar size={13} className="text-slate-400" />}
-          action={
+          action={(
             <Link href="/employee/attendance/compoff/history" className="text-xs font-semibold text-purple-600 hover:underline flex items-center gap-1">
-              View all <ArrowRight size={12} />
+              View all
+              {' '}
+              <ArrowRight size={12} />
             </Link>
-          }
+          )}
         >
-          {historyList.slice(0, 5).map(item => <CompOffCard key={item.id} item={item} />)}
+          {historyList.slice(0, 5).map((item) => <CompOffCard key={item.id} item={item} />)}
         </Section>
       )}
 
@@ -614,13 +665,14 @@ function CompOffCard({ item }: { item: ICompOff }) {
       {/* Icon */}
       <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
         item.status === CompOffStatus.APPROVED ? 'bg-teal-50'
-        : item.status === CompOffStatus.REJECTED ? 'bg-red-50'
-        : 'bg-amber-50'}`}>
+          : item.status === CompOffStatus.REJECTED ? 'bg-red-50'
+            : 'bg-amber-50'}`}
+      >
         {item.status === CompOffStatus.APPROVED
           ? <CheckCircle2 size={16} className="text-teal-600" />
           : item.status === CompOffStatus.REJECTED
-          ? <XCircle size={16} className="text-red-500" />
-          : <Clock size={16} className="text-amber-500" />}
+            ? <XCircle size={16} className="text-red-500" />
+            : <Clock size={16} className="text-amber-500" />}
       </div>
 
       {/* Info */}
@@ -637,20 +689,26 @@ function CompOffCard({ item }: { item: ICompOff }) {
         <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">{item.reason}</p>
         <div className="flex items-center gap-3 mt-1 flex-wrap">
           <span className="text-[10px] text-slate-400">
-            Worked: <span className="font-medium text-slate-600">{formatHours(item.worked_hours)}</span>
+            Worked:
+            {' '}
+            <span className="font-medium text-slate-600">{formatHours(item.worked_hours)}</span>
           </span>
           {/* <span className="text-[10px] text-slate-400">
             Comp off: <span className="font-medium text-slate-600">{formatDate(item.comp_off_date)}</span>
           </span> */}
           {expiresOn && item.status === CompOffStatus.APPROVED && !isAvailed && (
             <span className="text-[10px] text-amber-600 font-medium">
-              Expires {formatDate(expiresOn)}
+              Expires
+              {' '}
+              {formatDate(expiresOn)}
             </span>
           )}
         </div>
         {item.status === CompOffStatus.REJECTED && item.rejection_reason && (
           <p className="text-[10px] text-red-500 mt-1">
-            Reason: {item.rejection_reason}
+            Reason:
+            {' '}
+            {item.rejection_reason}
           </p>
         )}
       </div>

@@ -1,22 +1,22 @@
 'use client';
- 
+
 import React, { useRef } from 'react';
 import { ITeamMember } from '@/lib/service/employee';
 import { Mail, CalendarDays, BadgeCheck } from 'lucide-react';
- 
+
 // ─────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────
- 
+
 interface Props {
   team: ITeamMember[];
   loading?: boolean;
 }
- 
+
 // ─────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────
- 
+
 const AVATAR_PALETTES = [
   ['#0f766e', '#134e4a'],
   ['#1d4ed8', '#1e3a8a'],
@@ -27,15 +27,15 @@ const AVATAR_PALETTES = [
   ['#15803d', '#14532d'],
   ['#9333ea', '#581c87'],
 ];
- 
+
 // ─────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────
- 
+
 function initials(firstName?: string, lastName?: string, fullName?: string): string {
   if (fullName) {
     const parts = fullName.split(' ').filter(Boolean);
-    return parts.map(part => part[0]).join('').slice(0, 2).toUpperCase() || '??';
+    return parts.map((part) => part[0]).join('').slice(0, 2).toUpperCase() || '??';
   }
   return ((firstName?.[0] ?? '') + (lastName?.[0] ?? '')).toUpperCase() || '??';
 }
@@ -51,28 +51,28 @@ function fullName(member: ITeamMember): string {
   }
   return member.employee_name ?? '';
 }
- 
+
 function paletteFor(name: string): [string, string] {
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % AVATAR_PALETTES.length;
   return AVATAR_PALETTES[h] as [string, string];
 }
- 
+
 function fmtDate(dateStr?: string): string {
   if (!dateStr) return '—';
   return new Date(dateStr).toLocaleDateString('en-IN', {
     day: 'numeric', month: 'short', year: 'numeric',
   });
 }
- 
+
 // ─────────────────────────────────────────────
 // Story Bubble
 // ─────────────────────────────────────────────
- 
+
 function StoryBubble({ member, index }: { member: ITeamMember; index: number }) {
-  const name        = fullName(member);
-  const [bg, bg2]   = paletteFor(name || member.employee_code || String(index));
-  const isActive    = member.employment_status === 'ACTIVE' || member.user_status === 'ACTIVE';
+  const name = fullName(member);
+  const [bg, bg2] = paletteFor(name || member.employee_code || String(index));
+  const isActive = member.employment_status === 'ACTIVE' || member.user_status === 'ACTIVE';
 
   return (
     <div className="group relative flex flex-col items-center gap-1.5 flex-shrink-0 w-[72px]">
@@ -140,7 +140,10 @@ function StoryBubble({ member, index }: { member: ITeamMember; index: number }) 
             {member.date_of_joining && (
               <div className="flex items-center gap-1.5">
                 <CalendarDays size={11} className="text-gray-400 flex-shrink-0" />
-                <span className="text-[10px] text-gray-500">Joined {fmtDate(member.date_of_joining)}</span>
+                <span className="text-[10px] text-gray-500">
+                  Joined
+                  {fmtDate(member.date_of_joining)}
+                </span>
               </div>
             )}
             <div className="flex items-center gap-1.5">
@@ -157,11 +160,11 @@ function StoryBubble({ member, index }: { member: ITeamMember; index: number }) 
     </div>
   );
 }
- 
+
 // ─────────────────────────────────────────────
 // Skeleton loader
 // ─────────────────────────────────────────────
- 
+
 function StorySkeletons() {
   return (
     <>
@@ -175,16 +178,16 @@ function StorySkeletons() {
     </>
   );
 }
- 
+
 // ─────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────
- 
+
 export default function TeamMembersStrip({ team, loading = false }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
- 
+
   if (!loading && team.length === 0) return null;
- 
+
   return (
     <div className="bg-white dark:bg-gray-950 rounded-2xl border border-gray-100 dark:border-gray-800 px-4 py-4">
       {/* Header */}
@@ -192,11 +195,14 @@ export default function TeamMembersStrip({ team, loading = false }: Props) {
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Team</p>
         {!loading && (
           <span className="text-[11px] font-medium text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
-            {team.length} member{team.length !== 1 ? 's' : ''}
+            {team.length}
+            {' '}
+            member
+            {team.length !== 1 ? 's' : ''}
           </span>
         )}
       </div>
- 
+
       {/* Scroll strip */}
       <div
         ref={scrollRef}

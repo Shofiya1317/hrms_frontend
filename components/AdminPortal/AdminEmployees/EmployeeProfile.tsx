@@ -1,7 +1,9 @@
 'use client';
 
 import React from 'react';
-import { X, Mail, Phone, Building2, MapPin, Calendar, Users, Briefcase, Award, Clock, CheckCircle, XCircle } from 'lucide-react';
+import {
+  X, Mail, Phone, Building2, MapPin, Calendar, Users, Briefcase, Award, Clock, CheckCircle, XCircle,
+} from 'lucide-react';
 
 interface Employee {
   id: string;

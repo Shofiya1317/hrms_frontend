@@ -4,18 +4,18 @@ import {
 import { Params } from '../utils';
 
 export enum LeaveStatus {
-  PENDING   = 'pending',
-  APPROVED  = 'approved',
-  REJECTED  = 'rejected',
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
   CANCELLED = 'cancelled',
 }
 
 export enum HalfDaySession {
-  MORNING   = 'morning',
+  MORNING = 'morning',
   AFTERNOON = 'afternoon',
 }
 
-export interface ILeaveApplicationPayload { 
+export interface ILeaveApplicationPayload {
   leave_type_id: string;
   from_date: string;
   to_date: string;
@@ -108,7 +108,7 @@ export const getLeaveApplications = (
   { bearerToken: token, isFetchToken: !token },
 );
 
-//get my leavessss
+// get my leavessss
 
 export const getMyApplications = (
   tenantId: string,

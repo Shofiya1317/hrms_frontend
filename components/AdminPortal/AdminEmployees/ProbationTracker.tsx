@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import {
   Clock, Calendar, TrendingUp, AlertCircle, CheckCircle, XCircle,
-  User, Building2, Award, Loader2, Filter, ChevronDown, UserCheck, FileText, AlertTriangle, X
+  User, Building2, Award, Loader2, Filter, ChevronDown, UserCheck, FileText, AlertTriangle, X,
 } from 'lucide-react';
 import {
   getProbationDashboard,
@@ -27,7 +27,9 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }>
   failed: { label: 'Failed', color: 'bg-red-50 text-red-600 border-red-200', icon: XCircle },
 };
 
-function StatCard({ title, value, icon: Icon, color, bgColor }: any) {
+function StatCard({
+  title, value, icon: Icon, color, bgColor,
+}: any) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4">
       <div className="flex items-center justify-between mb-2">
@@ -57,7 +59,8 @@ function ProbationEmployeeCard({ employee, onAction }: { employee: IProbationEmp
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm">
             <span className="text-white text-base font-bold">
-              {employee.employee_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+              {employee.employee_name.split(' ').map((w) => w[0]).join('').slice(0, 2)
+                .toUpperCase()}
             </span>
           </div>
           <div>
@@ -88,7 +91,10 @@ function ProbationEmployeeCard({ employee, onAction }: { employee: IProbationEmp
         )}
         <div className="flex items-center gap-2 text-xs text-gray-600">
           <Calendar size={12} className="text-gray-400 flex-shrink-0" />
-          <span>Ends: {new Date(employee.probation_details.probation_end_date).toLocaleDateString()}</span>
+          <span>
+            Ends:
+            {new Date(employee.probation_details.probation_end_date).toLocaleDateString()}
+          </span>
         </div>
       </div>
 
@@ -102,7 +108,10 @@ function ProbationEmployeeCard({ employee, onAction }: { employee: IProbationEmp
         {employee.probation_details.extension_count > 0 && (
           <div className="flex items-center justify-between mt-2">
             <span className="text-xs text-gray-500">Extensions</span>
-            <span className="text-xs font-semibold text-amber-600">{employee.probation_details.extension_count}x</span>
+            <span className="text-xs font-semibold text-amber-600">
+              {employee.probation_details.extension_count}
+              x
+            </span>
           </div>
         )}
       </div>
@@ -288,7 +297,9 @@ export default function ProbationTracker() {
       {/* Employee List */}
       <div>
         <h3 className="text-sm font-bold text-gray-800 mb-3">
-          Probation Employees ({employees.length})
+          Probation Employees (
+          {employees.length}
+          )
         </h3>
         {employees.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
@@ -363,10 +374,10 @@ export default function ProbationTracker() {
                 onClick={handleAction}
                 disabled={actionLoading}
                 className={`flex-1 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 ${
-                  actionModal.type === 'confirm' ? 'bg-emerald-600 hover:bg-emerald-700' :
-                  actionModal.type === 'review' ? 'bg-purple-600 hover:bg-purple-700' :
-                  actionModal.type === 'extend' ? 'bg-amber-600 hover:bg-amber-700' :
-                  'bg-red-600 hover:bg-red-700'
+                  actionModal.type === 'confirm' ? 'bg-emerald-600 hover:bg-emerald-700'
+                    : actionModal.type === 'review' ? 'bg-purple-600 hover:bg-purple-700'
+                      : actionModal.type === 'extend' ? 'bg-amber-600 hover:bg-amber-700'
+                        : 'bg-red-600 hover:bg-red-700'
                 }`}
               >
                 {actionLoading ? <Loader2 size={16} className="animate-spin mx-auto" /> : 'Submit'}

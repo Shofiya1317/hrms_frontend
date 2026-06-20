@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Download, Filter, TrendingUp, TrendingDown, Users, Calendar, DollarSign, Clock, PieChart as PieChartIcon, BarChart3, LineChart as LineChartIcon } from 'lucide-react';
+import {
+  Download, Filter, TrendingUp, TrendingDown, Users, Calendar, DollarSign, Clock, PieChart as PieChartIcon, BarChart3, LineChart as LineChartIcon,
+} from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell, AreaChart, Area
+  LineChart, Line, PieChart, Pie, Cell, AreaChart, Area,
 } from 'recharts';
 
 const TABS = ['Workforce', 'Attendance'];
@@ -90,10 +92,18 @@ export default function AnalyticsPage() {
             {/* Stats Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
-                { label: 'Total Headcount', value: '248', sub: '+6 this month', icon: Users, trend: 'up' },
-                { label: 'Avg Tenure', value: '2.4 yrs', sub: 'Stable', icon: Clock, trend: 'stable' },
-                { label: 'Attrition Rate', value: '4.2%', sub: '-0.8% vs last yr', icon: TrendingDown, trend: 'down' },
-                { label: 'New Hires (YTD)', value: '18', sub: 'Jan–Mar 2026', icon: Users, trend: 'up' },
+                {
+                  label: 'Total Headcount', value: '248', sub: '+6 this month', icon: Users, trend: 'up',
+                },
+                {
+                  label: 'Avg Tenure', value: '2.4 yrs', sub: 'Stable', icon: Clock, trend: 'stable',
+                },
+                {
+                  label: 'Attrition Rate', value: '4.2%', sub: '-0.8% vs last yr', icon: TrendingDown, trend: 'down',
+                },
+                {
+                  label: 'New Hires (YTD)', value: '18', sub: 'Jan–Mar 2026', icon: Users, trend: 'up',
+                },
               ].map((s, i) => (
                 <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-all">
                   <div className="flex items-start justify-between">
@@ -111,81 +121,89 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Charts */}
-           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-  {/* Headcount Trend Chart */}
-  <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-sm">
-    <div className="flex items-center gap-2 mb-4">
-      <div className="w-6 h-6 rounded-lg bg-teal-50 flex items-center justify-center">
-        <LineChartIcon size={14} className="text-teal-600" />
-      </div>
-      <h3 className="text-sm font-bold text-slate-900">Headcount Trend (6 months)</h3>
-    </div>
-    <div className="w-full h-[200px]">
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={headcountData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-          <defs>
-            <linearGradient id="headcountGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#0f766e" stopOpacity={0.2} />
-              <stop offset="95%" stopColor="#0f766e" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} domain={[220, 260]} />
-          <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #e2e8f0', background: 'white', fontSize: 12 }} />
-          <Area type="monotone" dataKey="count" stroke="#0f766e" strokeWidth={2.5} fill="url(#headcountGrad)" name="Headcount" />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
-  </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Headcount Trend Chart */}
+              <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-6 h-6 rounded-lg bg-teal-50 flex items-center justify-center">
+                    <LineChartIcon size={14} className="text-teal-600" />
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900">Headcount Trend (6 months)</h3>
+                </div>
+                <div className="w-full h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={headcountData}
+                      margin={{
+                        top: 10, right: 10, left: 0, bottom: 0,
+                      }}
+                    >
+                      <defs>
+                        <linearGradient id="headcountGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#0f766e" stopOpacity={0.2} />
+                          <stop offset="95%" stopColor="#0f766e" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} domain={[220, 260]} />
+                      <Tooltip contentStyle={{
+                        borderRadius: 10, border: '1px solid #e2e8f0', background: 'white', fontSize: 12,
+                      }}
+                      />
+                      <Area type="monotone" dataKey="count" stroke="#0f766e" strokeWidth={2.5} fill="url(#headcountGrad)" name="Headcount" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
 
-  {/* Department Distribution Chart */}
-  <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-sm">
-    <div className="flex items-center gap-2 mb-4">
-      <div className="w-6 h-6 rounded-lg bg-teal-50 flex items-center justify-center">
-        <PieChartIcon size={14} className="text-teal-600" />
-      </div>
-      <h3 className="text-sm font-bold text-slate-900">Department Distribution</h3>
-    </div>
-    
-    {/* Fixed layout for pie chart + legend */}
-    <div className="flex flex-col sm:flex-row items-center gap-4">
-      {/* Pie Chart - Fixed width */}
-      <div className="w-full sm:w-[180px] md:w-[200px] h-[180px] flex-shrink-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie 
-              data={deptDistribution} 
-              cx="50%" 
-              cy="50%" 
-              innerRadius={45} 
-              outerRadius={70} 
-              dataKey="value" 
-              paddingAngle={3}
-            >
-              {deptDistribution.map((entry, index) => (
-                <Cell key={index} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 12 }} />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-      
-      {/* Legend - Scrollable on mobile if needed */}
-      <div className="flex-1 w-full">
-        <div className="grid grid-cols-2 gap-2">
-          {deptDistribution.map((d) => (
-            <div key={d.name} className="flex items-center gap-2 min-w-0">
-              <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }} />
-              <span className="text-xs text-slate-600 flex-1 truncate">{d.name}</span>
-              <span className="text-xs font-bold text-slate-800 flex-shrink-0">{d.value}</span>
+              {/* Department Distribution Chart */}
+              <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-6 h-6 rounded-lg bg-teal-50 flex items-center justify-center">
+                    <PieChartIcon size={14} className="text-teal-600" />
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900">Department Distribution</h3>
+                </div>
+
+                {/* Fixed layout for pie chart + legend */}
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                  {/* Pie Chart - Fixed width */}
+                  <div className="w-full sm:w-[180px] md:w-[200px] h-[180px] flex-shrink-0">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={deptDistribution}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={45}
+                          outerRadius={70}
+                          dataKey="value"
+                          paddingAngle={3}
+                        >
+                          {deptDistribution.map((entry, index) => (
+                            <Cell key={index} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 12 }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Legend - Scrollable on mobile if needed */}
+                  <div className="flex-1 w-full">
+                    <div className="grid grid-cols-2 gap-2">
+                      {deptDistribution.map((d) => (
+                        <div key={d.name} className="flex items-center gap-2 min-w-0">
+                          <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }} />
+                          <span className="text-xs text-slate-600 flex-1 truncate">{d.name}</span>
+                          <span className="text-xs font-bold text-slate-800 flex-shrink-0">{d.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
           </div>
         )}
 
@@ -194,10 +212,18 @@ export default function AnalyticsPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
-                { label: 'Avg Attendance Rate', value: '88.4%', color: 'text-teal-600', icon: Calendar },
-                { label: 'Avg Absenteeism', value: '6.1%', color: 'text-red-500', icon: TrendingDown },
-                { label: 'Late Arrival Rate', value: '4.8%', color: 'text-amber-600', icon: Clock },
-                { label: 'Shift Utilization', value: '92%', color: 'text-blue-600', icon: Users },
+                {
+                  label: 'Avg Attendance Rate', value: '88.4%', color: 'text-teal-600', icon: Calendar,
+                },
+                {
+                  label: 'Avg Absenteeism', value: '6.1%', color: 'text-red-500', icon: TrendingDown,
+                },
+                {
+                  label: 'Late Arrival Rate', value: '4.8%', color: 'text-amber-600', icon: Clock,
+                },
+                {
+                  label: 'Shift Utilization', value: '92%', color: 'text-blue-600', icon: Users,
+                },
               ].map((s, i) => (
                 <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm text-center">
                   <div className="w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center bg-slate-50">
@@ -233,10 +259,18 @@ export default function AnalyticsPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
-                { label: 'Open Positions', value: '4', icon: Users, color: 'text-teal-600' },
-                { label: 'Offer Acceptance Rate', value: '75%', icon: TrendingUp, color: 'text-blue-600' },
-                { label: 'Avg Time-to-Hire', value: '18 days', icon: Clock, color: 'text-amber-600' },
-                { label: 'Hiring Funnel Drop', value: '29%', icon: TrendingDown, color: 'text-red-500' },
+                {
+                  label: 'Open Positions', value: '4', icon: Users, color: 'text-teal-600',
+                },
+                {
+                  label: 'Offer Acceptance Rate', value: '75%', icon: TrendingUp, color: 'text-blue-600',
+                },
+                {
+                  label: 'Avg Time-to-Hire', value: '18 days', icon: Clock, color: 'text-amber-600',
+                },
+                {
+                  label: 'Hiring Funnel Drop', value: '29%', icon: TrendingDown, color: 'text-red-500',
+                },
               ].map((s, i) => (
                 <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
                   <div className="flex items-start justify-between">
@@ -276,10 +310,18 @@ export default function AnalyticsPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
-                { label: 'Total Payroll (Mar)', value: '₹1.24 Cr', icon: DollarSign, color: 'text-slate-900' },
-                { label: 'Avg Cost/Employee', value: '₹50,000', icon: Users, color: 'text-teal-600' },
-                { label: 'Payroll Growth', value: '+2.1%', icon: TrendingUp, color: 'text-blue-600' },
-                { label: 'Variable Pay %', value: '18%', icon: PieChartIcon, color: 'text-purple-600' },
+                {
+                  label: 'Total Payroll (Mar)', value: '₹1.24 Cr', icon: DollarSign, color: 'text-slate-900',
+                },
+                {
+                  label: 'Avg Cost/Employee', value: '₹50,000', icon: Users, color: 'text-teal-600',
+                },
+                {
+                  label: 'Payroll Growth', value: '+2.1%', icon: TrendingUp, color: 'text-blue-600',
+                },
+                {
+                  label: 'Variable Pay %', value: '18%', icon: PieChartIcon, color: 'text-purple-600',
+                },
               ].map((s, i) => (
                 <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
                   <div className="flex items-start justify-between">
@@ -350,10 +392,14 @@ export default function AnalyticsPage() {
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
                 <button className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-teal-600 rounded-xl hover:bg-teal-700 transition-colors">
-                  <Filter size={14} /> Generate Report
+                  <Filter size={14} />
+                  {' '}
+                  Generate Report
                 </button>
                 <button className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">
-                  <Download size={14} /> Export CSV
+                  <Download size={14} />
+                  {' '}
+                  Export CSV
                 </button>
               </div>
             </div>
@@ -362,14 +408,26 @@ export default function AnalyticsPage() {
               <h3 className="text-sm font-bold text-slate-900 mb-4">Scheduled Reports</h3>
               <div className="space-y-3">
                 {[
-                  { name: 'Weekly Attendance Summary', schedule: 'Every Monday 8:00 AM', recipients: 'admin@impactree.in', active: true },
-                  { name: 'Monthly Payroll Report', schedule: '1st of every month', recipients: 'finance@impactree.in', active: true },
-                  { name: 'Quarterly Attrition Report', schedule: 'End of quarter', recipients: 'ceo@impactree.in', active: false },
+                  {
+                    name: 'Weekly Attendance Summary', schedule: 'Every Monday 8:00 AM', recipients: 'admin@impactree.in', active: true,
+                  },
+                  {
+                    name: 'Monthly Payroll Report', schedule: '1st of every month', recipients: 'finance@impactree.in', active: true,
+                  },
+                  {
+                    name: 'Quarterly Attrition Report', schedule: 'End of quarter', recipients: 'ceo@impactree.in', active: false,
+                  },
                 ].map((report, i) => (
                   <div key={i} className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100">
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-slate-800">{report.name}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{report.schedule} · To: {report.recipients}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {report.schedule}
+                        {' '}
+                        · To:
+                        {' '}
+                        {report.recipients}
+                      </p>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${report.active ? 'bg-teal-100 text-teal-700' : 'bg-slate-100 text-slate-500'}`}>

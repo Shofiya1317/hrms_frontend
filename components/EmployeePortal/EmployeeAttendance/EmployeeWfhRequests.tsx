@@ -19,10 +19,18 @@ import {
 const STATUS_META: Record<WFHStatus, {
   label: string; bg: string; text: string; dot: string; border: string; icon: any;
 }> = {
-  [WFHStatus.PENDING]:   { label: 'Pending',   bg: 'bg-amber-50',  text: 'text-amber-700', dot: 'bg-amber-400',  border: 'border-amber-200',  icon: Clock        },
-  [WFHStatus.APPROVED]:  { label: 'Approved',  bg: 'bg-teal-50',   text: 'text-teal-700',  dot: 'bg-teal-500',   border: 'border-teal-200',   icon: CheckCircle2 },
-  [WFHStatus.REJECTED]:  { label: 'Rejected',  bg: 'bg-red-50',    text: 'text-red-600',   dot: 'bg-red-400',    border: 'border-red-200',    icon: XCircle      },
-  [WFHStatus.CANCELLED]: { label: 'Cancelled', bg: 'bg-slate-100', text: 'text-slate-500', dot: 'bg-slate-300',  border: 'border-slate-200',  icon: X            },
+  [WFHStatus.PENDING]: {
+    label: 'Pending', bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400', border: 'border-amber-200', icon: Clock,
+  },
+  [WFHStatus.APPROVED]: {
+    label: 'Approved', bg: 'bg-teal-50', text: 'text-teal-700', dot: 'bg-teal-500', border: 'border-teal-200', icon: CheckCircle2,
+  },
+  [WFHStatus.REJECTED]: {
+    label: 'Rejected', bg: 'bg-red-50', text: 'text-red-600', dot: 'bg-red-400', border: 'border-red-200', icon: XCircle,
+  },
+  [WFHStatus.CANCELLED]: {
+    label: 'Cancelled', bg: 'bg-slate-100', text: 'text-slate-500', dot: 'bg-slate-300', border: 'border-slate-200', icon: X,
+  },
 };
 
 // ─────────────────────────────────────────────
@@ -44,22 +52,24 @@ function toInputDate(iso: string) {
 // ─────────────────────────────────────────────
 
 interface ModalProps {
-  editing: IWFH | null;         // null = new request
+  editing: IWFH | null; // null = new request
   tenantId: string;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-function ApplyModal({ editing, tenantId, onClose, onSuccess }: ModalProps) {
-  const [date,   setDate]   = useState(editing ? toInputDate(editing.date) : '');
+function ApplyModal({
+  editing, tenantId, onClose, onSuccess,
+}: ModalProps) {
+  const [date, setDate] = useState(editing ? toInputDate(editing.date) : '');
   const [reason, setReason] = useState(editing?.reason ?? '');
   const [saving, setSaving] = useState(false);
-  const [err,    setErr]    = useState('');
+  const [err, setErr] = useState('');
 
   const isEdit = !!editing;
 
   const handleSubmit = async () => {
-    if (!date)          { setErr('Date is required.'); return; }
+    if (!date) { setErr('Date is required.'); return; }
     if (!reason.trim()) { setErr('Reason is required.'); return; }
     setSaving(true); setErr('');
     try {
@@ -71,23 +81,23 @@ function ApplyModal({ editing, tenantId, onClose, onSuccess }: ModalProps) {
         const payload: IApplyWFHPayload = { date, reason };
         response = await applyWFH(payload, tenantId);
       }
-      
+
       console.log('WFH API Response:', response);
-      
+
       // Check if the response indicates an error
       const responseData = response?.data as any;
       const status = response?.status;
-      
+
       // Handle error responses (status 400, 404, etc. or success: false)
       if (status && (status >= 400 || responseData?.success === false)) {
-        const errorMsg = Array.isArray(responseData?.error) 
-          ? responseData.error[0] 
+        const errorMsg = Array.isArray(responseData?.error)
+          ? responseData.error[0]
           : responseData?.error || responseData?.message || 'Failed to submit WFH request.';
         setErr(errorMsg);
         setSaving(false);
         return;
       }
-      
+
       // If we reach here, it's successful
       onSuccess();
     } catch (e: any) {
@@ -130,24 +140,28 @@ function ApplyModal({ editing, tenantId, onClose, onSuccess }: ModalProps) {
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5">
-                WFH Date <span className="text-red-500">*</span>
+                WFH Date
+                {' '}
+                <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 value={date}
                 min={new Date().toISOString().split('T')[0]}
-                onChange={e => setDate(e.target.value)}
+                onChange={(e) => setDate(e.target.value)}
                 className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
               />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5">
-                Reason <span className="text-red-500">*</span>
+                Reason
+                {' '}
+                <span className="text-red-500">*</span>
               </label>
               <textarea
                 value={reason}
-                onChange={e => setReason(e.target.value)}
+                onChange={(e) => setReason(e.target.value)}
                 rows={3}
                 placeholder="e.g. Feeling unwell, will work from home…"
                 className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all resize-none"
@@ -178,7 +192,13 @@ function ApplyModal({ editing, tenantId, onClose, onSuccess }: ModalProps) {
               }`}
             >
               {saving
-                ? <><Loader2 size={13} className="animate-spin" /> {isEdit ? 'Updating…' : 'Submitting…'}</>
+                ? (
+                  <>
+                    <Loader2 size={13} className="animate-spin" />
+                    {' '}
+                    {isEdit ? 'Updating…' : 'Submitting…'}
+                  </>
+                )
                 : isEdit ? 'Update Request' : 'Submit Request'}
             </button>
           </div>
@@ -192,7 +212,9 @@ function ApplyModal({ editing, tenantId, onClose, onSuccess }: ModalProps) {
 // Cancel Confirm Modal
 // ─────────────────────────────────────────────
 
-function CancelModal({ req, tenantId, onClose, onSuccess }: {
+function CancelModal({
+  req, tenantId, onClose, onSuccess,
+}: {
   req: IWFH; tenantId: string; onClose: () => void; onSuccess: () => void;
 }) {
   const [cancelling, setCancelling] = useState(false);
@@ -217,7 +239,10 @@ function CancelModal({ req, tenantId, onClose, onSuccess }: {
           </div>
           <h3 className="text-sm font-bold text-slate-900 mb-1">Cancel WFH Request</h3>
           <p className="text-xs text-slate-400 mb-1">Are you sure you want to cancel your WFH request for</p>
-          <p className="text-sm font-semibold text-slate-800 mb-4">{fmtDate(req.date)}?</p>
+          <p className="text-sm font-semibold text-slate-800 mb-4">
+            {fmtDate(req.date)}
+            ?
+          </p>
 
           {err && (
             <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-xl mb-3 text-left">
@@ -227,13 +252,25 @@ function CancelModal({ req, tenantId, onClose, onSuccess }: {
           )}
 
           <div className="flex gap-2.5">
-            <button onClick={onClose} disabled={cancelling}
-              className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-all">
+            <button
+              onClick={onClose}
+              disabled={cancelling}
+              className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-all"
+            >
               Keep it
             </button>
-            <button onClick={handleCancel} disabled={cancelling}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-sm font-bold text-white disabled:opacity-60 transition-all">
-              {cancelling ? <><Loader2 size={13} className="animate-spin" /> Cancelling…</> : 'Yes, Cancel'}
+            <button
+              onClick={handleCancel}
+              disabled={cancelling}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-sm font-bold text-white disabled:opacity-60 transition-all"
+            >
+              {cancelling ? (
+                <>
+                  <Loader2 size={13} className="animate-spin" />
+                  {' '}
+                  Cancelling…
+                </>
+              ) : 'Yes, Cancel'}
             </button>
           </div>
         </div>
@@ -267,27 +304,38 @@ function RequestCard({ req, onEdit, onCancel }: {
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-semibold text-slate-800">{fmtDate(req.date)}</span>
           <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full border ${meta.bg} ${meta.text} ${meta.border}`}>
-            <Icon size={9} /><span className="ml-0.5">{meta.label}</span>
+            <Icon size={9} />
+            <span className="ml-0.5">{meta.label}</span>
           </span>
         </div>
         <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">{req.reason}</p>
         <div className="flex items-center gap-3 mt-1 flex-wrap text-[10px] text-slate-400">
           <span className="flex items-center gap-1">
             <CalendarDays size={9} />
-            Applied {fmtDate(req.applied_on)}
+            Applied
+            {' '}
+            {fmtDate(req.applied_on)}
           </span>
           {req.approved_at && (
             <span className="flex items-center gap-1 text-teal-600">
               <CheckCircle2 size={9} />
-              Approved {fmtDate(req.approved_at)}
+              Approved
+              {' '}
+              {fmtDate(req.approved_at)}
             </span>
           )}
           {req.approver?.name && (
-            <span>by {req.approver.name}</span>
+            <span>
+              by
+              {req.approver.name}
+            </span>
           )}
         </div>
         {req.rejection_reason && (
-          <p className="text-[10px] text-red-500 mt-1">Reason: {req.rejection_reason}</p>
+          <p className="text-[10px] text-red-500 mt-1">
+            Reason:
+            {req.rejection_reason}
+          </p>
         )}
       </div>
 
@@ -323,23 +371,27 @@ function Toast({ msg, type, onClose }: { msg: string; type: 'success' | 'error';
     <div className="fixed bottom-6 right-6 z-[100] animate-in slide-in-from-right-2 duration-300">
       <div className={`flex items-start gap-3 px-4 py-3 rounded-xl shadow-lg border max-w-md ${
         type === 'success' ? 'bg-white border-emerald-200' : 'bg-white border-red-200'
-      }`}>
+      }`}
+      >
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
           type === 'success' ? 'bg-emerald-50' : 'bg-red-50'
-        }`}>
-          {type === 'success' 
-            ? <CheckCircle2 size={16} className="text-emerald-600" /> 
+        }`}
+        >
+          {type === 'success'
+            ? <CheckCircle2 size={16} className="text-emerald-600" />
             : <AlertCircle size={16} className="text-red-600" />}
         </div>
         <div className="flex-1 min-w-0">
           <p className={`text-sm font-semibold ${
             type === 'success' ? 'text-emerald-900' : 'text-red-900'
-          }`}>
+          }`}
+          >
             {type === 'success' ? 'Success' : 'Error'}
           </p>
           <p className={`text-xs mt-0.5 leading-relaxed ${
             type === 'success' ? 'text-emerald-700' : 'text-red-700'
-          }`}>
+          }`}
+          >
             {msg}
           </p>
         </div>
@@ -359,17 +411,17 @@ function Toast({ msg, type, onClose }: { msg: string; type: 'success' | 'error';
 // ─────────────────────────────────────────────
 
 const EmployeeWfhRequests = () => {
-  const params   = useParams();
+  const params = useParams();
   const tenantId = params?.subdomain as string;
 
-  const [requests,     setRequests]     = useState<IWFH[]>([]);
-  const [loading,      setLoading]      = useState(true);
+  const [requests, setRequests] = useState<IWFH[]>([]);
+  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<WFHStatus | 'ALL'>('ALL');
 
   // Modal state
-  const [showApply,  setShowApply]  = useState(false);
+  const [showApply, setShowApply] = useState(false);
   const [editingReq, setEditingReq] = useState<IWFH | null>(null);
-  const [cancelReq,  setCancelReq]  = useState<IWFH | null>(null);
+  const [cancelReq, setCancelReq] = useState<IWFH | null>(null);
 
   // Toast
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
@@ -382,8 +434,7 @@ const EmployeeWfhRequests = () => {
       const res = await getMyWFHRequests(tenantId);
       const raw: IWFH[] = Array.isArray(res?.data) ? res.data : (res?.data?.data ?? []);
       setRequests(raw);
-    } catch { /* silent */ }
-    finally { setLoading(false); }
+    } catch { /* silent */ } finally { setLoading(false); }
   };
 
   const showToast = (msg: string, type: 'success' | 'error') => {
@@ -401,14 +452,14 @@ const EmployeeWfhRequests = () => {
 
   const filtered = useMemo(() => {
     if (statusFilter === 'ALL') return requests;
-    return requests.filter(r => r.status === statusFilter);
+    return requests.filter((r) => r.status === statusFilter);
   }, [requests, statusFilter]);
 
   const stats = useMemo(() => ({
-    total:    requests.length,
-    pending:  requests.filter(r => r.status === WFHStatus.PENDING).length,
-    approved: requests.filter(r => r.status === WFHStatus.APPROVED).length,
-    rejected: requests.filter(r => r.status === WFHStatus.REJECTED).length,
+    total: requests.length,
+    pending: requests.filter((r) => r.status === WFHStatus.PENDING).length,
+    approved: requests.filter((r) => r.status === WFHStatus.APPROVED).length,
+    rejected: requests.filter((r) => r.status === WFHStatus.REJECTED).length,
   }), [requests]);
 
   const ALL_FILTER_STATUSES = [WFHStatus.PENDING, WFHStatus.APPROVED, WFHStatus.REJECTED, WFHStatus.CANCELLED];
@@ -424,25 +475,40 @@ const EmployeeWfhRequests = () => {
           <div>
             <h2 className="text-base font-bold text-[#0f1f2e]">My WFH Requests</h2>
             <p className="text-xs text-gray-400 mt-0.5">
-              {stats.total} total · {stats.pending} pending
+              {stats.total}
+              {' '}
+              total ·
+              {stats.pending}
+              {' '}
+              pending
             </p>
           </div>
           <button
             onClick={() => setShowApply(true)}
             className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition-all shadow-sm shadow-teal-200"
           >
-            <Plus size={13} /> Apply WFH
+            <Plus size={13} />
+            {' '}
+            Apply WFH
           </button>
         </div>
 
         {/* Stat chips */}
         <div className="grid grid-cols-4 gap-2">
           {[
-            { label: 'Total',    value: stats.total,    color: 'text-[#0f766e]', bg: 'bg-[#e8f5ee]', dot: 'bg-[#0f766e]' },
-            { label: 'Pending',  value: stats.pending,  color: 'text-amber-600', bg: 'bg-amber-50',   dot: 'bg-amber-400' },
-            { label: 'Approved', value: stats.approved, color: 'text-teal-600',  bg: 'bg-teal-50',    dot: 'bg-teal-500'  },
-            { label: 'Rejected', value: stats.rejected, color: 'text-red-500',   bg: 'bg-red-50',     dot: 'bg-red-400'   },
-          ].map(s => (
+            {
+              label: 'Total', value: stats.total, color: 'text-[#0f766e]', bg: 'bg-[#e8f5ee]', dot: 'bg-[#0f766e]',
+            },
+            {
+              label: 'Pending', value: stats.pending, color: 'text-amber-600', bg: 'bg-amber-50', dot: 'bg-amber-400',
+            },
+            {
+              label: 'Approved', value: stats.approved, color: 'text-teal-600', bg: 'bg-teal-50', dot: 'bg-teal-500',
+            },
+            {
+              label: 'Rejected', value: stats.rejected, color: 'text-red-500', bg: 'bg-red-50', dot: 'bg-red-400',
+            },
+          ].map((s) => (
             <div key={s.label} className={`${s.bg} rounded-xl px-3 py-2 border border-white`}>
               <div className="flex items-center gap-1.5 mb-1">
                 <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
@@ -458,11 +524,17 @@ const EmployeeWfhRequests = () => {
           <button
             onClick={() => setStatusFilter('ALL')}
             className={`px-2.5 py-1 text-[9px] font-bold rounded-lg transition-colors ${statusFilter === 'ALL' ? 'bg-white text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-          >All</button>
-          {ALL_FILTER_STATUSES.map(s => (
-            <button key={s} onClick={() => setStatusFilter(s)}
+          >
+            All
+          </button>
+          {ALL_FILTER_STATUSES.map((s) => (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
               className={`px-2.5 py-1 text-[9px] font-bold rounded-lg transition-colors capitalize ${statusFilter === s ? 'bg-white text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-            >{STATUS_META[s].label}</button>
+            >
+              {STATUS_META[s].label}
+            </button>
           ))}
         </div>
 
@@ -483,12 +555,12 @@ const EmployeeWfhRequests = () => {
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-            {filtered.map(req => (
+            {filtered.map((req) => (
               <RequestCard
                 key={req.id}
                 req={req}
-                onEdit={r => setEditingReq(r)}
-                onCancel={r => setCancelReq(r)}
+                onEdit={(r) => setEditingReq(r)}
+                onCancel={(r) => setCancelReq(r)}
               />
             ))}
           </div>
@@ -518,4 +590,4 @@ const EmployeeWfhRequests = () => {
   );
 };
 
-export default EmployeeWfhRequests; 
+export default EmployeeWfhRequests;

@@ -323,18 +323,6 @@
 //   );
 // }
 
-
-
-
-
-
-
-
-
-
-
-
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -571,11 +559,9 @@ export default function AttendancePolicies() {
     }
   };
 
-  const setNum = (field: keyof IAttendancePolicyPayload, val: string) =>
-    setForm((prev) => ({ ...prev, [field]: Number(val) }));
+  const setNum = (field: keyof IAttendancePolicyPayload, val: string) => setForm((prev) => ({ ...prev, [field]: Number(val) }));
 
-  const setBool = (field: keyof IAttendancePolicyPayload, val: boolean) =>
-    setForm((prev) => ({ ...prev, [field]: val }));
+  const setBool = (field: keyof IAttendancePolicyPayload, val: boolean) => setForm((prev) => ({ ...prev, [field]: val }));
 
   // ─── Work Schedule ─────────────────────────────────────────────────────────
 
@@ -614,8 +600,7 @@ export default function AttendancePolicies() {
     }
   };
 
-  const toggleWsDay = (key: DayKey) =>
-    setWsForm((prev) => ({ ...prev, [key]: !prev[key] }));
+  const toggleWsDay = (key: DayKey) => setWsForm((prev) => ({ ...prev, [key]: !prev[key] }));
 
   // ─── Work Location ─────────────────────────────────────────────────────────
 
@@ -657,8 +642,7 @@ export default function AttendancePolicies() {
     }
   };
 
-  const toggleLocation = (key: LocationDayKey) =>
-    setWlForm((prev) => ({ ...prev, [key]: prev[key] === 'office' ? 'wfh' : 'office' }));
+  const toggleLocation = (key: LocationDayKey) => setWlForm((prev) => ({ ...prev, [key]: prev[key] === 'office' ? 'wfh' : 'office' }));
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
@@ -681,7 +665,9 @@ export default function AttendancePolicies() {
             onClick={openCreate}
             className="flex items-center gap-2 rounded-xl bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0d6460] transition-colors"
           >
-            <Plus size={15} /> Add Policy
+            <Plus size={15} />
+            {' '}
+            Add Policy
           </button>
         )}
       </div>
@@ -755,7 +741,9 @@ export default function AttendancePolicies() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <span className={`px-2.5 py-1 rounded-full text-[10px] font-semibold ${p.sandwich_policy_enabled ? 'bg-[#e8f5ee] text-[#2D7A4F]' : 'bg-gray-100 text-gray-400'}`}>
-                      Sandwich Policy {p.sandwich_policy_enabled ? 'ON' : 'OFF'}
+                      Sandwich Policy
+                      {' '}
+                      {p.sandwich_policy_enabled ? 'ON' : 'OFF'}
                     </span>
                     {p.sandwich_policy_enabled && (
                       <>
@@ -848,9 +836,9 @@ export default function AttendancePolicies() {
               </div>
 
               {/* Summary badges */}
-              {(wsForm.monday || wsForm.tuesday || wsForm.wednesday || wsForm.thursday || wsForm.friday ||
-                wsForm.saturday_week_1 || wsForm.saturday_week_2 || wsForm.saturday_week_3 ||
-                wsForm.saturday_week_4 || wsForm.saturday_week_5 || wsForm.sunday) && (
+              {(wsForm.monday || wsForm.tuesday || wsForm.wednesday || wsForm.thursday || wsForm.friday
+                || wsForm.saturday_week_1 || wsForm.saturday_week_2 || wsForm.saturday_week_3
+                || wsForm.saturday_week_4 || wsForm.saturday_week_5 || wsForm.sunday) && (
                 <div className="rounded-xl border border-[#e8f5ee] bg-[#f6fcf9] p-3 space-y-1.5">
                   <p className="text-[10px] font-semibold text-[#2D7A4F] uppercase tracking-wide">Working Days</p>
                   <div className="flex flex-wrap gap-1.5">
@@ -877,11 +865,23 @@ export default function AttendancePolicies() {
                   className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-[#0f766e] rounded-xl hover:bg-[#0d6460] transition-colors disabled:opacity-60"
                 >
                   {wsSaving ? (
-                    <><Loader2 size={14} className="animate-spin" /> Saving...</>
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      {' '}
+                      Saving...
+                    </>
                   ) : wsSaved ? (
-                    <><Check size={14} /> Saved</>
+                    <>
+                      <Check size={14} />
+                      {' '}
+                      Saved
+                    </>
                   ) : (
-                    <><Save size={14} /> Save Schedule</>
+                    <>
+                      <Save size={14} />
+                      {' '}
+                      Save Schedule
+                    </>
                   )}
                 </button>
               </div>
@@ -975,11 +975,23 @@ export default function AttendancePolicies() {
                   className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-[#0f766e] rounded-xl hover:bg-[#0d6460] transition-colors disabled:opacity-60"
                 >
                   {wlSaving ? (
-                    <><Loader2 size={14} className="animate-spin" /> Saving...</>
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      {' '}
+                      Saving...
+                    </>
                   ) : wlSaved ? (
-                    <><Check size={14} /> Saved</>
+                    <>
+                      <Check size={14} />
+                      {' '}
+                      Saved
+                    </>
                   ) : (
-                    <><Save size={14} /> Save Location</>
+                    <>
+                      <Save size={14} />
+                      {' '}
+                      Save Location
+                    </>
                   )}
                 </button>
               </div>
@@ -1009,7 +1021,9 @@ export default function AttendancePolicies() {
             <div className="overflow-y-auto p-5 space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Policy Name <span className="text-red-500">*</span>
+                  Policy Name
+                  {' '}
+                  <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -1091,7 +1105,13 @@ export default function AttendancePolicies() {
                   disabled={saving}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#0f766e] rounded-xl hover:bg-[#0d6460] transition-colors disabled:opacity-60"
                 >
-                  {saving ? <><Loader2 size={14} className="animate-spin" /> Saving...</> : editingId ? 'Update Policy' : 'Create Policy'}
+                  {saving ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      {' '}
+                      Saving...
+                    </>
+                  ) : editingId ? 'Update Policy' : 'Create Policy'}
                 </button>
               </div>
             </div>

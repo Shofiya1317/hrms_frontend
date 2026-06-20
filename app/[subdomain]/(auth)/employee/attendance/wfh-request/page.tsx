@@ -1,6 +1,6 @@
-import EmployeeWfhRequests from '@/components/EmployeePortal/EmployeeAttendance/EmployeeWfhRequests'
+import EmployeeWfhRequests from '@/components/EmployeePortal/EmployeeAttendance/EmployeeWfhRequests';
 // import EmployeeRegularization from '@/components/EmployeePortal/EmployeeAttendance/EmployeeWfhRequests'
 
 export default function Page() {
-  return <EmployeeWfhRequests />
+  return <EmployeeWfhRequests />;
 }

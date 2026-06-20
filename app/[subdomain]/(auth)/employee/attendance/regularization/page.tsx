@@ -1,5 +1,5 @@
-import EmployeeRegularization from '@/components/EmployeePortal/EmployeeAttendance/EmployeeRegularization'
+import EmployeeRegularization from '@/components/EmployeePortal/EmployeeAttendance/EmployeeRegularization';
 
 export default function Page() {
-  return <EmployeeRegularization />
+  return <EmployeeRegularization />;
 }

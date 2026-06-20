@@ -1,5 +1,5 @@
 'use client';
- 
+
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
@@ -7,7 +7,6 @@ import {
   Users, Bell, Check, X, CheckCircle2,
   Clock, Loader2, LogIn, LogOut,
 } from 'lucide-react';
-import CheckInOutCard from './CheckInOutCard';
 import { getEmployeeLeaveBalanceDetailed, EmployeeLeaveBalance } from '@/lib/service/leave';
 import { getMyTeam, ITeamMember } from '@/lib/service/employee';
 import { getMyApplications, LeaveStatus } from '@/lib/service/leaveApplication';
@@ -15,81 +14,115 @@ import { getMyOnDutyApplications, OnDutyStatus } from '@/lib/service/onDuty';
 import { getMyWFHRequests, WFHStatus } from '@/lib/service/wfh';
 import { getRegularizations, RegularizationStatus } from '@/lib/service/regularization';
 import { getEmployeeAttendanceDashboard, IEmployeeAttendanceDashboard } from '@/lib/service/attendance';
- 
+import CheckInOutCard from './CheckInOutCard';
+
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface LeaveBalanceCard {
   id: string; type: string; short: string;
   balance: number; used: number; total: number;
   color: string; bg: string; gradientFrom: string; gradientTo: string;
 }
- 
+
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const QUICK_ACTIONS = [
-  { label: 'Apply Leave', icon: Calendar, href: '/employee/attendance/apply-leave', gradFrom: '#3b82f6', gradTo: '#6366f1', shadow: 'rgba(99,102,241,0.35)', desc: 'Request time off' },
-  { label: 'Regularize', icon: RotateCcw, href: '/employee/attendance/regularization', gradFrom: '#f59e0b', gradTo: '#f97316', shadow: 'rgba(249,115,22,0.35)', desc: 'Fix missed punches' },
-  { label: 'Comp Off', icon: Gift, href: '/employee/attendance/comp-off', gradFrom: '#8b5cf6', gradTo: '#a855f7', shadow: 'rgba(168,85,247,0.35)', desc: 'Claim overtime days' },
-  { label: 'Work from Home', icon: RotateCcw, href: '/employee/attendance/wfh-request', gradFrom: '#14b8a6', gradTo: '#06b6d4', shadow: 'rgba(6,182,212,0.35)', desc: 'Remote work request' },
-  { label: 'On Duty', icon: Gift, href: '/employee/attendance/on-duty', gradFrom: '#84cc16', gradTo: '#22c55e', shadow: 'rgba(34,197,94,0.35)', desc: 'Outdoor duty claim' },
+  {
+    label: 'Apply Leave', icon: Calendar, href: '/employee/attendance/apply-leave', gradFrom: '#3b82f6', gradTo: '#6366f1', shadow: 'rgba(99,102,241,0.35)', desc: 'Request time off',
+  },
+  {
+    label: 'Regularize', icon: RotateCcw, href: '/employee/attendance/regularization', gradFrom: '#f59e0b', gradTo: '#f97316', shadow: 'rgba(249,115,22,0.35)', desc: 'Fix missed punches',
+  },
+  {
+    label: 'Comp Off', icon: Gift, href: '/employee/attendance/comp-off', gradFrom: '#8b5cf6', gradTo: '#a855f7', shadow: 'rgba(168,85,247,0.35)', desc: 'Claim overtime days',
+  },
+  {
+    label: 'Work from Home', icon: RotateCcw, href: '/employee/attendance/wfh-request', gradFrom: '#14b8a6', gradTo: '#06b6d4', shadow: 'rgba(6,182,212,0.35)', desc: 'Remote work request',
+  },
+  {
+    label: 'On Duty', icon: Gift, href: '/employee/attendance/on-duty', gradFrom: '#84cc16', gradTo: '#22c55e', shadow: 'rgba(34,197,94,0.35)', desc: 'Outdoor duty claim',
+  },
 ];
- 
+
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  present:   { label: 'P',   color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
-  absent:    { label: 'A',   color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
-  late:      { label: 'L',   color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
-  half_day:  { label: 'HD',  color: '#7c3aed', bg: '#f5f3ff', border: '#e9d5ff' },
-  week_off:  { label: 'WO',  color: '#64748b', bg: '#f8fafc', border: '#e2e8f0' },
-  holiday:   { label: 'H',   color: '#0891b2', bg: '#ecfeff', border: '#a5f3fc' },
-  on_leave:  { label: 'OL',  color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
-  wfh:       { label: 'WFH', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe' },
+  present: {
+    label: 'P', color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0',
+  },
+  absent: {
+    label: 'A', color: '#dc2626', bg: '#fef2f2', border: '#fecaca',
+  },
+  late: {
+    label: 'L', color: '#d97706', bg: '#fffbeb', border: '#fde68a',
+  },
+  half_day: {
+    label: 'HD', color: '#7c3aed', bg: '#f5f3ff', border: '#e9d5ff',
+  },
+  week_off: {
+    label: 'WO', color: '#64748b', bg: '#f8fafc', border: '#e2e8f0',
+  },
+  holiday: {
+    label: 'H', color: '#0891b2', bg: '#ecfeff', border: '#a5f3fc',
+  },
+  on_leave: {
+    label: 'OL', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe',
+  },
+  wfh: {
+    label: 'WFH', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe',
+  },
 };
- 
+
 const LEAVE_COLOR_RAMPS = [
-  { color: '#16a34a', bg: '#f0fdf4', gradientFrom: '#86efac', gradientTo: '#4ade80' },
-  { color: '#2563eb', bg: '#eff6ff', gradientFrom: '#93c5fd', gradientTo: '#60a5fa' },
-  { color: '#d97706', bg: '#fffbeb', gradientFrom: '#fcd34d', gradientTo: '#fbbf24' },
-  { color: '#7c3aed', bg: '#f5f3ff', gradientFrom: '#c4b5fd', gradientTo: '#a78bfa' },
+  {
+    color: '#16a34a', bg: '#f0fdf4', gradientFrom: '#86efac', gradientTo: '#4ade80',
+  },
+  {
+    color: '#2563eb', bg: '#eff6ff', gradientFrom: '#93c5fd', gradientTo: '#60a5fa',
+  },
+  {
+    color: '#d97706', bg: '#fffbeb', gradientFrom: '#fcd34d', gradientTo: '#fbbf24',
+  },
+  {
+    color: '#7c3aed', bg: '#f5f3ff', gradientFrom: '#c4b5fd', gradientTo: '#a78bfa',
+  },
 ];
- 
+
 // ─── Main Dashboard ─────────────────────────────────────────────────────────────
 export default function EmployeeDashboard({ employee, apiKey, token }: { employee: any; apiKey: string; token: string }) {
   const [currentTime, setCurrentTime] = useState(new Date());
- 
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
- 
-  const fullName   = `${employee?.first_name ?? ''} ${employee?.last_name ?? ''}`.trim() || 'Employee';
+
+  const fullName = `${employee?.first_name ?? ''} ${employee?.last_name ?? ''}`.trim() || 'Employee';
   const employeeId = employee?.id;
   const designation = employee?.designation?.name ?? '';
-  const location   = employee?.city ?? employee?.country ?? '';
- 
-  const [leaveBalances,         setLeaveBalances]         = useState<LeaveBalanceCard[]>([]);
-  const [loadingLeaveBalance,   setLoadingLeaveBalance]   = useState(true);
-  const [teamMembers,           setTeamMembers]           = useState<any[]>([]);
-  const [teamCount,             setTeamCount]             = useState(0);
-  const [teamLoading,           setTeamLoading]           = useState(false);
-  const [pendingItems,          setPendingItems]          = useState<any[]>([]);
-  const [pendingLoading,        setPendingLoading]        = useState(false);
-  const [attendanceDashboard,   setAttendanceDashboard]   = useState<IEmployeeAttendanceDashboard | null>(null);
+  const location = employee?.city ?? employee?.country ?? '';
+
+  const [leaveBalances, setLeaveBalances] = useState<LeaveBalanceCard[]>([]);
+  const [loadingLeaveBalance, setLoadingLeaveBalance] = useState(true);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [teamCount, setTeamCount] = useState(0);
+  const [teamLoading, setTeamLoading] = useState(false);
+  const [pendingItems, setPendingItems] = useState<any[]>([]);
+  const [pendingLoading, setPendingLoading] = useState(false);
+  const [attendanceDashboard, setAttendanceDashboard] = useState<IEmployeeAttendanceDashboard | null>(null);
   const [attendanceDashboardLoading, setAttendanceDashboardLoading] = useState(false);
- 
+
   useEffect(() => {
     fetchAttendanceDashboard();
     fetchMyTeam();
     fetchLeaveBalances();
     fetchPendingRequests();
   }, []);
- 
+
   const fetchAttendanceDashboard = async () => {
     try {
       setAttendanceDashboardLoading(true);
       const response = await getEmployeeAttendanceDashboard(employeeId, apiKey, token);
       setAttendanceDashboard(response?.data?.data || null);
-    } catch (error) { console.error('Failed to fetch attendance dashboard', error); }
-    finally { setAttendanceDashboardLoading(false); }
+    } catch (error) { console.error('Failed to fetch attendance dashboard', error); } finally { setAttendanceDashboardLoading(false); }
   };
- 
+
   const fetchPendingRequests = async () => {
     if (!employeeId) return;
     try {
@@ -101,16 +134,23 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
         getRegularizations({ employee_id: employeeId, status: RegularizationStatus.PENDING, limit: 20 }, token),
       ]);
       const consolidated = [
-        ...(leaveRes?.data?.data || []).map((item: any) => ({ id: item.id, type: 'leave', title: item.leave_type_name || 'Leave Request', date: item.from_date, status: item.status, createdAt: item.created_at })),
-        ...(onDutyRes?.data?.data || []).map((item: any) => ({ id: item.id, type: 'onduty', title: item.onduty_type || 'On Duty', date: item.onduty_date, status: item.status, createdAt: item.created_at })),
-        ...(wfhRes?.data?.data || []).map((item: any) => ({ id: item.id, type: 'wfh', title: 'Work From Home', date: item.work_date, status: item.status, createdAt: item.created_at })),
-        ...(regularizationRes?.data?.data || []).map((item: any) => ({ id: item.id, type: 'regularization', title: 'Attendance Regularization', date: item.attendance_date, status: item.status, createdAt: item.created_at })),
+        ...(leaveRes?.data?.data || []).map((item: any) => ({
+          id: item.id, type: 'leave', title: item.leave_type_name || 'Leave Request', date: item.from_date, status: item.status, createdAt: item.created_at,
+        })),
+        ...(onDutyRes?.data?.data || []).map((item: any) => ({
+          id: item.id, type: 'onduty', title: item.onduty_type || 'On Duty', date: item.onduty_date, status: item.status, createdAt: item.created_at,
+        })),
+        ...(wfhRes?.data?.data || []).map((item: any) => ({
+          id: item.id, type: 'wfh', title: 'Work From Home', date: item.work_date, status: item.status, createdAt: item.created_at,
+        })),
+        ...(regularizationRes?.data?.data || []).map((item: any) => ({
+          id: item.id, type: 'regularization', title: 'Attendance Regularization', date: item.attendance_date, status: item.status, createdAt: item.created_at,
+        })),
       ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setPendingItems(consolidated);
-    } catch (error) { console.error(error); }
-    finally { setPendingLoading(false); }
+    } catch (error) { console.error(error); } finally { setPendingLoading(false); }
   };
- 
+
   const fetchMyTeam = async () => {
     try {
       setTeamLoading(true);
@@ -118,10 +158,9 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
       const teamRoot = response?.data?.data || response?.data;
       setTeamMembers(teamRoot?.children || []);
       setTeamCount(teamRoot?.total_team_size || 0);
-    } catch (error) { console.error(error); }
-    finally { setTeamLoading(false); }
+    } catch (error) { console.error(error); } finally { setTeamLoading(false); }
   };
- 
+
   const fetchLeaveBalances = async () => {
     try {
       setLoadingLeaveBalance(true);
@@ -141,39 +180,58 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
           }));
         setLeaveBalances(balances);
       }
-    } catch (error) { console.error('Failed to fetch leave balances', error); }
-    finally { setLoadingLeaveBalance(false); }
+    } catch (error) { console.error('Failed to fetch leave balances', error); } finally { setLoadingLeaveBalance(false); }
   };
- 
-  const getInitials = (name: string) =>
-    name?.split(' ')?.map((w) => w[0])?.slice(0, 2)?.join('')?.toUpperCase();
- 
+
+  const getInitials = (name: string) => name?.split(' ')?.map((w) => w[0])?.slice(0, 2)?.join('')
+    ?.toUpperCase();
+
   // ── Pending type icons & colors ──
   const pendingTypeConfig: Record<string, { color: string; bg: string; gradFrom: string; gradTo: string; icon: any }> = {
-    leave:          { color: '#2563eb', bg: '#eff6ff', gradFrom: '#60a5fa', gradTo: '#818cf8', icon: Calendar },
-    wfh:            { color: '#14b8a6', bg: '#f0fdfa', gradFrom: '#5eead4', gradTo: '#22d3ee', icon: RotateCcw },
-    onduty:         { color: '#84cc16', bg: '#f7fee7', gradFrom: '#a3e635', gradTo: '#4ade80', icon: Gift },
-    regularization: { color: '#f59e0b', bg: '#fffbeb', gradFrom: '#fbbf24', gradTo: '#fb923c', icon: RotateCcw },
+    leave: {
+      color: '#2563eb', bg: '#eff6ff', gradFrom: '#60a5fa', gradTo: '#818cf8', icon: Calendar,
+    },
+    wfh: {
+      color: '#14b8a6', bg: '#f0fdfa', gradFrom: '#5eead4', gradTo: '#22d3ee', icon: RotateCcw,
+    },
+    onduty: {
+      color: '#84cc16', bg: '#f7fee7', gradFrom: '#a3e635', gradTo: '#4ade80', icon: Gift,
+    },
+    regularization: {
+      color: '#f59e0b', bg: '#fffbeb', gradFrom: '#fbbf24', gradTo: '#fb923c', icon: RotateCcw,
+    },
   };
- 
+
   return (
     <div className="min-h-screen">
       <div className="px-3 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-6 space-y-5">
- 
+
         {/* ── Check In/Out ── */}
         <CheckInOutCard
-          apiKey={apiKey} token={token} fullName={fullName}
-          employeeId={employeeId} designation={designation} defaultLocation={location}
+          apiKey={apiKey}
+          token={token}
+          fullName={fullName}
+          employeeId={employeeId}
+          designation={designation}
+          defaultLocation={location}
           onAttendanceUpdate={fetchAttendanceDashboard}
         />
- 
+
         {/* ── Quick Stats ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Present Days', value: attendanceDashboard?.week_stats?.present_days ?? '--', sub: `of ${attendanceDashboard?.week_stats?.working_days ?? '--'} days`, gradFrom: '#86efac', gradTo: '#4ade80', shadow: 'rgba(74,222,128,0.25)', icon: CheckCircle2, iconColor: '#16a34a' },
-            { label: 'Working Hours', value: attendanceDashboard?.week_stats?.total_hours ?? '--', sub: 'this week', gradFrom: '#93c5fd', gradTo: '#818cf8', shadow: 'rgba(129,140,248,0.25)', icon: Clock, iconColor: '#4f46e5' },
-            { label: 'Leave Balance', value: leaveBalances.reduce((s, l) => s + l.balance, 0) || '--', sub: 'days remaining', gradFrom: '#fcd34d', gradTo: '#fb923c', shadow: 'rgba(251,146,60,0.25)', icon: Calendar, iconColor: '#d97706' },
-            { label: 'Team Size', value: teamLoading ? '…' : teamCount || teamMembers.length, sub: 'reporting to you', gradFrom: '#c4b5fd', gradTo: '#e879f9', shadow: 'rgba(232,121,249,0.25)', icon: Users, iconColor: '#9333ea' },
+            {
+              label: 'Present Days', value: attendanceDashboard?.week_stats?.present_days ?? '--', sub: `of ${attendanceDashboard?.week_stats?.working_days ?? '--'} days`, gradFrom: '#86efac', gradTo: '#4ade80', shadow: 'rgba(74,222,128,0.25)', icon: CheckCircle2, iconColor: '#16a34a',
+            },
+            {
+              label: 'Working Hours', value: attendanceDashboard?.week_stats?.total_hours ?? '--', sub: 'this week', gradFrom: '#93c5fd', gradTo: '#818cf8', shadow: 'rgba(129,140,248,0.25)', icon: Clock, iconColor: '#4f46e5',
+            },
+            {
+              label: 'Leave Balance', value: leaveBalances.reduce((s, l) => s + l.balance, 0) || '--', sub: 'days remaining', gradFrom: '#fcd34d', gradTo: '#fb923c', shadow: 'rgba(251,146,60,0.25)', icon: Calendar, iconColor: '#d97706',
+            },
+            {
+              label: 'Team Size', value: teamLoading ? '…' : teamCount || teamMembers.length, sub: 'reporting to you', gradFrom: '#c4b5fd', gradTo: '#e879f9', shadow: 'rgba(232,121,249,0.25)', icon: Users, iconColor: '#9333ea',
+            },
           ].map((stat) => (
             <div
               key={stat.label}
@@ -181,8 +239,10 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
               style={{ boxShadow: `0 4px 24px ${stat.shadow}, 0 1px 4px rgba(0,0,0,0.04)` }}
             >
               {/* bg blob */}
-              <div className="absolute -bottom-4 -right-4 w-20 h-20 rounded-full opacity-20 blur-xl"
-                style={{ background: `radial-gradient(circle, ${stat.gradTo}, ${stat.gradFrom})` }} />
+              <div
+                className="absolute -bottom-4 -right-4 w-20 h-20 rounded-full opacity-20 blur-xl"
+                style={{ background: `radial-gradient(circle, ${stat.gradTo}, ${stat.gradFrom})` }}
+              />
               <div
                 className="w-8 h-8 rounded-2xl flex items-center justify-center mb-3 shadow-sm"
                 style={{ background: `linear-gradient(135deg, ${stat.gradFrom}, ${stat.gradTo})` }}
@@ -195,10 +255,10 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
             </div>
           ))}
         </div>
- 
+
         {/* ── This Week + Timeline ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
- 
+
           {/* Today's Timeline */}
           <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-5">
             <div className="flex items-center justify-between mb-4">
@@ -212,7 +272,7 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
                 {currentTime.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
               </span>
             </div>
- 
+
             <div className="relative pl-5">
               <div className="absolute left-2 top-0 bottom-0 w-px bg-gradient-to-b from-slate-200 via-slate-100 to-transparent" />
               <div className="space-y-3">
@@ -252,7 +312,7 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
               </div>
             </div>
           </div>
- 
+
           {/* This Week */}
           <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-5">
             <div className="flex items-center justify-between mb-4">
@@ -263,10 +323,12 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
                 <h3 className="text-sm font-bold text-slate-800">This Week</h3>
               </div>
               <Link href="/employee/attendance/monthly-view" className="text-[10px] font-bold text-teal-600 bg-teal-50 px-2.5 py-1 rounded-full flex items-center gap-1 hover:bg-teal-100 transition-colors">
-                Monthly <ArrowRight size={10} />
+                Monthly
+                {' '}
+                <ArrowRight size={10} />
               </Link>
             </div>
- 
+
             <div className="grid grid-cols-7 gap-1.5">
               {attendanceDashboard?.week_summary?.map((day) => {
                 const cfg = STATUS_CONFIG[day.status] || STATUS_CONFIG.present;
@@ -279,17 +341,20 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
                   >
                     <span className="text-[9px] font-bold uppercase text-slate-500">{day.day}</span>
                     <span className="text-sm font-black" style={{ color: cfg.color }}>{day.date}</span>
-                    <span className="text-[8px] font-bold px-1 py-0.5 rounded-full" style={{ background: cfg.color + '20', color: cfg.color }}>{cfg.label}</span>
+                    <span className="text-[8px] font-bold px-1 py-0.5 rounded-full" style={{ background: `${cfg.color}20`, color: cfg.color }}>{cfg.label}</span>
                     <span className="text-[8px] text-slate-400 font-medium">{day.hours}</span>
                   </div>
                 );
               })}
             </div>
- 
+
             <div className="mt-4 pt-3 border-t border-slate-100">
               <div className="flex justify-between items-center mb-1.5">
                 <span className="text-[11px] font-semibold text-slate-500">Week Progress</span>
-                <span className="text-[11px] font-black text-teal-600">{attendanceDashboard?.week_progress || 0}%</span>
+                <span className="text-[11px] font-black text-teal-600">
+                  {attendanceDashboard?.week_progress || 0}
+                  %
+                </span>
               </div>
               <div className="h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
                 <div
@@ -304,7 +369,7 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
             </div>
           </div>
         </div>
- 
+
         {/* ── Quick Actions ── */}
         <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-5">
           <div className="flex items-center justify-between mb-4">
@@ -336,19 +401,24 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
             ))}
           </div>
         </div>
- 
+
         {/* ── Leave Balances ── */}
         <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-sm font-bold text-slate-800">Leave Balances</h3>
-              <p className="text-[10px] text-slate-400 mt-0.5">Annual · {new Date().getFullYear()}</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">
+                Annual ·
+                {new Date().getFullYear()}
+              </p>
             </div>
             <Link href="/employee/attendance/leave" className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full flex items-center gap-1 hover:bg-indigo-100 transition-colors">
-              Apply <ArrowRight size={10} />
+              Apply
+              {' '}
+              <ArrowRight size={10} />
             </Link>
           </div>
- 
+
           {loadingLeaveBalance ? (
             <div className="flex justify-center py-8">
               <Loader2 size={20} className="animate-spin text-emerald-500" />
@@ -364,10 +434,12 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
                   <div
                     key={l.id}
                     className="relative overflow-hidden rounded-2xl border p-4 transition-all hover:scale-[1.01]"
-                    style={{ background: l.bg, borderColor: l.color + '30', boxShadow: `0 4px 20px ${l.color}18` }}
+                    style={{ background: l.bg, borderColor: `${l.color}30`, boxShadow: `0 4px 20px ${l.color}18` }}
                   >
-                    <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full opacity-10 blur-lg"
-                      style={{ background: `radial-gradient(${l.gradientTo}, ${l.gradientFrom})` }} />
+                    <div
+                      className="absolute -top-4 -right-4 w-16 h-16 rounded-full opacity-10 blur-lg"
+                      style={{ background: `radial-gradient(${l.gradientTo}, ${l.gradientFrom})` }}
+                    />
                     <div className="flex items-start justify-between mb-3">
                       <div
                         className="w-9 h-9 rounded-2xl flex items-center justify-center text-xs font-black text-white shadow-sm"
@@ -387,17 +459,25 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
                         style={{ width: `${availPct}%`, background: `linear-gradient(90deg, ${l.gradientFrom}, ${l.gradientTo})` }}
                       />
                     </div>
-                    <p className="text-[10px] text-slate-500 mt-1.5">{l.used} used · {l.total} total</p>
+                    <p className="text-[10px] text-slate-500 mt-1.5">
+                      {l.used}
+                      {' '}
+                      used ·
+                      {' '}
+                      {l.total}
+                      {' '}
+                      total
+                    </p>
                   </div>
                 );
               })}
             </div>
           )}
         </div>
- 
+
         {/* ── Team + Pending row ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
- 
+
           {/* Team Members */}
           <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-5">
             <div className="flex items-center justify-between mb-4">
@@ -407,9 +487,15 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
                 </div>
                 <h3 className="text-sm font-bold text-slate-800">My Team</h3>
               </div>
-              {!teamLoading && <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-2.5 py-1 rounded-full">{teamCount} members</span>}
+              {!teamLoading && (
+              <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-2.5 py-1 rounded-full">
+                {teamCount}
+                {' '}
+                members
+              </span>
+              )}
             </div>
- 
+
             {teamLoading ? (
               <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-violet-500" /></div>
             ) : teamMembers.length === 0 ? (
@@ -432,12 +518,17 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
                   );
                 })}
                 {teamCount > 5 && (
-                  <p className="text-center text-[10px] font-bold text-slate-400 pt-1">+{teamCount - 5} more members</p>
+                  <p className="text-center text-[10px] font-bold text-slate-400 pt-1">
+                    +
+                    {teamCount - 5}
+                    {' '}
+                    more members
+                  </p>
                 )}
               </div>
             )}
           </div>
- 
+
           {/* Pending Requests */}
           <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-amber-200/60 shadow-[0_4px_24px_rgba(245,158,11,0.1)] p-5">
             <div className="flex items-center justify-between mb-4">
@@ -456,7 +547,7 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
                 </span>
               )}
             </div>
- 
+
             {pendingLoading ? (
               <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-amber-500" /></div>
             ) : pendingItems.length === 0 ? (
@@ -493,13 +584,18 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
                   );
                 })}
                 {pendingItems.length > 4 && (
-                  <p className="text-center text-[10px] font-bold text-slate-400 pt-1">+{pendingItems.length - 4} more requests</p>
+                  <p className="text-center text-[10px] font-bold text-slate-400 pt-1">
+                    +
+                    {pendingItems.length - 4}
+                    {' '}
+                    more requests
+                  </p>
                 )}
               </div>
             )}
           </div>
         </div>
- 
+
       </div>
     </div>
   );

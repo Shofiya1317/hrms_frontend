@@ -259,6 +259,3 @@ export const updateWorkLocationSchedule = (
   tenantId,
   { bearerToken: token, isFetchToken: !token },
 );
-
-
-

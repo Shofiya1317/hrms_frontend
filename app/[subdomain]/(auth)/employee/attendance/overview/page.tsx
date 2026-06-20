@@ -2,4 +2,4 @@ import AttendanceOverview from '@/components/EmployeePortal/EmployeeAttendance/A
 
 export default function Page() {
   return <AttendanceOverview />;
-} 
+}

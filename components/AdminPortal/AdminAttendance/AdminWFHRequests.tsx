@@ -18,10 +18,18 @@ import {
 const STATUS_META: Record<WFHStatus, {
   label: string; bg: string; text: string; dot: string; border: string; icon: any;
 }> = {
-  [WFHStatus.PENDING]:   { label: 'Pending',   bg: 'bg-amber-50',  text: 'text-amber-700', dot: 'bg-amber-400',  border: 'border-amber-200',  icon: Clock        },
-  [WFHStatus.APPROVED]:  { label: 'Approved',  bg: 'bg-teal-50',   text: 'text-teal-700',  dot: 'bg-teal-500',   border: 'border-teal-200',   icon: CheckCircle2 },
-  [WFHStatus.REJECTED]:  { label: 'Rejected',  bg: 'bg-red-50',    text: 'text-red-600',   dot: 'bg-red-400',    border: 'border-red-200',    icon: XCircle      },
-  [WFHStatus.CANCELLED]: { label: 'Cancelled', bg: 'bg-slate-100', text: 'text-slate-500', dot: 'bg-slate-400',  border: 'border-slate-200',  icon: X            },
+  [WFHStatus.PENDING]: {
+    label: 'Pending', bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400', border: 'border-amber-200', icon: Clock,
+  },
+  [WFHStatus.APPROVED]: {
+    label: 'Approved', bg: 'bg-teal-50', text: 'text-teal-700', dot: 'bg-teal-500', border: 'border-teal-200', icon: CheckCircle2,
+  },
+  [WFHStatus.REJECTED]: {
+    label: 'Rejected', bg: 'bg-red-50', text: 'text-red-600', dot: 'bg-red-400', border: 'border-red-200', icon: XCircle,
+  },
+  [WFHStatus.CANCELLED]: {
+    label: 'Cancelled', bg: 'bg-slate-100', text: 'text-slate-500', dot: 'bg-slate-400', border: 'border-slate-200', icon: X,
+  },
 };
 
 const ALL_STATUSES = [WFHStatus.PENDING, WFHStatus.APPROVED, WFHStatus.REJECTED, WFHStatus.CANCELLED];
@@ -36,11 +44,15 @@ function fmtDate(iso: string) {
 
 function fmtDateTime(iso: string | null) {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleDateString('en-GB', {
+    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
 }
 
 function initials(name: string) {
-  return name.split(' ').filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  return name.split(' ').filter(Boolean).map((w) => w[0]).join('')
+    .slice(0, 2)
+    .toUpperCase();
 }
 
 const AVATAR_COLORS = [
@@ -62,15 +74,15 @@ function avatarColor(name: string) {
 function ReviewDrawer({ req, onClose, onDone }: {
   req: IWFH; onClose: () => void; onDone: () => void;
 }) {
-  const params    = useParams();
-  const tenantId  = params?.subdomain as string;
-  const name      = req.employee?.name ?? '—';
-  const meta      = STATUS_META[req.status];
+  const params = useParams();
+  const tenantId = params?.subdomain as string;
+  const name = req.employee?.name ?? '—';
+  const meta = STATUS_META[req.status];
 
-  const [action,  setAction]  = useState<WFHStatus.APPROVED | WFHStatus.REJECTED>(WFHStatus.APPROVED);
-  const [reason,  setReason]  = useState('');
-  const [saving,  setSaving]  = useState(false);
-  const [err,     setErr]     = useState('');
+  const [action, setAction] = useState<WFHStatus.APPROVED | WFHStatus.REJECTED>(WFHStatus.APPROVED);
+  const [reason, setReason] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
 
   const handleSubmit = async () => {
     if (action === WFHStatus.REJECTED && !reason.trim()) {
@@ -128,11 +140,11 @@ function ReviewDrawer({ req, onClose, onDone }: {
           {/* Info grid */}
           <div className="grid grid-cols-2 gap-2">
             {[
-              { label: 'WFH Date',    value: fmtDate(req.date) },
-              { label: 'Applied On',  value: fmtDate(req.applied_on) },
+              { label: 'WFH Date', value: fmtDate(req.date) },
+              { label: 'Applied On', value: fmtDate(req.applied_on) },
               { label: 'Approved At', value: fmtDateTime(req.approved_at) },
-              { label: 'Approver',    value: req.approver?.name ?? '—' },
-            ].map(r => (
+              { label: 'Approver', value: req.approver?.name ?? '—' },
+            ].map((r) => (
               <div key={r.label} className="bg-slate-50 rounded-xl px-3 py-2.5">
                 <p className="text-[9px] text-slate-400 font-semibold uppercase tracking-wide">{r.label}</p>
                 <p className="text-xs font-bold text-slate-800 mt-0.5">{r.value}</p>
@@ -161,8 +173,10 @@ function ReviewDrawer({ req, onClose, onDone }: {
             <p className="text-xs font-semibold text-slate-500">Select action</p>
 
             <div className="grid grid-cols-2 gap-2">
-              {([WFHStatus.APPROVED, WFHStatus.REJECTED] as const).map(a => (
-                <button key={a} onClick={() => setAction(a)}
+              {([WFHStatus.APPROVED, WFHStatus.REJECTED] as const).map((a) => (
+                <button
+                  key={a}
+                  onClick={() => setAction(a)}
                   className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold border-2 transition-all ${
                     action === a
                       ? a === WFHStatus.APPROVED
@@ -180,10 +194,14 @@ function ReviewDrawer({ req, onClose, onDone }: {
             {action === WFHStatus.REJECTED && (
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Rejection Reason <span className="text-red-500">*</span>
+                  Rejection Reason
+                  {' '}
+                  <span className="text-red-500">*</span>
                 </label>
                 <textarea
-                  value={reason} onChange={e => setReason(e.target.value)} rows={3}
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  rows={3}
                   placeholder="Enter reason for rejection…"
                   className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all resize-none"
                 />
@@ -197,16 +215,36 @@ function ReviewDrawer({ req, onClose, onDone }: {
               </div>
             )}
 
-            <button onClick={handleSubmit} disabled={saving}
+            <button
+              onClick={handleSubmit}
+              disabled={saving}
               className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-60 shadow-sm ${
                 action === WFHStatus.APPROVED ? 'bg-[#0f766e] hover:bg-[#0d6460]' : 'bg-red-500 hover:bg-red-600'
               }`}
             >
               {saving
-                ? <><Loader2 size={14} className="animate-spin" /> Submitting…</>
+                ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    {' '}
+                    Submitting…
+                  </>
+                )
                 : action === WFHStatus.APPROVED
-                ? <><CheckCircle2 size={14} /> Approve Request</>
-                : <><XCircle size={14} /> Reject Request</>}
+                  ? (
+                    <>
+                      <CheckCircle2 size={14} />
+                      {' '}
+                      Approve Request
+                    </>
+                  )
+                  : (
+                    <>
+                      <XCircle size={14} />
+                      {' '}
+                      Reject Request
+                    </>
+                  )}
             </button>
           </div>
         )}
@@ -225,8 +263,10 @@ function RequestRow({ req, onSelect }: { req: IWFH; onSelect: () => void }) {
   const name = req.employee?.name ?? '—';
 
   return (
-    <div onClick={onSelect}
-      className="group flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-50 last:border-0">
+    <div
+      onClick={onSelect}
+      className="group flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-50 last:border-0"
+    >
       <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${avatarColor(name)} text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0`}>
         {initials(name)}
       </div>
@@ -234,7 +274,8 @@ function RequestRow({ req, onSelect }: { req: IWFH; onSelect: () => void }) {
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-semibold text-[#0f1f2e] truncate">{name}</span>
           <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full border ${meta.bg} ${meta.text} ${meta.border}`}>
-            <Icon size={9} /><span className="ml-0.5">{meta.label}</span>
+            <Icon size={9} />
+            <span className="ml-0.5">{meta.label}</span>
           </span>
         </div>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -246,10 +287,15 @@ function RequestRow({ req, onSelect }: { req: IWFH; onSelect: () => void }) {
           )}
           <span className="flex items-center gap-1 text-[10px] text-gray-500">
             <Home size={9} className="text-teal-500" />
-            WFH on <span className="font-semibold ml-0.5">{fmtDate(req.date)}</span>
+            WFH on
+            {' '}
+            <span className="font-semibold ml-0.5">{fmtDate(req.date)}</span>
           </span>
           <span className="text-gray-300">·</span>
-          <span className="text-[10px] text-gray-400">Applied {fmtDate(req.applied_on)}</span>
+          <span className="text-[10px] text-gray-400">
+            Applied
+            {fmtDate(req.applied_on)}
+          </span>
         </div>
         {req.reason && (
           <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{req.reason}</p>
@@ -267,14 +313,14 @@ function RequestRow({ req, onSelect }: { req: IWFH; onSelect: () => void }) {
 // ─────────────────────────────────────────────
 
 export default function AdminWFHRequests() {
-  const params   = useParams();
+  const params = useParams();
   const tenantId = params?.subdomain as string;
 
-  const [requests,     setRequests]     = useState<IWFH[]>([]);
-  const [loading,      setLoading]      = useState(true);
-  const [search,       setSearch]       = useState('');
+  const [requests, setRequests] = useState<IWFH[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<WFHStatus | 'ALL'>('ALL');
-  const [selected,     setSelected]     = useState<IWFH | null>(null);
+  const [selected, setSelected] = useState<IWFH | null>(null);
 
   useEffect(() => { if (tenantId) fetchRequests(); }, [tenantId]);
 
@@ -284,29 +330,26 @@ export default function AdminWFHRequests() {
       const res = await getAllWFHRequests(tenantId);
       const raw: IWFH[] = Array.isArray(res?.data) ? res.data : (res?.data?.data ?? []);
       setRequests(raw);
-    } catch { /* silent */ }
-    finally { setLoading(false); }
+    } catch { /* silent */ } finally { setLoading(false); }
   };
 
   const filtered = useMemo(() => {
     let list = requests;
-    if (statusFilter !== 'ALL') list = list.filter(r => r.status === statusFilter);
+    if (statusFilter !== 'ALL') list = list.filter((r) => r.status === statusFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter(r =>
-        r.employee?.name?.toLowerCase().includes(q) ||
-        r.employee?.employee_code?.toLowerCase().includes(q) ||
-        r.reason?.toLowerCase().includes(q)
-      );
+      list = list.filter((r) => r.employee?.name?.toLowerCase().includes(q)
+        || r.employee?.employee_code?.toLowerCase().includes(q)
+        || r.reason?.toLowerCase().includes(q));
     }
     return list;
   }, [requests, statusFilter, search]);
 
   const stats = useMemo(() => ({
-    total:     requests.length,
-    pending:   requests.filter(r => r.status === WFHStatus.PENDING).length,
-    approved:  requests.filter(r => r.status === WFHStatus.APPROVED).length,
-    rejected:  requests.filter(r => r.status === WFHStatus.REJECTED).length,
+    total: requests.length,
+    pending: requests.filter((r) => r.status === WFHStatus.PENDING).length,
+    approved: requests.filter((r) => r.status === WFHStatus.APPROVED).length,
+    rejected: requests.filter((r) => r.status === WFHStatus.REJECTED).length,
   }), [requests]);
 
   return (
@@ -315,27 +358,38 @@ export default function AdminWFHRequests() {
       {/* Sub-header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <p className="text-xs text-gray-400">
-          {stats.total} requests · {stats.pending} pending approval
+          {stats.total}
+          {' '}
+          requests ·
+          {stats.pending}
+          {' '}
+          pending approval
         </p>
         <div className="flex items-center gap-2 flex-wrap">
           {/* Search */}
           <div className="relative">
             <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
-              value={search} onChange={e => setSearch(e.target.value)}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Search employee…"
               className="pl-7 pr-3 py-1.5 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20 focus:border-[#0f766e] transition-all w-36"
             />
           </div>
           {/* Status filter */}
           <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
-            <button onClick={() => setStatusFilter('ALL')}
-              className={`px-2 py-1 text-[9px] font-bold rounded-lg transition-colors ${statusFilter === 'ALL' ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+            <button
+              onClick={() => setStatusFilter('ALL')}
+              className={`px-2 py-1 text-[9px] font-bold rounded-lg transition-colors ${statusFilter === 'ALL' ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
               All
             </button>
-            {ALL_STATUSES.map(s => (
-              <button key={s} onClick={() => setStatusFilter(s)}
-                className={`px-2 py-1 text-[9px] font-bold rounded-lg transition-colors capitalize ${statusFilter === s ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+            {ALL_STATUSES.map((s) => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`px-2 py-1 text-[9px] font-bold rounded-lg transition-colors capitalize ${statusFilter === s ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              >
                 {STATUS_META[s].label}
               </button>
             ))}
@@ -346,11 +400,19 @@ export default function AdminWFHRequests() {
       {/* Stat chips */}
       <div className="grid grid-cols-4 gap-2">
         {[
-          { label: 'Total',    value: stats.total,    color: 'text-[#0f766e]', bg: 'bg-[#e8f5ee]', dot: 'bg-[#0f766e]' },
-          { label: 'Pending',  value: stats.pending,  color: 'text-amber-600', bg: 'bg-amber-50',   dot: 'bg-amber-400' },
-          { label: 'Approved', value: stats.approved, color: 'text-teal-600',  bg: 'bg-teal-50',    dot: 'bg-teal-500'  },
-          { label: 'Rejected', value: stats.rejected, color: 'text-red-500',   bg: 'bg-red-50',     dot: 'bg-red-400'   },
-        ].map(s => (
+          {
+            label: 'Total', value: stats.total, color: 'text-[#0f766e]', bg: 'bg-[#e8f5ee]', dot: 'bg-[#0f766e]',
+          },
+          {
+            label: 'Pending', value: stats.pending, color: 'text-amber-600', bg: 'bg-amber-50', dot: 'bg-amber-400',
+          },
+          {
+            label: 'Approved', value: stats.approved, color: 'text-teal-600', bg: 'bg-teal-50', dot: 'bg-teal-500',
+          },
+          {
+            label: 'Rejected', value: stats.rejected, color: 'text-red-500', bg: 'bg-red-50', dot: 'bg-red-400',
+          },
+        ].map((s) => (
           <div key={s.label} className={`${s.bg} rounded-xl px-3 py-2 border border-gray-100`}>
             <div className="flex items-center gap-1.5 mb-1">
               <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
@@ -374,8 +436,8 @@ export default function AdminWFHRequests() {
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          {ALL_STATUSES.map(status => {
-            const group = filtered.filter(r => r.status === status);
+          {ALL_STATUSES.map((status) => {
+            const group = filtered.filter((r) => r.status === status);
             if (!group.length) return null;
             const meta = STATUS_META[status];
             return (
@@ -389,7 +451,7 @@ export default function AdminWFHRequests() {
                     {group.length}
                   </span>
                 </div>
-                {group.map(req => (
+                {group.map((req) => (
                   <RequestRow key={req.id} req={req} onSelect={() => setSelected(req)} />
                 ))}
               </div>

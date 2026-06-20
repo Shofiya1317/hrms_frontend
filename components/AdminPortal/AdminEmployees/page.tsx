@@ -1,10 +1,19 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Plus, Download, Upload, Mail, Phone, Building2, MapPin, Eye, Edit, Trash2, CheckCircle, XCircle, Clock } from 'lucide-react';
+import {
+  Search, Plus, Download, Upload, Mail, Phone, Building2, MapPin, Eye, Edit, Trash2, CheckCircle, XCircle, Clock, Filter,
+} from 'lucide-react';
 import { useParams } from 'next/navigation';
-import AddEmployeeModal from '../AdminEmployees/AddEmployeeModal';
 import { deleteEmployee, getEmployees } from '@/lib/service/employee';
+import { getDepartments } from '@/lib/service/masters';
+import AddEmployeeModal from './AddEmployeeModal';
+
+enum EmploymentStatus {
+  ACTIVE = 'ACTIVE',
+  ON_NOTICE = 'ON_NOTICE',
+  EXITED = 'EXITED',
+}
 
 interface Employee {
   id: string;
@@ -21,19 +30,16 @@ interface Employee {
   managerId: string | null;
   reporting_manager_id?: string | null;
   joinDate: string;
-  status: 'active' | 'inactive' | 'on-leave';
+  status: EmploymentStatus;
   employeeId: string;
   dateOfBirth?: string | null;
   gender?: string | null;
 }
 
-const DEPARTMENTS = ['All Departments', 'Engineering', 'Human Resources', 'Sales', 'Finance', 'Operations', 'Quality Assurance', 'Executive'];
-const STATUSES = ['All Status', 'active', 'inactive', 'on-leave'];
-
-const STATUS_CONFIG = {
-  active: { label: 'Active', color: 'bg-green-100 text-green-700', icon: CheckCircle },
-  inactive: { label: 'Inactive', color: 'bg-gray-100 text-gray-600', icon: XCircle },
-  'on-leave': { label: 'On Leave', color: 'bg-amber-100 text-amber-700', icon: Clock },
+const STATUS_CONFIG: Record<EmploymentStatus, { label: string; color: string; icon: any }> = {
+  [EmploymentStatus.ACTIVE]: { label: 'Active', color: 'bg-green-100 text-green-700', icon: CheckCircle },
+  [EmploymentStatus.ON_NOTICE]: { label: 'On Notice', color: 'bg-amber-100 text-amber-700', icon: Clock },
+  [EmploymentStatus.EXITED]: { label: 'Exited', color: 'bg-gray-100 text-gray-600', icon: XCircle },
 };
 
 const TABS = ['Registry', 'Profile', 'ID Management', 'Documents', 'Lifecycle'];
@@ -53,23 +59,46 @@ export default function EmployeesPage() {
 
   const [activeTab, setActiveTab] = useState('Registry');
   const [search, setSearch] = useState('');
-  const [deptFilter, setDeptFilter] = useState('All Departments');
-  const [statusFilter, setStatusFilter] = useState('All Status');
+  const [deptFilter, setDeptFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<EmploymentStatus | ''>('');
+  const [departments, setDepartments] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(100);
 
-  
+  // Fetch departments
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const response = await getDepartments(tenantId);
+        const depts = response?.data?.data || response?.data || [];
+        setDepartments(depts.map((d: any) => ({ id: d.id, name: d.name })));
+      } catch (err) {
+        console.error('Failed to fetch departments:', err);
+      }
+    };
+    fetchDepartments();
+  }, [tenantId]);
 
-  const fetchEmployees = useCallback(async () => {
+  const fetchEmployees = useCallback(async () {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await getEmployees(tenantId);
+      const params: any = {
+        page,
+        limit,
+      };
+      if (search) params.search = search;
+      if (deptFilter) params.department_id = deptFilter;
+      if (statusFilter) params.employment_status = statusFilter;
+
+      const response = await getEmployees(tenantId, params);
       console.log('Employee API response:', response);
 
       let rawEmployees = [];
@@ -88,7 +117,6 @@ export default function EmployeesPage() {
 
       if (rawEmployees.length > 0) {
         setEmployees(rawEmployees.map((emp: any) => {
-          const statusValue = (emp.status || 'ACTIVE').toLowerCase();
           const name = emp.name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || 'Unknown Employee';
           return {
             id: emp.id,
@@ -107,9 +135,7 @@ export default function EmployeesPage() {
             joinDate: emp.joinDate || (emp.date_of_joining
               ? new Date(emp.date_of_joining).toLocaleString('default', { month: 'short', year: 'numeric' })
               : ''),
-            status: (statusValue === 'active' || statusValue === 'inactive' || statusValue === 'on-leave')
-              ? statusValue as 'active' | 'inactive' | 'on-leave'
-              : 'active',
+            status: (emp.status || 'ACTIVE') as EmploymentStatus,
             employeeId: emp.employeeId || emp.employee_code || emp.employee_id || `EMP-${String(emp.id || '').slice(0, 6)}`,
             dateOfBirth: emp.dateOfBirth || emp.date_of_birth || null,
             gender: emp.gender || null,
@@ -127,7 +153,7 @@ export default function EmployeesPage() {
     } finally {
       setLoading(false);
     }
-  }, [tenantId]);
+  }, [tenantId, search, deptFilter, statusFilter, page, limit]);
 
   useEffect(() => {
     fetchEmployees();
@@ -169,21 +195,14 @@ export default function EmployeesPage() {
       manager: created.managerName || '',
       managerId: created.managerId || null,
       joinDate: joinMonth,
-      status: 'active',
+      status: EmploymentStatus.ACTIVE,
       employeeId: created.employeeId || created.employee_code || `EMP-${String(created.id || '').slice(0, 6)}`,
     };
 
     setEmployees((prev) => [newEmployee, ...prev]);
   };
 
-  const filtered = employees.filter((e) => {
-    const matchSearch = e.name.toLowerCase().includes(search.toLowerCase()) ||
-      e.employeeId.toLowerCase().includes(search.toLowerCase()) ||
-      e.role.toLowerCase().includes(search.toLowerCase());
-    const matchDept = deptFilter === 'All Departments' || e.department === deptFilter;
-    const matchStatus = statusFilter === 'All Status' || e.status === statusFilter;
-    return matchSearch && matchDept && matchStatus;
-  });
+  const filtered = employees;
 
   return (
     <div className="space-y-5 p-3 sm:p-4 lg:p-6">
@@ -191,7 +210,12 @@ export default function EmployeesPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold text-[#0f1f2e]">Employees</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Single source of truth · {employees.length} total records</p>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Single source of truth ·
+            {employees.length}
+            {' '}
+            total records
+          </p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 sm:w-auto">
@@ -242,14 +266,20 @@ export default function EmployeesPage() {
               onChange={(e) => setDeptFilter(e.target.value)}
               className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-[#2D7A4F] focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 sm:w-auto"
             >
-              {DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}
+              <option value="">All Departments</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
             </select>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => setStatusFilter(e.target.value as EmploymentStatus | '')}
               className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-[#2D7A4F] focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 sm:w-auto"
             >
-              {STATUSES.map((s) => <option key={s}>{s}</option>)}
+              <option value="">All Status</option>
+              <option value={EmploymentStatus.ACTIVE}>Active</option>
+              <option value={EmploymentStatus.ON_NOTICE}>On Notice</option>
+              <option value={EmploymentStatus.EXITED}>Exited</option>
             </select>
             <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 sm:w-auto">
               <Download size={14} />
@@ -309,7 +339,13 @@ export default function EmployeesPage() {
                                 </div>
                                 <div>
                                   <p className="text-sm font-semibold text-gray-900">{emp.name}</p>
-                                  <p className="text-xs text-gray-400">{emp.employeeId} · {emp.role}</p>
+                                  <p className="text-xs text-gray-400">
+                                    {emp.employeeId}
+                                    {' '}
+                                    ·
+                                    {' '}
+                                    {emp.role}
+                                  </p>
                                 </div>
                               </div>
                             </td>
@@ -364,11 +400,31 @@ export default function EmployeesPage() {
                 </table>
               </div>
               <div className="flex flex-col gap-3 border-t border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs text-gray-500">Showing {filtered.length} of {employees.length} employees</p>
+                <p className="text-xs text-gray-500">
+                  Showing
+                  {filtered.length}
+                  {' '}
+                  of
+                  {employees.length}
+                  {' '}
+                  employees
+                </p>
                 <div className="flex items-center gap-1">
-                  <button className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Prev</button>
-                  <button className="px-3 py-1.5 text-xs font-medium text-white bg-[#2D7A4F] rounded-lg">1</button>
-                  <button className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Next</button>
+                  <button 
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Prev
+                  </button>
+                  <span className="px-3 py-1.5 text-xs font-medium text-white bg-[#2D7A4F] rounded-lg">{page}</span>
+                  <button 
+                    onClick={() => setPage(p => p + 1)}
+                    disabled={employees.length < limit}
+                    className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
                 </div>
               </div>
             </div>
@@ -500,7 +556,13 @@ function EmployeeProfile({ employee, managerNames }: Readonly<{ employee: Employ
               <div key={leave.type}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-medium text-gray-700">{leave.type}</span>
-                  <span className="text-xs font-bold text-gray-800">{leave.used}/{leave.total} used</span>
+                  <span className="text-xs font-bold text-gray-800">
+                    {leave.used}
+                    /
+                    {leave.total}
+                    {' '}
+                    used
+                  </span>
                 </div>
                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                   <div
@@ -523,7 +585,9 @@ function IDManagement({ employees }: Readonly<{ employees: Employee[] }>) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="text-sm font-bold text-[#0f1f2e]">Employee ID Management</h3>
         <button className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2D7A4F] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#1e5c3a] sm:w-auto">
-          <Plus size={14} /> Generate IDs
+          <Plus size={14} />
+          {' '}
+          Generate IDs
         </button>
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -571,11 +635,21 @@ function IDManagement({ employees }: Readonly<{ employees: Employee[] }>) {
 
 function DocumentManagement(): JSX.Element {
   const docs = [
-    { name: 'Offer Letter - New Employee.pdf', tag: 'HR', size: '245 KB', date: 'Mar 2026', expiry: null },
-    { name: 'Aadhaar Card - Employee.pdf', tag: 'KYC', size: '1.2 MB', date: 'Jan 2026', expiry: 'Dec 2030' },
-    { name: 'PAN Card - Employee.pdf', tag: 'KYC', size: '890 KB', date: 'Jun 2025', expiry: null },
-    { name: 'NDA Agreement - Employee.pdf', tag: 'Legal', size: '320 KB', date: 'Sep 2025', expiry: 'Sep 2028' },
-    { name: 'Salary Slip - Feb 2026.pdf', tag: 'HR', size: '180 KB', date: 'Feb 2026', expiry: null },
+    {
+      name: 'Offer Letter - New Employee.pdf', tag: 'HR', size: '245 KB', date: 'Mar 2026', expiry: null,
+    },
+    {
+      name: 'Aadhaar Card - Employee.pdf', tag: 'KYC', size: '1.2 MB', date: 'Jan 2026', expiry: 'Dec 2030',
+    },
+    {
+      name: 'PAN Card - Employee.pdf', tag: 'KYC', size: '890 KB', date: 'Jun 2025', expiry: null,
+    },
+    {
+      name: 'NDA Agreement - Employee.pdf', tag: 'Legal', size: '320 KB', date: 'Sep 2025', expiry: 'Sep 2028',
+    },
+    {
+      name: 'Salary Slip - Feb 2026.pdf', tag: 'HR', size: '180 KB', date: 'Feb 2026', expiry: null,
+    },
   ];
   const tagColors: Record<string, string> = {
     KYC: 'bg-blue-100 text-blue-700',
@@ -587,7 +661,9 @@ function DocumentManagement(): JSX.Element {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="text-sm font-bold text-[#0f1f2e]">Document Management</h3>
         <button className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2D7A4F] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#1e5c3a] sm:w-auto">
-          <Upload size={14} /> Upload Document
+          <Upload size={14} />
+          {' '}
+          Upload Document
         </button>
       </div>
       <div className="space-y-2">
@@ -600,8 +676,19 @@ function DocumentManagement(): JSX.Element {
               <p className="text-sm font-semibold text-gray-800 truncate">{doc.name}</p>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${tagColors[doc.tag]}`}>{doc.tag}</span>
-                <span className="text-xs text-gray-400">{doc.size} · {doc.date}</span>
-                {doc.expiry && <span className="text-xs text-amber-600 font-medium">Expires {doc.expiry}</span>}
+                <span className="text-xs text-gray-400">
+                  {doc.size}
+                  {' '}
+                  ·
+                  {' '}
+                  {doc.date}
+                </span>
+                {doc.expiry && (
+                <span className="text-xs text-amber-600 font-medium">
+                  Expires
+                  {doc.expiry}
+                </span>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
@@ -641,7 +728,13 @@ function EmployeeLifecycle({ employees }: Readonly<{ employees: Employee[] }>) {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-gray-800">{emp.name}</p>
-                <p className="text-xs text-gray-500">{emp.role} · {emp.department || 'N/A'}</p>
+                <p className="text-xs text-gray-500">
+                  {emp.role}
+                  {' '}
+                  ·
+                  {' '}
+                  {emp.department || 'N/A'}
+                </p>
               </div>
               <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${typeConfig[emp.status]}`}>
                 {eventLabel[emp.status]}

@@ -33,9 +33,9 @@ const EMPTY_FORM: LeaveTypePayload = {
 };
 
 const genderBadge: Record<string, string> = {
-  male:   'bg-blue-50 text-blue-700',
+  male: 'bg-blue-50 text-blue-700',
   female: 'bg-pink-50 text-pink-700',
-  all:    'bg-slate-100 text-slate-600',
+  all: 'bg-slate-100 text-slate-600',
 };
 
 // ── Leave Type Modal ──────────────────────────────────────────────
@@ -47,9 +47,11 @@ interface LeaveTypeModalProps {
   saving: boolean;
 }
 
-function LeaveTypeModal({ mode, initial, onClose, onSave, saving }: LeaveTypeModalProps) {
+function LeaveTypeModal({
+  mode, initial, onClose, onSave, saving,
+}: LeaveTypeModalProps) {
   const [form, setForm] = useState<LeaveTypePayload>(
-    initial ? { ...initial } : { ...EMPTY_FORM }
+    initial ? { ...initial } : { ...EMPTY_FORM },
   );
 
   // Reset form when initial changes (for edit mode)
@@ -61,8 +63,7 @@ function LeaveTypeModal({ mode, initial, onClose, onSave, saving }: LeaveTypeMod
     }
   }, [initial, mode]);
 
-  const set = (field: keyof LeaveTypePayload, value: unknown) =>
-    setForm(prev => ({ ...prev, [field]: value }));
+  const set = (field: keyof LeaveTypePayload, value: unknown) => setForm((prev) => ({ ...prev, [field]: value }));
 
   const handleSubmit = async () => {
     if (!form.name.trim()) {
@@ -106,7 +107,7 @@ function LeaveTypeModal({ mode, initial, onClose, onSave, saving }: LeaveTypeMod
     >
       <div
         className="bg-white rounded-xl border border-slate-200 shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-3 py-3 border-b border-slate-100">
@@ -131,12 +132,14 @@ function LeaveTypeModal({ mode, initial, onClose, onSave, saving }: LeaveTypeMod
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600">
-                Name <span className="text-red-500">*</span>
+                Name
+                {' '}
+                <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={form.name}
-                onChange={e => set('name', e.target.value)}
+                onChange={(e) => set('name', e.target.value)}
                 placeholder="Annual Leave"
                 className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
               />
@@ -159,7 +162,7 @@ function LeaveTypeModal({ mode, initial, onClose, onSave, saving }: LeaveTypeMod
             <label className="text-xs font-semibold text-slate-600">Description</label>
             <textarea
               value={form.description || ''}
-              onChange={e => set('description', e.target.value)}
+              onChange={(e) => set('description', e.target.value)}
               placeholder="Optional description..."
               rows={2}
               className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all resize-none"
@@ -171,9 +174,7 @@ function LeaveTypeModal({ mode, initial, onClose, onSave, saving }: LeaveTypeMod
               <label className="text-xs font-semibold text-slate-600">Applicable gender</label>
               <select
                 value={form.applicable_gender || 'all'}
-                onChange={e =>
-                  set('applicable_gender', e.target.value as LeaveTypePayload['applicable_gender'])
-                }
+                onChange={(e) => set('applicable_gender', e.target.value as LeaveTypePayload['applicable_gender'])}
                 className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all bg-white"
               >
                 <option value="all">All</option>
@@ -187,9 +188,7 @@ function LeaveTypeModal({ mode, initial, onClose, onSave, saving }: LeaveTypeMod
                 type="number"
                 min={1}
                 value={form.max_consecutive_days ?? ''}
-                onChange={e =>
-                  set('max_consecutive_days', e.target.value ? parseInt(e.target.value) : undefined)
-                }
+                onChange={(e) => set('max_consecutive_days', e.target.value ? parseInt(e.target.value) : undefined)}
                 placeholder="e.g. 18"
                 className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
               />
@@ -200,7 +199,7 @@ function LeaveTypeModal({ mode, initial, onClose, onSave, saving }: LeaveTypeMod
                 type="number"
                 min={0}
                 value={form.notice_days_required ?? 0}
-                onChange={e => set('notice_days_required', parseInt(e.target.value) || 0)}
+                onChange={(e) => set('notice_days_required', parseInt(e.target.value) || 0)}
                 placeholder="0"
                 className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
               />
@@ -210,10 +209,10 @@ function LeaveTypeModal({ mode, initial, onClose, onSave, saving }: LeaveTypeMod
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-600">Flags</label>
             <div className="grid grid-cols-2 gap-2">
-              <Toggle field="is_paid"           label="Paid leave" />
-              <Toggle field="is_encashable"      label="Encashable" />
-              <Toggle field="requires_document"  label="Document required" />
-              <Toggle field="is_system_type"     label="System type" />
+              <Toggle field="is_paid" label="Paid leave" />
+              <Toggle field="is_encashable" label="Encashable" />
+              <Toggle field="requires_document" label="Document required" />
+              <Toggle field="is_system_type" label="System type" />
             </div>
           </div>
         </div>
@@ -228,7 +227,7 @@ function LeaveTypeModal({ mode, initial, onClose, onSave, saving }: LeaveTypeMod
           </button>
           <button
             onClick={handleSubmit}
-            disabled={saving || !form.name.trim() }
+            disabled={saving || !form.name.trim()}
             className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-[#0f766e] hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-all"
           >
             {saving && <Loader2 size={12} className="animate-spin" />}
@@ -248,7 +247,9 @@ interface DeleteModalProps {
   deleting: boolean;
 }
 
-function DeleteModal({ leaveType, onClose, onConfirm, deleting }: DeleteModalProps) {
+function DeleteModal({
+  leaveType, onClose, onConfirm, deleting,
+}: DeleteModalProps) {
   const handleConfirm = async () => {
     await onConfirm();
   };
@@ -260,7 +261,7 @@ function DeleteModal({ leaveType, onClose, onConfirm, deleting }: DeleteModalPro
     >
       <div
         className="bg-white rounded-xl border border-slate-200 shadow-xl w-full max-w-sm"
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0">
@@ -273,8 +274,10 @@ function DeleteModal({ leaveType, onClose, onConfirm, deleting }: DeleteModalPro
         </div>
         <div className="px-5 py-4">
           <p className="text-sm text-slate-600">
-            Are you sure you want to delete{' '}
-            <span className="font-semibold text-slate-900">{leaveType.name}</span>?
+            Are you sure you want to delete
+            {' '}
+            <span className="font-semibold text-slate-900">{leaveType.name}</span>
+            ?
             This may affect existing leave requests linked to this type.
           </p>
         </div>
@@ -307,12 +310,12 @@ interface LeaveTypesTabProps {
 
 export default function LeaveTypesTab({ apiKey, token }: LeaveTypesTabProps) {
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState<string | null>(null);
-  const [modal, setModal]           = useState<'create' | 'edit' | 'delete' | null>(null);
-  const [selected, setSelected]     = useState<LeaveType | null>(null);
-  const [saving, setSaving]         = useState(false);
-  const [deleting, setDeleting]     = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [modal, setModal] = useState<'create' | 'edit' | 'delete' | null>(null);
+  const [selected, setSelected] = useState<LeaveType | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchLeaveTypes();
@@ -321,10 +324,10 @@ export default function LeaveTypesTab({ apiKey, token }: LeaveTypesTabProps) {
   async function fetchLeaveTypes() {
     setLoading(true);
     setError(null);
-    
+
     try {
       const res = await getLeaveTypes(apiKey, token);
-      
+
       // Improved response handling
       let list: LeaveType[] = [];
       if (res?.data?.data && Array.isArray(res.data.data)) {
@@ -334,12 +337,12 @@ export default function LeaveTypesTab({ apiKey, token }: LeaveTypesTabProps) {
       } else if (Array.isArray(res)) {
         list = res;
       }
-      
+
       setLeaveTypes(list);
     } catch (e: unknown) {
       const errorMsg = e instanceof Error ? e.message : 'Failed to load leave types';
       setError(errorMsg);
-        } finally {
+    } finally {
       setLoading(false);
     }
   }
@@ -348,39 +351,37 @@ export default function LeaveTypesTab({ apiKey, token }: LeaveTypesTabProps) {
     setSaving(true);
     setError(null);
     const savingToast = toast.loading(id ? 'Updating leave type...' : 'Creating leave type...');
-    
+
     try {
       let response;
       let newLeaveType: LeaveType;
-      
+
       if (id) {
         // Edit existing
         response = await updateLeaveType(id, payload, apiKey, token);
-        
+
         // Extract the updated leave type from response
         const responseData = response?.data?.data || response?.data;
         newLeaveType = { ...payload, id, ...responseData };
-        
+
         // Update the list with the new data
-        setLeaveTypes(prev => prev.map(lt => 
-          lt.id === id ? newLeaveType : lt
-        ));
-        
+        setLeaveTypes((prev) => prev.map((lt) => (lt.id === id ? newLeaveType : lt)));
+
         toast.success(`Leave type "${payload.name}" updated successfully`, { id: savingToast });
       } else {
         // Create new
         response = await createLeaveType(payload, apiKey, token);
-        
+
         // Extract the created leave type from response
         const responseData = response?.data?.data || response?.data;
         newLeaveType = { ...payload, ...responseData, id: responseData?.id || Date.now().toString() };
-        
+
         // Add to list
-        setLeaveTypes(prev => [...prev, newLeaveType]);
-        
+        setLeaveTypes((prev) => [...prev, newLeaveType]);
+
         toast.success(`Leave type "${payload.name}" created successfully`, { id: savingToast });
       }
-      
+
       setModal(null);
       setSelected(null);
     } catch (e: unknown) {
@@ -394,15 +395,15 @@ export default function LeaveTypesTab({ apiKey, token }: LeaveTypesTabProps) {
 
   async function handleDelete() {
     if (!selected) return;
-    
+
     setDeleting(true);
     setError(null);
     const deletingToast = toast.loading(`Deleting ${selected.name}...`);
-    
+
     try {
       await deleteLeaveType(selected.id, apiKey, token);
       // Remove from list
-      setLeaveTypes(prev => prev.filter(lt => lt.id !== selected.id));
+      setLeaveTypes((prev) => prev.filter((lt) => lt.id !== selected.id));
       toast.success(`Leave type "${selected.name}" deleted successfully`, { id: deletingToast });
       setModal(null);
       setSelected(null);
@@ -415,19 +416,19 @@ export default function LeaveTypesTab({ apiKey, token }: LeaveTypesTabProps) {
     }
   }
 
-  const openEdit = (lt: LeaveType) => { 
-    setSelected(lt); 
-    setModal('edit'); 
+  const openEdit = (lt: LeaveType) => {
+    setSelected(lt);
+    setModal('edit');
   };
-  
-  const openDelete = (lt: LeaveType) => { 
-    setSelected(lt); 
-    setModal('delete'); 
+
+  const openDelete = (lt: LeaveType) => {
+    setSelected(lt);
+    setModal('delete');
   };
-  
-  const closeModal = () => { 
-    setModal(null); 
-    setSelected(null); 
+
+  const closeModal = () => {
+    setModal(null);
+    setSelected(null);
   };
 
   // Table row component for better performance
@@ -451,24 +452,27 @@ export default function LeaveTypesTab({ apiKey, token }: LeaveTypesTabProps) {
       <td className="px-4 py-3">
         <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${
           leaveType.is_paid ? 'bg-teal-50 text-teal-700' : 'bg-slate-100 text-slate-400'
-        }`}>
-          {leaveType.is_paid && <CheckCircle2 size={11} />} 
+        }`}
+        >
+          {leaveType.is_paid && <CheckCircle2 size={11} />}
           {leaveType.is_paid ? 'Yes' : 'No'}
         </span>
       </td>
       <td className="px-4 py-3">
         <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${
           leaveType.is_encashable ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-400'
-        }`}>
-          {leaveType.is_encashable && <CheckCircle2 size={11} />} 
+        }`}
+        >
+          {leaveType.is_encashable && <CheckCircle2 size={11} />}
           {leaveType.is_encashable ? 'Yes' : 'No'}
         </span>
       </td>
       <td className="px-4 py-3">
         <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${
           leaveType.requires_document ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-400'
-        }`}>
-          {leaveType.requires_document && <CheckCircle2 size={11} />} 
+        }`}
+        >
+          {leaveType.requires_document && <CheckCircle2 size={11} />}
           {leaveType.requires_document ? 'Yes' : 'No'}
         </span>
       </td>
@@ -476,7 +480,8 @@ export default function LeaveTypesTab({ apiKey, token }: LeaveTypesTabProps) {
         {leaveType.applicable_gender ? (
           <span className={`inline-flex text-xs font-semibold px-2 py-1 rounded-full capitalize ${
             genderBadge[leaveType.applicable_gender] ?? 'bg-slate-100 text-slate-500'
-          }`}>
+          }`}
+          >
             {leaveType.applicable_gender}
           </span>
         ) : '—'}
@@ -541,13 +546,17 @@ export default function LeaveTypesTab({ apiKey, token }: LeaveTypesTabProps) {
             {leaveType.applicable_gender && leaveType.applicable_gender !== 'all' && (
               <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${
                 genderBadge[leaveType.applicable_gender]
-              }`}>
+              }`}
+              >
                 {leaveType.applicable_gender}
               </span>
             )}
             {leaveType.max_consecutive_days != null && (
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                Max {leaveType.max_consecutive_days}d
+                Max
+                {' '}
+                {leaveType.max_consecutive_days}
+                d
               </span>
             )}
           </div>
@@ -585,21 +594,27 @@ export default function LeaveTypesTab({ apiKey, token }: LeaveTypesTabProps) {
             onClick={() => setModal('create')}
             className="self-start sm:self-auto flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-[#0f766e] hover:bg-teal-700 rounded-lg transition-all shadow-sm"
           >
-            <Plus size={13} /> Add type
+            <Plus size={13} />
+            {' '}
+            Add type
           </button>
         </div>
 
         {/* Error */}
         {error && (
           <div className="mx-4 mt-3 flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-            <AlertTriangle size={13} /> {error}
+            <AlertTriangle size={13} />
+            {' '}
+            {error}
           </div>
         )}
 
         {/* Loading */}
         {loading && (
           <div className="flex items-center justify-center gap-2 py-12 text-sm text-slate-400">
-            <Loader2 size={16} className="animate-spin" /> Loading leave types…
+            <Loader2 size={16} className="animate-spin" />
+            {' '}
+            Loading leave types…
           </div>
         )}
 
@@ -609,7 +624,7 @@ export default function LeaveTypesTab({ apiKey, token }: LeaveTypesTabProps) {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50">
-                  {['Leave type', 'Code', 'Paid', 'Encashable', 'Doc required', 'Gender', 'Max days', 'Notice days', ''].map(h => (
+                  {['Leave type', 'Code', 'Paid', 'Encashable', 'Doc required', 'Gender', 'Max days', 'Notice days', ''].map((h) => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">
                       {h}
                     </th>
@@ -617,7 +632,7 @@ export default function LeaveTypesTab({ apiKey, token }: LeaveTypesTabProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {leaveTypes.map(lt => (
+                {leaveTypes.map((lt) => (
                   <TableRow key={lt.id} leaveType={lt} />
                 ))}
               </tbody>
@@ -628,7 +643,7 @@ export default function LeaveTypesTab({ apiKey, token }: LeaveTypesTabProps) {
         {/* Mobile Cards */}
         {!loading && leaveTypes.length > 0 && (
           <div className="sm:hidden divide-y divide-slate-100">
-            {leaveTypes.map(lt => (
+            {leaveTypes.map((lt) => (
               <MobileCard key={lt.id} leaveType={lt} />
             ))}
           </div>
@@ -661,7 +676,7 @@ export default function LeaveTypesTab({ apiKey, token }: LeaveTypesTabProps) {
           saving={saving}
         />
       )}
-      
+
       {modal === 'delete' && selected && (
         <DeleteModal
           leaveType={selected}

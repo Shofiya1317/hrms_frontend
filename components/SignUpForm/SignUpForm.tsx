@@ -227,8 +227,7 @@ export default function SignUpForm() {
       .toLowerCase()
       .replace(/[^a-z0-9\s]/g, '');
 
-    const limitLength = (text: string, maxLength: number) =>
-      (text.length > maxLength ? text.slice(0, maxLength) : text);
+    const limitLength = (text: string, maxLength: number) => (text.length > maxLength ? text.slice(0, maxLength) : text);
 
     const buildShortName = (words: string[], maxLength: number) => {
       let result = words[0] || '';
@@ -238,8 +237,7 @@ export default function SignUpForm() {
       return limitLength(result, maxLength);
     };
 
-    const createInitials = (words: string[], maxLength: number) =>
-      limitLength(words.map((word) => word.charAt(0)).join(''), maxLength);
+    const createInitials = (words: string[], maxLength: number) => limitLength(words.map((word) => word.charAt(0)).join(''), maxLength);
 
     const name = cleanName(inputName);
     const words = name.split(' ').filter(Boolean);

@@ -6,7 +6,9 @@ import { signOut, useSession } from 'next-auth/react';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import React, { ReactNode, useEffect, useRef, useState } from 'react';
+import React, {
+  ReactNode, useEffect, useRef, useState,
+} from 'react';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import toast from 'react-hot-toast';
@@ -148,12 +150,12 @@ export const getMenuItemsByRole = (role: string): IMenuItem[] => {
 
 // ── Active helpers ────────────────────────────────────────────────
 const isMenuItemActive = (item: IMenuItem, pathname: string): boolean => {
-  if (item.path && item.path !== '' && pathname.startsWith(item.path))
-    return true;
-  if (item.menuItems)
+  if (item.path && item.path !== '' && pathname.startsWith(item.path)) { return true; }
+  if (item.menuItems) {
     return item.menuItems.some(
-      (sub) => sub.path && pathname.startsWith(sub.path)
+      (sub) => sub.path && pathname.startsWith(sub.path),
     );
+  }
   return false;
 };
 
@@ -210,7 +212,6 @@ function DesktopDropdownMenu({
   );
 }
 
-
 // ── Desktop Nav Item (keeps absolute dropdown for lg screens) ─────
 function DesktopNavbarItem({
   item,
@@ -248,8 +249,7 @@ function DesktopNavbarItem({
         style={{ cursor: 'pointer' }}
         onClick={handleClick}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ')
-            handleClick(e as unknown as React.MouseEvent);
+          if (e.key === 'Enter' || e.key === ' ') { handleClick(e as unknown as React.MouseEvent); }
         }}
       >
         <div className="relative flex items-center whitespace-nowrap">
@@ -476,7 +476,7 @@ function MobileProfileList({
       {profileMenu.map((item: IProfileItem) => {
         const active = isProfileItemActive(
           item as unknown as IMenuItem,
-          pathname
+          pathname,
         );
         return (
           <li key={item.label} className="list-none">
@@ -510,7 +510,9 @@ function MobileProfileList({
 }
 
 function Header(props: HeaderProps) {
-  const { menuItems, pathname, profileMenu, user } = props;
+  const {
+    menuItems, pathname, profileMenu, user,
+  } = props;
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -530,10 +532,8 @@ function Header(props: HeaderProps) {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (navRef.current && !navRef.current.contains(e.target as Node))
-        setOpenMenu(null);
-      if (profileRef.current && !profileRef.current.contains(e.target as Node))
-        setShowProfileMenu(false);
+      if (navRef.current && !navRef.current.contains(e.target as Node)) { setOpenMenu(null); }
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) { setShowProfileMenu(false); }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -569,66 +569,64 @@ function Header(props: HeaderProps) {
   const closeMobile = () => setIsMobileOpen(false);
 
   // Mobile Notifications View Component
-  const MobileNotificationsView = ({ onClose }: { onClose: () => void }) => {
-    return (
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
-          <button
-            onClick={() => router.push('/notifications')}
-            className="text-sm text-teal-600 font-medium hover:text-teal-700"
-          >
-            View All
-          </button>
-        </div>
-
-        {/* Quick notification preview */}
-        <div className="space-y-3">
-          <div className="p-3 bg-teal-50 rounded-lg border border-teal-100">
-            <p className="text-sm font-medium text-gray-900">
-              Leave Request Approved
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Your annual leave request has been approved
-            </p>
-            <p className="text-xs text-teal-600 mt-2">2 hours ago</p>
-          </div>
-          <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
-            <p className="text-sm font-medium text-gray-900">
-              New Announcement
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Company holiday schedule for December
-            </p>
-            <p className="text-xs text-gray-400 mt-2">1 day ago</p>
-          </div>
-          <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
-            <p className="text-sm font-medium text-gray-900">
-              Timesheet Reminder
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Your timesheet for November is pending
-            </p>
-            <p className="text-xs text-gray-400 mt-2">3 days ago</p>
-          </div>
-        </div>
-
+  const MobileNotificationsView = ({ onClose }: { onClose: () => void }) => (
+    <div className="p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
         <button
-          onClick={() => {
-            router.push('/notifications');
-            onClose();
-          }}
-          className="w-full mt-4 py-2.5 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors"
+          onClick={() => router.push('/notifications')}
+          className="text-sm text-teal-600 font-medium hover:text-teal-700"
         >
-          View All Notifications
+          View All
         </button>
       </div>
-    );
-  };
+
+      {/* Quick notification preview */}
+      <div className="space-y-3">
+        <div className="p-3 bg-teal-50 rounded-lg border border-teal-100">
+          <p className="text-sm font-medium text-gray-900">
+            Leave Request Approved
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            Your annual leave request has been approved
+          </p>
+          <p className="text-xs text-teal-600 mt-2">2 hours ago</p>
+        </div>
+        <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+          <p className="text-sm font-medium text-gray-900">
+            New Announcement
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            Company holiday schedule for December
+          </p>
+          <p className="text-xs text-gray-400 mt-2">1 day ago</p>
+        </div>
+        <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+          <p className="text-sm font-medium text-gray-900">
+            Timesheet Reminder
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            Your timesheet for November is pending
+          </p>
+          <p className="text-xs text-gray-400 mt-2">3 days ago</p>
+        </div>
+      </div>
+
+      <button
+        onClick={() => {
+          router.push('/notifications');
+          onClose();
+        }}
+        className="w-full mt-4 py-2.5 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors"
+      >
+        View All Notifications
+      </button>
+    </div>
+  );
 
   return (
     <div className="fixed inset-x-0 top-0 p-0" style={{ zIndex: 1030 }}>
-      <Navbar expand="lg" className="header_bg px-3 py-0 sm:px-4 lg:px-6" expanded={true}>
+      <Navbar expand="lg" className="header_bg px-3 py-0 sm:px-4 lg:px-6" expanded>
         {/* ── Logo ── */}
         <Navbar.Brand href="/dashboard" className="p-0">
           <div className="flex items-center font-semibold">
@@ -843,8 +841,7 @@ function Header(props: HeaderProps) {
                   ref={profileRef}
                   onClick={() => setShowProfileMenu((prev) => !prev)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ')
-                      setShowProfileMenu((prev) => !prev);
+                    if (e.key === 'Enter' || e.key === ' ') { setShowProfileMenu((prev) => !prev); }
                   }}
                 >
                   <div className="flex items-center gap-3" title={user?.name}>

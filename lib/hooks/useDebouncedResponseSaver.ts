@@ -1,6 +1,6 @@
-import { ITaskResponse } from '@/components/TaskDataEntryForm/types';
 import debounce from 'lodash.debounce';
 import { useMemo, useRef } from 'react';
+import { ITaskResponse } from '@/components/TaskDataEntryForm/types';
 
 type SaveFn = (responses: ITaskResponse[]) => void;
 type UpdateFn = (response: ITaskResponse, id: string) => void;

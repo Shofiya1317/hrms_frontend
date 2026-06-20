@@ -3,14 +3,12 @@
 import { Formik, Form } from 'formik';
 import { useRouter } from 'next/navigation';
 import { object, array } from 'yup';
-import { Button } from '../Button/Button';
 import toast from 'react-hot-toast';
 import { MdArrowForward } from 'react-icons/md';
 import { IoMdAdd } from 'react-icons/io';
 import Select from 'react-select';
 import { useEffect, useRef, useState } from 'react';
 import CreatableSelect from 'react-select/creatable';
-import CustomStyles from '../CustomStyles/CustomStyles';
 import { onboardingStep2 } from '@/lib/service/auth';
 import { MastersService } from '@/lib/service';
 import { IAccount } from '@/lib/interface/IAccount.interface';
@@ -20,6 +18,8 @@ import {
   IShift,
   IWorkSchedule,
 } from '@/lib/interface/IMasters.interface';
+import CustomStyles from '../CustomStyles/CustomStyles';
+import { Button } from '../Button/Button';
 import './OrganisationSetupForm.css';
 
 // ── Form types ────────────────────────────────────────────────────
@@ -104,7 +104,7 @@ const emptySchedule: NewSchedule = {
 const validationSchema = object({
   branches_locations: array().min(
     1,
-    'At least one branch/location is required'
+    'At least one branch/location is required',
   ),
   departments: array().min(1, 'At least one department is required'),
   work_shifts: array().min(1, 'At least one work shift is required'),
@@ -313,7 +313,7 @@ export default function OrganisationSetupForm({
     try {
       const res = await MastersService.createDepartment(
         { name: newDept.name.trim(), description: newDept.description },
-        slug
+        slug,
       );
       const { success, error } = res?.data as {
         success: boolean;
@@ -361,7 +361,7 @@ export default function OrganisationSetupForm({
           end_time: newShift.end_time,
           working_hours: newShift.working_hours,
         },
-        slug
+        slug,
       );
       const { success, error } = res?.data as {
         success: boolean;
@@ -391,7 +391,7 @@ export default function OrganisationSetupForm({
     try {
       const res = await MastersService.createWorkSchedule(
         { ...newSchedule, name: newSchedule.name.trim() },
-        slug
+        slug,
       );
       const { success, error } = res?.data as {
         success: boolean;
@@ -431,12 +431,8 @@ export default function OrganisationSetupForm({
     const hourRef = useRef<HTMLDivElement>(null);
     const minRef = useRef<HTMLDivElement>(null);
 
-    const hours = Array.from({ length: 12 }, (_, i) =>
-      String(i + 1).padStart(2, '0')
-    );
-    const minutes = Array.from({ length: 60 }, (_, i) =>
-      String(i).padStart(2, '0')
-    );
+    const hours = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
+    const minutes = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
     // Parse external value into local state only on open
     const handleOpen = () => {
@@ -456,8 +452,7 @@ export default function OrganisationSetupForm({
     // Close on outside click
     useEffect(() => {
       const handler = (e: MouseEvent) => {
-        if (ref.current && !ref.current.contains(e.target as Node))
-          setOpen(false);
+        if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); }
       };
       document.addEventListener('mousedown', handler);
       return () => document.removeEventListener('mousedown', handler);
@@ -469,13 +464,12 @@ export default function OrganisationSetupForm({
       setTimeout(() => {
         [hourRef, minRef].forEach((r) => {
           const active = r.current?.querySelector(
-            '.tp-item--active'
+            '.tp-item--active',
           ) as HTMLElement;
           if (active && r.current) {
-            r.current.scrollTop =
-              active.offsetTop -
-              r.current.clientHeight / 2 +
-              active.clientHeight / 2;
+            r.current.scrollTop = active.offsetTop
+              - r.current.clientHeight / 2
+              + active.clientHeight / 2;
           }
         });
       }, 50);
@@ -492,12 +486,12 @@ export default function OrganisationSetupForm({
 
     const displayValue = value
       ? (() => {
-          const [h, m] = value.split(':').map(Number);
-          if (isNaN(h) || isNaN(m)) return '';
-          const p = h >= 12 ? 'PM' : 'AM';
-          const h12 = h % 12 === 0 ? 12 : h % 12;
-          return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${p}`;
-        })()
+        const [h, m] = value.split(':').map(Number);
+        if (isNaN(h) || isNaN(m)) return '';
+        const p = h >= 12 ? 'PM' : 'AM';
+        const h12 = h % 12 === 0 ? 12 : h % 12;
+        return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${p}`;
+      })()
       : '';
 
     return (
@@ -621,7 +615,8 @@ export default function OrganisationSetupForm({
                 <div className="row g-3 mt-2">
                   <div className="col-12 col-md-12">
                     <label className="form-label fw-medium">
-                      Branches / Locations{' '}
+                      Branches / Locations
+                      {' '}
                       <span className="text-danger">*</span>
                     </label>
                     <CreatableSelect
@@ -632,12 +627,10 @@ export default function OrganisationSetupForm({
                         value: v,
                         label: v,
                       }))}
-                      onChange={(selected: any) =>
-                        setFieldValue(
-                          'branches_locations',
-                          selected.map((s: any) => s.value)
-                        )
-                      }
+                      onChange={(selected: any) => setFieldValue(
+                        'branches_locations',
+                        selected.map((s: any) => s.value),
+                      )}
                       placeholder="e.g. Chennai HQ, Mumbai Office…"
                       noOptionsMessage={() => 'Type a location and press Enter'}
                       formatCreateLabel={(input) => `Add "${input}"`}
@@ -653,7 +646,9 @@ export default function OrganisationSetupForm({
 
                   <div className="col-12 col-md-12">
                     <label className="form-label fw-medium">
-                      Departments <span className="text-danger">*</span>
+                      Departments
+                      {' '}
+                      <span className="text-danger">*</span>
                     </label>
                     <div className="d-flex gap-2 align-items-start">
                       <div className="flex-grow-1">
@@ -662,15 +657,11 @@ export default function OrganisationSetupForm({
                           isMulti
                           isLoading={loadingMasters}
                           options={departmentOptions}
-                          value={departmentOptions.filter((d) =>
-                            values.departments.includes(d.value)
+                          value={departmentOptions.filter((d) => values.departments.includes(d.value))}
+                          onChange={(selected: any) => setFieldValue(
+                            'departments',
+                            selected.map((s: any) => s.value),
                           )}
-                          onChange={(selected: any) =>
-                            setFieldValue(
-                              'departments',
-                              selected.map((s: any) => s.value)
-                            )
-                          }
                           placeholder={
                             loadingMasters ? 'Loading…' : 'Select departments…'
                           }
@@ -695,7 +686,9 @@ export default function OrganisationSetupForm({
                 <div className="row g-3 mt-2 mb-2">
                   <div className="col-12 col-md-12">
                     <label className="form-label fw-medium">
-                      Work Shift <span className="text-danger">*</span>
+                      Work Shift
+                      {' '}
+                      <span className="text-danger">*</span>
                     </label>
                     <div className="d-flex gap-2 align-items-start">
                       <div className="flex-grow-1">
@@ -704,15 +697,11 @@ export default function OrganisationSetupForm({
                           isMulti
                           isLoading={loadingMasters}
                           options={shiftOptions}
-                          value={shiftOptions.filter((o) =>
-                            values.work_shifts.includes(o.value)
+                          value={shiftOptions.filter((o) => values.work_shifts.includes(o.value))}
+                          onChange={(selected: any) => setFieldValue(
+                            'work_shifts',
+                            selected.map((s: any) => s.value),
                           )}
-                          onChange={(selected: any) =>
-                            setFieldValue(
-                              'work_shifts',
-                              selected.map((s: any) => s.value)
-                            )
-                          }
                           placeholder={
                             loadingMasters ? 'Loading…' : 'Select shifts…'
                           }
@@ -783,12 +772,10 @@ export default function OrganisationSetupForm({
                           className="form-control form-control-sm"
                           placeholder="Schedule name (e.g. 5-Day Week)"
                           value={newSchedule.name}
-                          onChange={(e) =>
-                            setNewSchedule({ ...newSchedule, name: e.target.value })
-                          }
+                          onChange={(e) => setNewSchedule({ ...newSchedule, name: e.target.value })}
                         />
                       </div>
-                      
+
                       <div className="mb-3">
                         <div className="schedule-label">Working Days</div>
                         <div className="d-flex flex-wrap gap-2">
@@ -800,19 +787,17 @@ export default function OrganisationSetupForm({
                               <input
                                 type="checkbox"
                                 checked={newSchedule[key] as boolean}
-                                onChange={(e) =>
-                                  setNewSchedule({
-                                    ...newSchedule,
-                                    [key]: e.target.checked,
-                                  })
-                                }
+                                onChange={(e) => setNewSchedule({
+                                  ...newSchedule,
+                                  [key]: e.target.checked,
+                                })}
                               />
                               {label.substring(0, 3)}
                             </label>
                           ))}
                         </div>
                       </div>
-                      
+
                       <div className="mb-3">
                         <div className="schedule-label">Saturday Weeks</div>
                         <div className="d-flex flex-wrap gap-2">
@@ -824,12 +809,10 @@ export default function OrganisationSetupForm({
                               <input
                                 type="checkbox"
                                 checked={newSchedule[key] as boolean}
-                                onChange={(e) =>
-                                  setNewSchedule({
-                                    ...newSchedule,
-                                    [key]: e.target.checked,
-                                  })
-                                }
+                                onChange={(e) => setNewSchedule({
+                                  ...newSchedule,
+                                  [key]: e.target.checked,
+                                })}
                               />
                               {label}
                             </label>
@@ -849,13 +832,13 @@ export default function OrganisationSetupForm({
                     type="submit"
                     isSolid
                     className="company-info-btn"
-                    sufixIconChildren={
+                    sufixIconChildren={(
                       <MdArrowForward
                         size={20}
                         color="var(--icon-color)"
                         className="ms-3"
                       />
-                    }
+                    )}
                   />
                 </div>
               </Form>
@@ -887,16 +870,16 @@ export default function OrganisationSetupForm({
               <div className="modal-body">
                 <div className="mb-3">
                   <label className="form-label">
-                    Name <span className="text-danger">*</span>
+                    Name
+                    {' '}
+                    <span className="text-danger">*</span>
                   </label>
                   <input
                     type="text"
                     className="form-control"
                     placeholder="e.g. Product Design"
                     value={newDept.name}
-                    onChange={(e) =>
-                      setNewDept({ ...newDept, name: e.target.value })
-                    }
+                    onChange={(e) => setNewDept({ ...newDept, name: e.target.value })}
                   />
                 </div>
                 <div className="mb-1">
@@ -906,9 +889,7 @@ export default function OrganisationSetupForm({
                     rows={3}
                     placeholder="Enter a brief description"
                     value={newDept.description}
-                    onChange={(e) =>
-                      setNewDept({ ...newDept, description: e.target.value })
-                    }
+                    onChange={(e) => setNewDept({ ...newDept, description: e.target.value })}
                   />
                 </div>
               </div>
@@ -959,16 +940,16 @@ export default function OrganisationSetupForm({
               <div className="modal-body">
                 <div className="mb-3">
                   <label className="form-label">
-                    Name <span className="text-danger">*</span>
+                    Name
+                    {' '}
+                    <span className="text-danger">*</span>
                   </label>
                   <input
                     type="text"
                     className="form-control"
                     placeholder="e.g. Morning Shift"
                     value={newShift.name}
-                    onChange={(e) =>
-                      setNewShift({ ...newShift, name: e.target.value })
-                    }
+                    onChange={(e) => setNewShift({ ...newShift, name: e.target.value })}
                   />
                 </div>
                 <div className="mb-3">
@@ -978,40 +959,40 @@ export default function OrganisationSetupForm({
                     rows={2}
                     placeholder="Enter description"
                     value={newShift.description}
-                    onChange={(e) =>
-                      setNewShift({ ...newShift, description: e.target.value })
-                    }
+                    onChange={(e) => setNewShift({ ...newShift, description: e.target.value })}
                   />
                 </div>
                 <div className="row g-3 mb-3">
                   <div className="col-6">
                     <label className="form-label">
-                      Start Time <span className="text-danger">*</span>
+                      Start Time
+                      {' '}
+                      <span className="text-danger">*</span>
                     </label>
                     <TimePickerInput
                       value={newShift.start_time}
-                      onChange={(val) =>
-                        setNewShift({ ...newShift, start_time: val })
-                      }
+                      onChange={(val) => setNewShift({ ...newShift, start_time: val })}
                       placeholder="Start time"
                     />
                   </div>
                   <div className="col-6">
                     <label className="form-label">
-                      End Time <span className="text-danger">*</span>
+                      End Time
+                      {' '}
+                      <span className="text-danger">*</span>
                     </label>
                     <TimePickerInput
                       value={newShift.end_time}
-                      onChange={(val) =>
-                        setNewShift({ ...newShift, end_time: val })
-                      }
+                      onChange={(val) => setNewShift({ ...newShift, end_time: val })}
                       placeholder="End time"
                     />
                   </div>
                 </div>
                 <div className="mb-1">
                   <label className="form-label">
-                    Working Hours <span className="text-danger">*</span>
+                    Working Hours
+                    {' '}
+                    <span className="text-danger">*</span>
                   </label>
                   <input
                     type="number"
@@ -1020,14 +1001,12 @@ export default function OrganisationSetupForm({
                     max={24}
                     placeholder="e.g. 8"
                     value={newShift.working_hours}
-                    onChange={(e) =>
-                      setNewShift({
-                        ...newShift,
-                        working_hours: e.target.value
-                          ? parseInt(e.target.value)
-                          : '',
-                      })
-                    }
+                    onChange={(e) => setNewShift({
+                      ...newShift,
+                      working_hours: e.target.value
+                        ? parseInt(e.target.value)
+                        : '',
+                    })}
                   />
                 </div>
               </div>

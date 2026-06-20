@@ -1,32 +1,38 @@
 'use client';
 
-import { useEffect, useState, useMemo, useRef } from 'react';
+import {
+  useEffect, useState, useMemo, useRef,
+} from 'react';
 import { useParams } from 'next/navigation';
 import {
   Plus, Pencil, Trash2, X, Loader2, CalendarDays,
   AlertCircle, ChevronLeft, ChevronRight, Download,
   Briefcase, Shield, Award, Sun, Building, Repeat,
-  Home, MapPin, Settings, Eye, EyeOff
+  Home, MapPin, Settings, Eye, EyeOff,
 } from 'lucide-react';
 import {
   getHolidaysByYear, createHoliday, updateHoliday, deleteHoliday, bulkImportHolidays,
   IHoliday, IHolidayPayload, HolidayType, DayType,
   getMonthlyCalendar, getWorkSchedule, ICalendarDay, IMonthlyCalendar, IWorkSchedule,
-  getWorkLocationSchedule, IWorkLocationSchedule
+  getWorkLocationSchedule, IWorkLocationSchedule,
 } from '@/lib/service/companyHoliday';
 
 // ─────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────
 
-const MONTH_FULL  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const DAYS_SHORT  = ['S','M','T','W','T','F','S'];
+const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const DAYS_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const HOLIDAY_TYPES: HolidayType[] = ['public', 'optional', 'restricted'];
 
 // Work location meta for display
 const LOCATION_META = {
-  office: { icon: Building, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200', label: 'Office' },
-  wfh: { icon: Home, color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200', label: 'WFH' },
+  office: {
+    icon: Building, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200', label: 'Office',
+  },
+  wfh: {
+    icon: Home, color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200', label: 'WFH',
+  },
 };
 
 // Function to get work location for a specific day
@@ -39,9 +45,15 @@ const getWorkLocation = (dayName: string, locationSchedule: IWorkLocationSchedul
 const TYPE_META: Record<HolidayType, {
   label: string; bg: string; text: string; dot: string; border: string; ringColor: string;
 }> = {
-  public:     { label: 'Public',     bg: 'bg-blue-100',   text: 'text-blue-700',   dot: 'bg-blue-500',   border: 'border-blue-200',   ringColor: 'ring-blue-400'   },
-  optional:   { label: 'Optional',   bg: 'bg-amber-100',  text: 'text-amber-700',  dot: 'bg-amber-500',  border: 'border-amber-200',  ringColor: 'ring-amber-400'  },
-  restricted: { label: 'Restricted', bg: 'bg-purple-100', text: 'text-purple-700', dot: 'bg-purple-500', border: 'border-purple-200', ringColor: 'ring-purple-400' },
+  public: {
+    label: 'Public', bg: 'bg-blue-100', text: 'text-blue-700', dot: 'bg-blue-500', border: 'border-blue-200', ringColor: 'ring-blue-400',
+  },
+  optional: {
+    label: 'Optional', bg: 'bg-amber-100', text: 'text-amber-700', dot: 'bg-amber-500', border: 'border-amber-200', ringColor: 'ring-amber-400',
+  },
+  restricted: {
+    label: 'Restricted', bg: 'bg-purple-100', text: 'text-purple-700', dot: 'bg-purple-500', border: 'border-purple-200', ringColor: 'ring-purple-400',
+  },
 };
 
 // Meta for a "working day override" entry (day_type === 'working')
@@ -63,18 +75,30 @@ function getEntryMeta(h: IHoliday) {
 // Day visual config
 type DayKind = 'working' | 'weekend' | 'working_saturday' | 'non_working_saturday' | 'holiday' | 'working_override';
 const DAY_KIND_META: Record<DayKind, { bg: string; text: string; border: string; dot: string; label: string }> = {
-  working:             { bg: 'bg-white',        text: 'text-slate-700', border: 'border-slate-100', dot: 'bg-slate-300',   label: 'Working day'            },
-  weekend:             { bg: 'bg-slate-50',      text: 'text-slate-400', border: 'border-slate-100', dot: 'bg-slate-200',   label: 'Weekend'                },
-  working_saturday:    { bg: 'bg-emerald-50',    text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-400', label: 'Working Saturday'  },
-  non_working_saturday:{ bg: 'bg-slate-50',      text: 'text-slate-400', border: 'border-slate-100', dot: 'bg-slate-200',   label: 'Off Saturday'           },
-  holiday:             { bg: 'bg-red-50',        text: 'text-red-600',   border: 'border-red-200',   dot: 'bg-red-400',     label: 'Holiday'                },
-  working_override:    { bg: 'bg-orange-50',     text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-400', label: 'Working Day (Override)' },
+  working: {
+    bg: 'bg-white', text: 'text-slate-700', border: 'border-slate-100', dot: 'bg-slate-300', label: 'Working day',
+  },
+  weekend: {
+    bg: 'bg-slate-50', text: 'text-slate-400', border: 'border-slate-100', dot: 'bg-slate-200', label: 'Weekend',
+  },
+  working_saturday: {
+    bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-400', label: 'Working Saturday',
+  },
+  non_working_saturday: {
+    bg: 'bg-slate-50', text: 'text-slate-400', border: 'border-slate-100', dot: 'bg-slate-200', label: 'Off Saturday',
+  },
+  holiday: {
+    bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-200', dot: 'bg-red-400', label: 'Holiday',
+  },
+  working_override: {
+    bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-400', label: 'Working Day (Override)',
+  },
 };
 
 const defaultForm = (): IHolidayPayload => ({
   name: '', date: '', holiday_type: 'public', day_type: 'holiday', description: '', is_active: true,
 });
-const isoToInput  = (iso: string) => iso?.split('T')[0] ?? '';
+const isoToInput = (iso: string) => iso?.split('T')[0] ?? '';
 
 // ─────────────────────────────────────────────
 // Key helper: which nth Saturday is this date?
@@ -103,14 +127,14 @@ function getDayKind(date: Date, workSchedule: IWorkSchedule | null): DayKind {
 
   if (dow === 6) {
     // Saturday — check which week
-    const nth    = getNthSaturdayOfMonth(date);          // 1–5
-    const key    = `saturday_week_${nth}` as keyof typeof workSchedule.schedule;
+    const nth = getNthSaturdayOfMonth(date); // 1–5
+    const key = `saturday_week_${nth}` as keyof typeof workSchedule.schedule;
     const isWork = workSchedule ? !!workSchedule.schedule[key] : false;
     return isWork ? 'working_saturday' : 'non_working_saturday';
   }
 
   // Mon–Fri
-  const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const key = dayNames[dow] as keyof typeof workSchedule.schedule;
   const isWork = workSchedule ? !!workSchedule.schedule[key] : true; // default working
   return isWork ? 'working' : 'weekend';
@@ -126,7 +150,7 @@ function getEffectiveDayKind(
   calendarDay: ICalendarDay | undefined,
   workSchedule: IWorkSchedule | null,
 ): DayKind {
-  const activeEntry = entriesForDate.find(h => h.is_active !== false) ?? entriesForDate[0];
+  const activeEntry = entriesForDate.find((h) => h.is_active !== false) ?? entriesForDate[0];
 
   if (activeEntry) {
     return activeEntry.day_type === 'working' ? 'working_override' : 'holiday';
@@ -138,8 +162,10 @@ function getEffectiveDayKind(
 // ─────────────────────────────────────────────
 // Work Location Schedule Card
 function WorkLocationCard({ wls }: { wls: IWorkLocationSchedule }) {
-  const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', ];
-  const dayLabels = { monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu', friday: 'Fri', saturday: 'Sat', };
+  const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const dayLabels = {
+    monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu', friday: 'Fri', saturday: 'Sat',
+  };
 
   // Add null check for schedule
   if (!wls || !wls.schedule) {
@@ -159,11 +185,11 @@ function WorkLocationCard({ wls }: { wls: IWorkLocationSchedule }) {
       </div>
 
       <div className="grid grid-cols-8 gap-2">
-        {dayOrder.map(day => {
+        {dayOrder.map((day) => {
           const location = wls.schedule[day as keyof typeof wls.schedule];
           const meta = LOCATION_META[location as keyof typeof LOCATION_META] || LOCATION_META.office;
           const IconComponent = meta.icon;
-          
+
           return (
             <div key={day} className={`text-center py-2 rounded-lg ${meta.bg} ${meta.border} border`}>
               <div className="flex flex-col items-center gap-1">
@@ -184,13 +210,17 @@ function WorkLocationCard({ wls }: { wls: IWorkLocationSchedule }) {
         <div className="flex items-center gap-1">
           <Building size={10} className="text-blue-600" />
           <span className="text-[10px] font-medium text-slate-600">
-            {Object.values(wls.schedule).filter(loc => loc === 'office').length} Office days
+            {Object.values(wls.schedule).filter((loc) => loc === 'office').length}
+            {' '}
+            Office days
           </span>
         </div>
         <div className="flex items-center gap-1">
           <Home size={10} className="text-green-600" />
           <span className="text-[10px] font-medium text-slate-600">
-            {Object.values(wls.schedule).filter(loc => loc === 'wfh').length} WFH days
+            {Object.values(wls.schedule).filter((loc) => loc === 'wfh').length}
+            {' '}
+            WFH days
           </span>
         </div>
       </div>
@@ -217,7 +247,7 @@ function WorkScheduleCard({ ws }: { ws: IWorkSchedule }) {
         <div>
           <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Working days</p>
           <div className="flex flex-wrap gap-1">
-            {ws.working_days.map(d => (
+            {ws.working_days.map((d) => (
               <span key={d} className="text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded-full">{d}</span>
             ))}
           </div>
@@ -225,7 +255,7 @@ function WorkScheduleCard({ ws }: { ws: IWorkSchedule }) {
         <div>
           <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Off days</p>
           <div className="flex flex-wrap gap-1">
-            {ws.non_working_days.map(d => (
+            {ws.non_working_days.map((d) => (
               <span key={d} className="text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200 px-1.5 py-0.5 rounded-full">{d}</span>
             ))}
           </div>
@@ -236,12 +266,15 @@ function WorkScheduleCard({ ws }: { ws: IWorkSchedule }) {
       <div className="mt-3 pt-3 border-t border-slate-50">
         <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Saturday schedule</p>
         <div className="grid grid-cols-5 gap-1">
-          {[1,2,3,4,5].map(n => {
+          {[1, 2, 3, 4, 5].map((n) => {
             const key = `saturday_week_${n}` as keyof typeof ws.schedule;
             const isWork = !!ws.schedule[key];
             return (
               <div key={n} className={`text-center py-1.5 rounded-lg text-[9px] font-bold ${isWork ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}>
-                <div>{n}{n===1?'st':n===2?'nd':n===3?'rd':'th'}</div>
+                <div>
+                  {n}
+                  {n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'}
+                </div>
                 <div>{isWork ? 'ON' : 'OFF'}</div>
               </div>
             );
@@ -274,7 +307,7 @@ function DayCell({
   const [open, setOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const dateObj = new Date(iso + 'T00:00:00'); // local midnight, avoid UTC shift
+  const dateObj = new Date(`${iso}T00:00:00`); // local midnight, avoid UTC shift
   const h = holidays[0];
   const entryMeta = h ? getEntryMeta(h) : null;
 
@@ -285,12 +318,12 @@ function DayCell({
   const isOverride = calendarDay?.is_override ?? false;
   const flipLeft = colIndex >= 5;
 
-  const keep  = () => { if (closeTimer.current) clearTimeout(closeTimer.current); };
+  const keep = () => { if (closeTimer.current) clearTimeout(closeTimer.current); };
   const leave = () => { closeTimer.current = setTimeout(() => setOpen(false), 150); };
 
   // Nth saturday info for tooltip
   const satNth = dateObj.getDay() === 6 ? getNthSaturdayOfMonth(dateObj) : 0;
-  
+
   // Get work location for this day
   const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const dayName = dayNames[dateObj.getDay()];
@@ -303,12 +336,13 @@ function DayCell({
       <div className={`w-full aspect-square flex flex-col items-center justify-center rounded-lg text-[10px] font-semibold border cursor-default select-none transition-all relative
         ${kindMeta.bg} ${kindMeta.text} ${kindMeta.border}
         ${open ? (entryMeta ? `ring-2 ${entryMeta.ringColor}` : 'ring-2 ring-teal-300') : ''}
-        ${isToday ? 'ring-2 ring-[#0f766e] ring-offset-1 font-bold' : ''}`}>
+        ${isToday ? 'ring-2 ring-[#0f766e] ring-offset-1 font-bold' : ''}`}
+      >
         <span>{day}</span>
 
         {/* Status dot */}
         <div className={`w-1 h-1 rounded-full mt-0.5 ${kindMeta.dot}`} />
-        
+
         {/* Work location indicator */}
         {workLocation && locationMeta && (
           <div className="absolute bottom-0.5 right-0.5">
@@ -329,8 +363,11 @@ function DayCell({
 
       {/* Hover card */}
       {open && (
-        <div onMouseEnter={keep} onMouseLeave={leave}
-          className={`absolute top-full z-50 w-56 mt-1 ${flipLeft ? 'right-0' : 'left-0'}`}>
+        <div
+          onMouseEnter={keep}
+          onMouseLeave={leave}
+          className={`absolute top-full z-50 w-56 mt-1 ${flipLeft ? 'right-0' : 'left-0'}`}
+        >
           <div className={`bg-white rounded-2xl shadow-2xl border ${entryMeta ? entryMeta.border : 'border-slate-200'} p-3 space-y-2.5`}>
 
             {/* Day kind info */}
@@ -342,7 +379,10 @@ function DayCell({
               <div className="flex items-center gap-1">
                 {satNth > 0 && (
                   <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${dayKind === 'working_saturday' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                    {satNth}{satNth===1?'st':satNth===2?'nd':satNth===3?'rd':'th'} Sat
+                    {satNth}
+                    {satNth === 1 ? 'st' : satNth === 2 ? 'nd' : satNth === 3 ? 'rd' : 'th'}
+                    {' '}
+                    Sat
                   </span>
                 )}
                 {workLocation && locationMeta && (
@@ -381,14 +421,26 @@ function DayCell({
                   {hh.description && <p className="text-[9px] text-slate-400 mb-2">{hh.description}</p>}
                   {!viewOnly && (
                     <div className="flex gap-1.5">
-                      <button onClick={() => { setOpen(false); onEdit(hh); }}
-                        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors">
-                        <Pencil size={9} /> Edit
+                      <button
+                        onClick={() => { setOpen(false); onEdit(hh); }}
+                        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors"
+                      >
+                        <Pencil size={9} />
+                        {' '}
+                        Edit
                       </button>
-                      <button onClick={() => { setOpen(false); onConfirmDelete(hh.id, hh.name); }}
+                      <button
+                        onClick={() => { setOpen(false); onConfirmDelete(hh.id, hh.name); }}
                         disabled={deletingId === hh.id}
-                        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-colors disabled:opacity-50">
-                        {deletingId === hh.id ? <Loader2 size={9} className="animate-spin" /> : <><Trash2 size={9} /> Del</>}
+                        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-colors disabled:opacity-50"
+                      >
+                        {deletingId === hh.id ? <Loader2 size={9} className="animate-spin" /> : (
+                          <>
+                            <Trash2 size={9} />
+                            {' '}
+                            Del
+                          </>
+                        )}
                       </button>
                     </div>
                   )}
@@ -398,26 +450,48 @@ function DayCell({
 
             {viewOnly && attendance && (() => {
               const status = attendance.is_regularized ? 'regularized' : attendance.is_late ? 'late' : attendance.attendance_status;
-              const am = ATTENDANCE_META[status] ?? ATTENDANCE_META['absent'];
+              const am = ATTENDANCE_META[status] ?? ATTENDANCE_META.absent;
               return (
                 <div className="border-t border-slate-100 pt-2 space-y-1">
                   <div className="flex items-center gap-1.5">
                     <span className={`w-2 h-2 rounded-full ${am.dot}`} />
                     <span className={`text-[10px] font-bold ${am.text}`}>{am.label}</span>
-                    {attendance.is_late && <span className="ml-auto text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700">Late {attendance.late_by_minutes}m</span>}
+                    {attendance.is_late && (
+                    <span className="ml-auto text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700">
+                      Late
+                      {attendance.late_by_minutes}
+                      m
+                    </span>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-1 text-[9px] text-slate-500">
-                    <span>In: <span className="font-semibold text-slate-700">{fmtTime(attendance.check_in_time)}</span></span>
-                    <span>Out: <span className="font-semibold text-slate-700">{fmtTime(attendance.check_out_time)}</span></span>
+                    <span>
+                      In:
+                      <span className="font-semibold text-slate-700">{fmtTime(attendance.check_in_time)}</span>
+                    </span>
+                    <span>
+                      Out:
+                      <span className="font-semibold text-slate-700">{fmtTime(attendance.check_out_time)}</span>
+                    </span>
                   </div>
-                  {attendance.total_worked_hours && <p className="text-[9px] text-slate-400">{attendance.total_worked_hours} hrs worked</p>}
+                  {attendance.total_worked_hours && (
+                  <p className="text-[9px] text-slate-400">
+                    {attendance.total_worked_hours}
+                    {' '}
+                    hrs worked
+                  </p>
+                  )}
                 </div>
               );
             })()}
             {!viewOnly && !h && (
-              <button onClick={() => { setOpen(false); onDayClick(iso); }}
-                className="w-full flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors border-t border-slate-100 pt-2.5 mt-0.5">
-                <Plus size={9} /> Add Entry
+              <button
+                onClick={() => { setOpen(false); onDayClick(iso); }}
+                className="w-full flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors border-t border-slate-100 pt-2.5 mt-0.5"
+              >
+                <Plus size={9} />
+                {' '}
+                Add Entry
               </button>
             )}
           </div>
@@ -447,43 +521,46 @@ function MiniMonth({
   viewOnly?: boolean;
   attendanceByDate?: Record<string, IAttendanceLog>;
 }) {
-  const today      = new Date();
-  const firstDow   = new Date(year, monthIdx, 1).getDay();
-  const totalDays  = new Date(year, monthIdx + 1, 0).getDate();
+  const today = new Date();
+  const firstDow = new Date(year, monthIdx, 1).getDay();
+  const totalDays = new Date(year, monthIdx + 1, 0).getDate();
   const cells: (number | null)[] = Array(firstDow).fill(null);
   for (let d = 1; d <= totalDays; d++) cells.push(d);
   while (cells.length % 7 !== 0) cells.push(null);
 
   const calendarByDate = useMemo(() => {
     if (!calendarData) return {} as Record<string, ICalendarDay>;
-    return Object.fromEntries(calendarData.days.map(d => [d.date, d]));
+    return Object.fromEntries(calendarData.days.map((d) => [d.date, d]));
   }, [calendarData]);
 
   // Month summary counts
   const summary = useMemo(() => {
-    let holidaysCount = 0, workOverridesCount = 0, workingDays = 0, offDays = 0, workSats = 0, offSats = 0;
+    let holidaysCount = 0; let workOverridesCount = 0; let workingDays = 0; let offDays = 0; let workSats = 0; let
+      offSats = 0;
     for (let d = 1; d <= totalDays; d++) {
-      const iso     = `${year}-${String(monthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-      const hs      = byDate[iso] ?? [];
-      const calDay  = calendarByDate[iso];
-      const dateObj = new Date(iso + 'T00:00:00');
+      const iso = `${year}-${String(monthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const hs = byDate[iso] ?? [];
+      const calDay = calendarByDate[iso];
+      const dateObj = new Date(`${iso}T00:00:00`);
 
       // Holiday-type filter, but always keep working-day overrides regardless of filter
       const filteredEntries = filterType === 'all'
         ? hs
-        : hs.filter(h => h.holiday_type === filterType || h.day_type === 'working');
+        : hs.filter((h) => h.holiday_type === filterType || h.day_type === 'working');
 
       const kind = getEffectiveDayKind(dateObj, filteredEntries, calDay, workSchedule);
 
-      if (filteredEntries.some(h => h.day_type !== 'working')) holidaysCount++;
-      if (filteredEntries.some(h => h.day_type === 'working')) workOverridesCount++;
+      if (filteredEntries.some((h) => h.day_type !== 'working')) holidaysCount++;
+      if (filteredEntries.some((h) => h.day_type === 'working')) workOverridesCount++;
 
       if (kind === 'working' || kind === 'working_override') workingDays++;
       if (kind === 'working_saturday') { workingDays++; workSats++; }
       if (kind === 'non_working_saturday') offSats++;
       if (kind === 'weekend') offDays++;
     }
-    return { holidays: holidaysCount, workOverrides: workOverridesCount, workingDays, offDays, workSats, offSats };
+    return {
+      holidays: holidaysCount, workOverrides: workOverridesCount, workingDays, offDays, workSats, offSats,
+    };
   }, [byDate, calendarByDate, year, monthIdx, totalDays, filterType, workSchedule]);
 
   return (
@@ -494,7 +571,8 @@ function MiniMonth({
           <span className="text-[11px] font-bold text-[#0f1f2e] uppercase tracking-wider">{MONTH_FULL[monthIdx]}</span>
           <div className="flex items-center gap-1">
             {viewOnly && attendanceByDate ? (() => {
-              let p = 0, a = 0, l = 0;
+              let p = 0; let a = 0; let
+                l = 0;
               for (let d = 1; d <= totalDays; d++) {
                 const iso = `${year}-${String(monthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const att = attendanceByDate[iso];
@@ -502,37 +580,74 @@ function MiniMonth({
                 const s = att.is_regularized ? 'regularized' : att.is_late ? 'late' : att.attendance_status;
                 if (s === 'on_leave') l++; else if (s === 'absent') a++; else p++;
               }
-              return (<>
-                {p > 0 && <span className="text-[9px] font-bold text-green-700 bg-green-50 px-1.5 py-0.5 rounded-full border border-green-100">{p}P</span>}
-                {l > 0 && <span className="text-[9px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-100">{l}L</span>}
-                {a > 0 && <span className="text-[9px] font-bold text-red-700 bg-red-50 px-1.5 py-0.5 rounded-full border border-red-100">{a}A</span>}
-              </>);
-            })() : (<>
-              {summary.holidays > 0 && (
+              return (
+                <>
+                  {p > 0 && (
+                  <span className="text-[9px] font-bold text-green-700 bg-green-50 px-1.5 py-0.5 rounded-full border border-green-100">
+                    {p}
+                    P
+                  </span>
+                  )}
+                  {l > 0 && (
+                  <span className="text-[9px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-100">
+                    {l}
+                    L
+                  </span>
+                  )}
+                  {a > 0 && (
+                  <span className="text-[9px] font-bold text-red-700 bg-red-50 px-1.5 py-0.5 rounded-full border border-red-100">
+                    {a}
+                    A
+                  </span>
+                  )}
+                </>
+              );
+            })() : (
+              <>
+                {summary.holidays > 0 && (
                 <span className="text-[9px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded-full border border-teal-100">
-                  {summary.holidays} holiday{summary.holidays > 1 ? 's' : ''}
+                  {summary.holidays}
+                  {' '}
+                  holiday
+                  {summary.holidays > 1 ? 's' : ''}
                 </span>
-              )}
-              {summary.workOverrides > 0 && (
+                )}
+                {summary.workOverrides > 0 && (
                 <span className="text-[9px] font-bold text-orange-700 bg-orange-50 px-1.5 py-0.5 rounded-full border border-orange-100">
-                  {summary.workOverrides} override{summary.workOverrides > 1 ? 's' : ''}
+                  {summary.workOverrides}
+                  {' '}
+                  override
+                  {summary.workOverrides > 1 ? 's' : ''}
                 </span>
-              )}
-            </>)}
+                )}
+              </>
+            )}
           </div>
         </div>
         {/* Working/off summary */}
         <div className="flex items-center gap-2 text-[9px] text-gray-400">
-          <span title="Working days" className="flex items-center gap-0.5"><Briefcase size={8} className="text-emerald-500" /> {summary.workingDays}W</span>
-          <span title="Off days" className="flex items-center gap-0.5"><Sun size={8} className="text-slate-400" /> {summary.offDays}O</span>
+          <span title="Working days" className="flex items-center gap-0.5">
+            <Briefcase size={8} className="text-emerald-500" />
+            {' '}
+            {summary.workingDays}
+            W
+          </span>
+          <span title="Off days" className="flex items-center gap-0.5">
+            <Sun size={8} className="text-slate-400" />
+            {' '}
+            {summary.offDays}
+            O
+          </span>
           {summary.workSats > 0 && (
             <span title="Working Saturdays" className="flex items-center gap-0.5 text-emerald-600 font-semibold">
-              {summary.workSats}S↑
+              {summary.workSats}
+              S↑
             </span>
           )}
           {summary.offSats > 0 && (
             <span title="Off Saturdays" className="flex items-center gap-0.5 text-slate-400 font-semibold">
-              {summary.offSats}S↓
+              {summary.offSats}
+              S↓
             </span>
           )}
         </div>
@@ -550,13 +665,13 @@ function MiniMonth({
         {cells.map((day, i) => {
           if (!day) return <div key={i} />;
           const iso = `${year}-${String(monthIdx + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-          const allH      = byDate[iso] ?? [];
+          const allH = byDate[iso] ?? [];
           // Keep working-day overrides visible regardless of holiday-type filter
-          const filtered  = filterType === 'all'
+          const filtered = filterType === 'all'
             ? allH
-            : allH.filter(h => h.holiday_type === filterType || h.day_type === 'working');
-          const calDay    = calendarByDate[iso];
-          const isToday   = today.getFullYear() === year && today.getMonth() === monthIdx && today.getDate() === day;
+            : allH.filter((h) => h.holiday_type === filterType || h.day_type === 'working');
+          const calDay = calendarByDate[iso];
+          const isToday = today.getFullYear() === year && today.getMonth() === monthIdx && today.getDate() === day;
 
           return (
             <DayCell
@@ -601,11 +716,21 @@ export interface IAttendanceLog {
 }
 
 const ATTENDANCE_META: Record<string, { label: string; dot: string; text: string; bg: string; ring: string }> = {
-  present:     { label: 'Present',     dot: 'bg-green-500',   text: 'text-green-700',   bg: 'bg-green-50',   ring: 'ring-green-400'   },
-  late:        { label: 'Late',        dot: 'bg-amber-500',   text: 'text-amber-700',   bg: 'bg-amber-50',   ring: 'ring-amber-400'   },
-  on_leave:    { label: 'Leave',       dot: 'bg-blue-500',    text: 'text-blue-700',    bg: 'bg-blue-50',    ring: 'ring-blue-400'    },
-  absent:      { label: 'Absent',      dot: 'bg-red-500',     text: 'text-red-700',     bg: 'bg-red-50',     ring: 'ring-red-400'     },
-  regularized: { label: 'Regularized', dot: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50', ring: 'ring-emerald-400' },
+  present: {
+    label: 'Present', dot: 'bg-green-500', text: 'text-green-700', bg: 'bg-green-50', ring: 'ring-green-400',
+  },
+  late: {
+    label: 'Late', dot: 'bg-amber-500', text: 'text-amber-700', bg: 'bg-amber-50', ring: 'ring-amber-400',
+  },
+  on_leave: {
+    label: 'Leave', dot: 'bg-blue-500', text: 'text-blue-700', bg: 'bg-blue-50', ring: 'ring-blue-400',
+  },
+  absent: {
+    label: 'Absent', dot: 'bg-red-500', text: 'text-red-700', bg: 'bg-red-50', ring: 'ring-red-400',
+  },
+  regularized: {
+    label: 'Regularized', dot: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50', ring: 'ring-emerald-400',
+  },
 };
 
 function fmtTime(iso: string | null) {
@@ -623,32 +748,32 @@ export default function HolidaysTab({
   attendanceByDate?: Record<string, IAttendanceLog>;
   onYearChange?: (year: number) => void;
 } = {}) {
-  const params    = useParams();
+  const params = useParams();
   const subdomain = params?.subdomain as string;
 
   const currentYear = new Date().getFullYear();
-  const [year,        setYear]        = useState(currentYear);
-  const [filterType,  setFilterType]  = useState<HolidayType | 'all'>('all');
-  const [holidays,    setHolidays]    = useState<IHoliday[]>([]);
+  const [year, setYear] = useState(currentYear);
+  const [filterType, setFilterType] = useState<HolidayType | 'all'>('all');
+  const [holidays, setHolidays] = useState<IHoliday[]>([]);
   const [calendarData, setCalendarData] = useState<IMonthlyCalendar[]>([]);
   const [workSchedule, setWorkSchedule] = useState<IWorkSchedule | null>(null);
   const [workLocationSchedule, setWorkLocationSchedule] = useState<IWorkLocationSchedule | null>(null);
   const [showLocationSchedule, setShowLocationSchedule] = useState(false);
-  const [loading,     setLoading]     = useState(true);
-  const [deletingId,  setDeletingId]  = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const [showModal,   setShowModal]   = useState(false);
-  const [editingId,   setEditingId]   = useState<string | null>(null);
-  const [form,        setFormState]   = useState<IHolidayPayload>(defaultForm());
-  const [saving,      setSaving]      = useState(false);
-  const [modalError,  setModalError]  = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setFormState] = useState<IHolidayPayload>(defaultForm());
+  const [saving, setSaving] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
 
-  const [showImport,  setShowImport]  = useState(false);
-  const [importIds,   setImportIds]   = useState('');
-  const [importing,   setImporting]   = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [importIds, setImportIds] = useState('');
+  const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
 
-  const [confirmDeleteId,   setConfirmDeleteId]   = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmDeleteName, setConfirmDeleteName] = useState('');
 
   useEffect(() => {
@@ -680,18 +805,18 @@ export default function HolidaysTab({
 
   const fetchHolidays = async () => {
     try {
-      const res  = await getHolidaysByYear(year, subdomain);
+      const res = await getHolidaysByYear(year, subdomain);
       const raw: IHoliday[] = Array.isArray(res?.data) ? res.data : (res?.data?.data ?? []);
-      setHolidays(raw.filter(h => !h.is_deleted));
+      setHolidays(raw.filter((h) => !h.is_deleted));
     } catch { /* silent */ }
   };
 
   const fetchCalendarData = async () => {
     try {
       const results = await Promise.all(
-        Array.from({ length: 12 }, (_, i) => getMonthlyCalendar(year, i + 1, subdomain))
+        Array.from({ length: 12 }, (_, i) => getMonthlyCalendar(year, i + 1, subdomain)),
       );
-      setCalendarData(results.map(r => r?.data).filter(Boolean) as IMonthlyCalendar[]);
+      setCalendarData(results.map((r) => r?.data).filter(Boolean) as IMonthlyCalendar[]);
     } catch { /* silent */ }
   };
 
@@ -704,7 +829,7 @@ export default function HolidaysTab({
 
   const byDate = useMemo(() => {
     const map: Record<string, IHoliday[]> = {};
-    holidays.forEach(h => {
+    holidays.forEach((h) => {
       const key = isoToInput(h.date);
       if (!map[key]) map[key] = [];
       map[key].push(h);
@@ -714,9 +839,10 @@ export default function HolidaysTab({
 
   // Year-level stats — factors in holiday entries AND working-day overrides
   const stats = useMemo(() => {
-    let workingDays = 0, offDays = 0, workSats = 0, offSats = 0;
+    let workingDays = 0; let offDays = 0; let workSats = 0; let
+      offSats = 0;
     const start = new Date(year, 0, 1);
-    const end   = new Date(year, 11, 31);
+    const end = new Date(year, 11, 31);
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       const entries = byDate[iso] ?? [];
@@ -728,14 +854,14 @@ export default function HolidaysTab({
       if (kind === 'weekend') offDays++;
     }
 
-    const trueHolidays = holidays.filter(h => h.day_type !== 'working');
-    const workOverrides = holidays.filter(h => h.day_type === 'working');
+    const trueHolidays = holidays.filter((h) => h.day_type !== 'working');
+    const workOverrides = holidays.filter((h) => h.day_type === 'working');
 
     return {
-      total:      trueHolidays.length,
-      public:     trueHolidays.filter(h => h.holiday_type === 'public').length,
-      optional:   trueHolidays.filter(h => h.holiday_type === 'optional').length,
-      restricted: trueHolidays.filter(h => h.holiday_type === 'restricted').length,
+      total: trueHolidays.length,
+      public: trueHolidays.filter((h) => h.holiday_type === 'public').length,
+      optional: trueHolidays.filter((h) => h.holiday_type === 'optional').length,
+      restricted: trueHolidays.filter((h) => h.holiday_type === 'restricted').length,
       workOverrides: workOverrides.length,
       workingDays,
       offDays,
@@ -744,14 +870,14 @@ export default function HolidaysTab({
     };
   }, [holidays, byDate, workSchedule, year]);
 
-  const setField = (k: keyof IHolidayPayload, v: any) => setFormState(prev => ({ ...prev, [k]: v }));
+  const setField = (k: keyof IHolidayPayload, v: any) => setFormState((prev) => ({ ...prev, [k]: v }));
 
   const openCreate = (date?: string) => {
     // Smart default: clicking a normally-off day suggests a "working day" override,
     // clicking a normally-working day suggests a "holiday".
     let defaultDayType: DayType = 'holiday';
     if (date) {
-      const dateObj  = new Date(date + 'T00:00:00');
+      const dateObj = new Date(`${date}T00:00:00`);
       const baseKind = getDayKind(dateObj, workSchedule);
       if (baseKind === 'weekend' || baseKind === 'non_working_saturday') {
         defaultDayType = 'working';
@@ -775,10 +901,10 @@ export default function HolidaysTab({
 
   const handleSave = async () => {
     if (!form.name.trim()) { setModalError('Name is required.'); return; }
-    if (!form.date)        { setModalError('Date is required.'); return; }
-    if (!form.day_type)    { setModalError('Day type is required.'); return; }
+    if (!form.date) { setModalError('Date is required.'); return; }
+    if (!form.day_type) { setModalError('Day type is required.'); return; }
     if (!form.holiday_type) { setModalError('Holiday type is required.'); return; }
-    
+
     // Create clean payload
     const payload: IHolidayPayload = {
       name: form.name.trim(),
@@ -786,11 +912,11 @@ export default function HolidaysTab({
       holiday_type: form.holiday_type,
       day_type: form.day_type,
       description: form.description?.trim() || '',
-      is_active: form.is_active
+      is_active: form.is_active,
     };
-    
+
     console.log('Clean payload being sent:', payload);
-    
+
     setSaving(true); setModalError(null);
     try {
       editingId ? await updateHoliday(editingId, payload, subdomain) : await createHoliday(payload, subdomain);
@@ -806,13 +932,12 @@ export default function HolidaysTab({
     setDeletingId(id);
     try {
       await deleteHoliday(id, subdomain);
-      setHolidays(prev => prev.filter(h => h.id !== id));
-    } catch { /* silent */ }
-    finally { setDeletingId(null); setConfirmDeleteId(null); }
+      setHolidays((prev) => prev.filter((h) => h.id !== id));
+    } catch { /* silent */ } finally { setDeletingId(null); setConfirmDeleteId(null); }
   };
 
   const handleBulkImport = async () => {
-    const ids = importIds.split(',').map(s => s.trim()).filter(Boolean);
+    const ids = importIds.split(',').map((s) => s.trim()).filter(Boolean);
     if (!ids.length) { setImportError('Enter at least one holiday ID.'); return; }
     setImporting(true); setImportError(null);
     try {
@@ -831,14 +956,25 @@ export default function HolidaysTab({
         <div>
           <h3 className="text-sm font-bold text-[#0f1f2e]">Holiday & Work Calendar</h3>
           <p className="text-xs text-gray-400 mt-0.5">
-            {stats.total} holidays · {stats.workOverrides} work overrides · {stats.workingDays} working days · {stats.workSats} working Sats
+            {stats.total}
+            {' '}
+            holidays ·
+            {stats.workOverrides}
+            {' '}
+            work overrides ·
+            {stats.workingDays}
+            {' '}
+            working days ·
+            {stats.workSats}
+            {' '}
+            working Sats
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {/* Location Schedule Toggle */}
           {workLocationSchedule && (
             <div className="flex items-center gap-1 bg-purple-50 rounded-xl px-2 py-1">
-              <button 
+              <button
                 onClick={() => setShowLocationSchedule(!showLocationSchedule)}
                 className="flex items-center gap-1 p-1 rounded-lg hover:bg-purple-100 transition-colors text-purple-700"
                 title={showLocationSchedule ? 'Hide work location schedule' : 'Show work location schedule'}
@@ -847,36 +983,51 @@ export default function HolidaysTab({
                 <MapPin size={12} />
               </button>
               <span className="text-[10px] font-medium text-purple-700">
-                {showLocationSchedule ? 'Hide' : 'Show'} Locations
+                {showLocationSchedule ? 'Hide' : 'Show'}
+                {' '}
+                Locations
               </span>
             </div>
           )}
           {/* Year nav */}
           <div className="flex items-center gap-1 bg-gray-100 rounded-xl px-2 py-1">
-            <button onClick={() => { setYear(y => { const n = y - 1; onYearChange?.(n); return n; }); }} className="p-1 rounded-lg hover:bg-white transition-colors text-gray-500"><ChevronLeft size={13} /></button>
+            <button onClick={() => { setYear((y) => { const n = y - 1; onYearChange?.(n); return n; }); }} className="p-1 rounded-lg hover:bg-white transition-colors text-gray-500"><ChevronLeft size={13} /></button>
             <span className="text-xs font-bold text-[#0f1f2e] px-1 min-w-[36px] text-center">{year}</span>
-            <button onClick={() => { setYear(y => { const n = y + 1; onYearChange?.(n); return n; }); }} className="p-1 rounded-lg hover:bg-white transition-colors text-gray-500"><ChevronRight size={13} /></button>
+            <button onClick={() => { setYear((y) => { const n = y + 1; onYearChange?.(n); return n; }); }} className="p-1 rounded-lg hover:bg-white transition-colors text-gray-500"><ChevronRight size={13} /></button>
           </div>
           {/* Type filter */}
           <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
-            {(['all', ...HOLIDAY_TYPES] as const).map(t => (
-              <button key={t} onClick={() => setFilterType(t)}
+            {(['all', ...HOLIDAY_TYPES] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setFilterType(t)}
                 className={`px-2.5 py-1 text-[10px] font-semibold rounded-lg transition-colors capitalize ${
-                  filterType === t ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  filterType === t ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              >
                 {t === 'all' ? 'All' : TYPE_META[t].label}
               </button>
             ))}
           </div>
-          {!viewOnly && (<>
-            <button onClick={() => { setImportIds(''); setImportError(null); setShowImport(true); }}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#0f766e] bg-[#e8f5ee] hover:bg-[#d4eddf] rounded-xl transition-colors">
-              <Download size={13} /> Import
+          {!viewOnly && (
+          <>
+            <button
+              onClick={() => { setImportIds(''); setImportError(null); setShowImport(true); }}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#0f766e] bg-[#e8f5ee] hover:bg-[#d4eddf] rounded-xl transition-colors"
+            >
+              <Download size={13} />
+              {' '}
+              Import
             </button>
-            <button onClick={() => openCreate()}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-[#0f766e] hover:bg-[#0d6460] rounded-xl transition-colors">
-              <Plus size={13} /> Add Entry
+            <button
+              onClick={() => openCreate()}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-[#0f766e] hover:bg-[#0d6460] rounded-xl transition-colors"
+            >
+              <Plus size={13} />
+              {' '}
+              Add Entry
             </button>
-          </>)}
+          </>
+          )}
         </div>
       </div>
 
@@ -891,16 +1042,34 @@ export default function HolidaysTab({
       {/* ── Stat Cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-2">
         {([
-          { label: 'Total Holidays',    value: stats.total,         color: 'text-teal-700',    bg: 'bg-teal-50',    icon: CalendarDays },
-          { label: 'Public',            value: stats.public,        color: 'text-blue-700',    bg: 'bg-blue-50',    icon: Award        },
-          { label: 'Optional',          value: stats.optional,      color: 'text-amber-700',   bg: 'bg-amber-50',   icon: Plus         },
-          { label: 'Restricted',        value: stats.restricted,    color: 'text-purple-700',  bg: 'bg-purple-50',  icon: Shield       },
-          { label: 'Work Overrides',    value: stats.workOverrides, color: 'text-orange-700',  bg: 'bg-orange-50',  icon: Repeat       },
-          { label: 'Working Days',      value: stats.workingDays,   color: 'text-emerald-700', bg: 'bg-emerald-50', icon: Briefcase    },
-          { label: 'Off Days',          value: stats.offDays,       color: 'text-slate-600',   bg: 'bg-slate-50',   icon: Sun          },
-          { label: 'Working Saturdays', value: stats.workSats,      color: 'text-emerald-700', bg: 'bg-emerald-50', icon: Briefcase    },
-          { label: 'Off Saturdays',     value: stats.offSats,       color: 'text-slate-500',   bg: 'bg-slate-50',   icon: Sun          },
-        ] as const).map(s => {
+          {
+            label: 'Total Holidays', value: stats.total, color: 'text-teal-700', bg: 'bg-teal-50', icon: CalendarDays,
+          },
+          {
+            label: 'Public', value: stats.public, color: 'text-blue-700', bg: 'bg-blue-50', icon: Award,
+          },
+          {
+            label: 'Optional', value: stats.optional, color: 'text-amber-700', bg: 'bg-amber-50', icon: Plus,
+          },
+          {
+            label: 'Restricted', value: stats.restricted, color: 'text-purple-700', bg: 'bg-purple-50', icon: Shield,
+          },
+          {
+            label: 'Work Overrides', value: stats.workOverrides, color: 'text-orange-700', bg: 'bg-orange-50', icon: Repeat,
+          },
+          {
+            label: 'Working Days', value: stats.workingDays, color: 'text-emerald-700', bg: 'bg-emerald-50', icon: Briefcase,
+          },
+          {
+            label: 'Off Days', value: stats.offDays, color: 'text-slate-600', bg: 'bg-slate-50', icon: Sun,
+          },
+          {
+            label: 'Working Saturdays', value: stats.workSats, color: 'text-emerald-700', bg: 'bg-emerald-50', icon: Briefcase,
+          },
+          {
+            label: 'Off Saturdays', value: stats.offSats, color: 'text-slate-500', bg: 'bg-slate-50', icon: Sun,
+          },
+        ] as const).map((s) => {
           const Icon = s.icon;
           return (
             <div key={s.label} className="bg-white rounded-2xl border border-gray-100 px-3 py-2.5 shadow-sm flex items-center gap-2">
@@ -918,7 +1087,7 @@ export default function HolidaysTab({
 
       {/* ── Legend ── */}
       <div className="flex items-center gap-3 px-1 flex-wrap">
-        {HOLIDAY_TYPES.map(t => {
+        {HOLIDAY_TYPES.map((t) => {
           const m = TYPE_META[t];
           return (
             <div key={t} className="flex items-center gap-1.5">
@@ -932,10 +1101,10 @@ export default function HolidaysTab({
           <span className="text-[10px] text-gray-500 font-medium">Working Day (Override)</span>
         </div>
         {([
-          { label: 'Working Sat',  dot: 'bg-emerald-400' },
-          { label: 'Off Sat',      dot: 'bg-slate-200'   },
-          { label: 'Today',        dot: 'bg-teal-600 ring-2 ring-teal-600' },
-        ] as const).map(l => (
+          { label: 'Working Sat', dot: 'bg-emerald-400' },
+          { label: 'Off Sat', dot: 'bg-slate-200' },
+          { label: 'Today', dot: 'bg-teal-600 ring-2 ring-teal-600' },
+        ] as const).map((l) => (
           <div key={l.label} className="flex items-center gap-1.5">
             <span className={`w-3 h-3 rounded-sm ${l.dot}`} />
             <span className="text-[10px] text-gray-500 font-medium">{l.label}</span>
@@ -992,24 +1161,32 @@ export default function HolidaysTab({
               {/* Entry type: Holiday vs Working Day Override */}
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Entry Type <span className="text-red-500">*</span>
+                  Entry Type
+                  {' '}
+                  <span className="text-red-500">*</span>
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  <button type="button" onClick={() => setField('day_type', 'holiday')}
+                  <button
+                    type="button"
+                    onClick={() => setField('day_type', 'holiday')}
                     className={`flex flex-col items-center gap-1.5 py-3 rounded-xl text-xs font-bold border transition-all ${
                       form.day_type === 'holiday'
                         ? 'bg-red-50 text-red-600 border-red-300'
                         : 'bg-gray-50 text-gray-400 border-gray-200 hover:border-gray-300'
-                    }`}>
+                    }`}
+                  >
                     <Sun size={16} />
                     Holiday (Day Off)
                   </button>
-                  <button type="button" onClick={() => setField('day_type', 'working')}
+                  <button
+                    type="button"
+                    onClick={() => setField('day_type', 'working')}
                     className={`flex flex-col items-center gap-1.5 py-3 rounded-xl text-xs font-bold border transition-all ${
                       form.day_type === 'working'
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
                         : 'bg-gray-50 text-gray-400 border-gray-200 hover:border-gray-300'
-                    }`}>
+                    }`}
+                  >
                     <Briefcase size={16} />
                     Working Day (Override)
                   </button>
@@ -1023,18 +1200,31 @@ export default function HolidaysTab({
 
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  {form.day_type === 'working' ? 'Title' : 'Holiday Name'} <span className="text-red-500">*</span>
+                  {form.day_type === 'working' ? 'Title' : 'Holiday Name'}
+                  {' '}
+                  <span className="text-red-500">*</span>
                 </label>
-                <input type="text" value={form.name} onChange={e => setField('name', e.target.value)}
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => setField('name', e.target.value)}
                   placeholder={form.day_type === 'working' ? 'e.g. Compensatory Working Day' : 'e.g. Independence Day'}
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all" />
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
+                />
               </div>
 
               <div className={form.day_type === 'working' ? '' : 'grid grid-cols-2 gap-3'}>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Date <span className="text-red-500">*</span></label>
-                  <input type="date" value={form.date} onChange={e => setField('date', e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all" />
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                    Date
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={form.date}
+                    onChange={(e) => setField('date', e.target.value)}
+                    className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
+                  />
                 </div>
 
                 {/* Holiday type — only relevant when this is an actual holiday */}
@@ -1042,12 +1232,16 @@ export default function HolidaysTab({
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1.5">Type</label>
                     <div className="flex flex-col gap-1.5">
-                      {HOLIDAY_TYPES.map(t => {
+                      {HOLIDAY_TYPES.map((t) => {
                         const m = TYPE_META[t];
                         return (
-                          <button key={t} type="button" onClick={() => setField('holiday_type', t)}
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => setField('holiday_type', t)}
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                              form.holiday_type === t ? `${m.bg} ${m.text} ${m.border}` : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-gray-300'}`}>
+                              form.holiday_type === t ? `${m.bg} ${m.text} ${m.border}` : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-gray-300'}`}
+                          >
                             <span className={`w-2 h-2 rounded-full ${form.holiday_type === t ? m.dot : 'bg-gray-300'}`} />
                             {m.label}
                           </button>
@@ -1060,9 +1254,13 @@ export default function HolidaysTab({
 
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Description</label>
-                <textarea value={form.description} onChange={e => setField('description', e.target.value)} rows={2}
+                <textarea
+                  value={form.description}
+                  onChange={(e) => setField('description', e.target.value)}
+                  rows={2}
                   placeholder={form.day_type === 'working' ? 'e.g. Compensating for Diwali holiday on 2nd Saturday' : 'Optional description…'}
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all resize-none" />
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all resize-none"
+                />
               </div>
 
               <div className="flex items-center justify-between px-3 py-2.5 bg-gray-50 rounded-xl border border-gray-100">
@@ -1074,8 +1272,11 @@ export default function HolidaysTab({
                       : "Inactive holidays won't show to employees"}
                   </p>
                 </div>
-                <button type="button" onClick={() => setField('is_active', !form.is_active)}
-                  className={`relative w-10 h-5 rounded-full transition-colors ${form.is_active ? 'bg-teal-600' : 'bg-gray-300'}`}>
+                <button
+                  type="button"
+                  onClick={() => setField('is_active', !form.is_active)}
+                  className={`relative w-10 h-5 rounded-full transition-colors ${form.is_active ? 'bg-teal-600' : 'bg-gray-300'}`}
+                >
                   <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.is_active ? 'translate-x-5' : 'translate-x-0'}`} />
                 </button>
               </div>
@@ -1086,11 +1287,26 @@ export default function HolidaysTab({
                 </div>
               )}
               <div className="flex gap-3 pt-1">
-                <button type="button" onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
-                <button type="button" onClick={handleSave} disabled={saving}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#0f766e] rounded-xl hover:bg-[#0d6460] transition-colors disabled:opacity-60">
-                  {saving ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : editingId ? 'Update Entry' : 'Add Entry'}
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#0f766e] rounded-xl hover:bg-[#0d6460] transition-colors disabled:opacity-60"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      {' '}
+                      Saving…
+                    </>
+                  ) : editingId ? 'Update Entry' : 'Add Entry'}
                 </button>
               </div>
             </div>
@@ -1108,13 +1324,38 @@ export default function HolidaysTab({
               </div>
               <h3 className="text-sm font-bold text-[#0f1f2e] mb-1">Delete Entry</h3>
               <p className="text-xs text-gray-400 mb-1">Are you sure you want to delete</p>
-              <p className="text-sm font-semibold text-[#0f1f2e] mb-5">"{confirmDeleteName}"?</p>
+              <p className="text-sm font-semibold text-[#0f1f2e] mb-5">
+                "
+                {confirmDeleteName}
+                "?
+              </p>
               <div className="flex gap-3 w-full">
-                <button type="button" onClick={() => setConfirmDeleteId(null)}
-                  className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
-                <button type="button" onClick={() => handleDelete(confirmDeleteId)} disabled={deletingId === confirmDeleteId}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-red-500 rounded-xl hover:bg-red-600 transition-colors disabled:opacity-60">
-                  {deletingId === confirmDeleteId ? <><Loader2 size={14} className="animate-spin" /> Deleting…</> : <><Trash2 size={14} /> Delete</>}
+                <button
+                  type="button"
+                  onClick={() => setConfirmDeleteId(null)}
+                  className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(confirmDeleteId)}
+                  disabled={deletingId === confirmDeleteId}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-red-500 rounded-xl hover:bg-red-600 transition-colors disabled:opacity-60"
+                >
+                  {deletingId === confirmDeleteId ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      {' '}
+                      Deleting…
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={14} />
+                      {' '}
+                      Delete
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -1137,11 +1378,21 @@ export default function HolidaysTab({
             </div>
             <div className="p-5 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Holiday IDs <span className="text-red-500">*</span></label>
-                <textarea value={importIds} onChange={e => setImportIds(e.target.value)} rows={3}
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                  Holiday IDs
+                  <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={importIds}
+                  onChange={(e) => setImportIds(e.target.value)}
+                  rows={3}
                   placeholder="Paste comma-separated holiday IDs…"
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all resize-none" />
-                <p className="text-[10px] text-gray-400 mt-1">Importing into year <span className="font-semibold text-teal-700">{year}</span></p>
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all resize-none"
+                />
+                <p className="text-[10px] text-gray-400 mt-1">
+                  Importing into year
+                  <span className="font-semibold text-teal-700">{year}</span>
+                </p>
               </div>
               {importError && (
                 <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-xl">
@@ -1150,11 +1401,26 @@ export default function HolidaysTab({
                 </div>
               )}
               <div className="flex gap-3">
-                <button type="button" onClick={() => setShowImport(false)}
-                  className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
-                <button type="button" onClick={handleBulkImport} disabled={importing}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#0f766e] rounded-xl hover:bg-[#0d6460] transition-colors disabled:opacity-60">
-                  {importing ? <><Loader2 size={14} className="animate-spin" /> Importing…</> : 'Import'}
+                <button
+                  type="button"
+                  onClick={() => setShowImport(false)}
+                  className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkImport}
+                  disabled={importing}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#0f766e] rounded-xl hover:bg-[#0d6460] transition-colors disabled:opacity-60"
+                >
+                  {importing ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      {' '}
+                      Importing…
+                    </>
+                  ) : 'Import'}
                 </button>
               </div>
             </div>

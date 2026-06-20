@@ -1,4 +1,6 @@
-import { get, post, put, patch, deleteRequest } from '../axiosInstance';
+import {
+  get, post, put, patch, deleteRequest,
+} from '../axiosInstance';
 
 export const getLeaveTypes = (
   tenantId: string,

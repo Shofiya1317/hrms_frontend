@@ -1,7 +1,11 @@
 'use client';
 
-import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { Plus, ZoomIn, ZoomOut, Users, Building2, GripVertical, UserPlus, ChevronDown, ChevronRight } from 'lucide-react';
+import React, {
+  useState, useRef, useCallback, useEffect, useMemo,
+} from 'react';
+import {
+  Plus, ZoomIn, ZoomOut, Users, Building2, GripVertical, UserPlus, ChevronDown, ChevronRight,
+} from 'lucide-react';
 import {
   OrgNode,
   DEPT_COLORS,
@@ -100,7 +104,9 @@ interface OrgCardProps {
   orgRows: OrgRow[];
 }
 
-function OrgCard({ node, isRoot = false, draggedId, dropTargetId, onDragStart, onDragEnd, onDrop, onDragOver, employeeMap, orgRows }: OrgCardProps) {
+function OrgCard({
+  node, isRoot = false, draggedId, dropTargetId, onDragStart, onDragEnd, onDrop, onDragOver, employeeMap, orgRows,
+}: OrgCardProps) {
   const [expanded, setExpanded] = useState(true);
   const hasReports = node.reports && node.reports.length > 0;
   const gradient = DEPT_COLORS[node.dept] || 'from-gray-500 to-gray-600';
@@ -241,14 +247,26 @@ export default function OrganogramPage() {
     setError(null);
     try {
       const staticRows: OrgRow[] = [
-        { id: 'n1', name: 'Arjun Mehta', role: 'Admin', dept: 'Management', avatar: 'AM', level: 0, parent_id: null, sort_order: 0, user_id: '1' },
-        { id: 'n2', name: 'Rahul Sharma', role: 'Team Lead', dept: 'Operations', avatar: 'RS', level: 1, parent_id: 'n1', sort_order: 0, user_id: '2' },
-        { id: 'n3', name: 'Ananya Krishnan', role: 'Engineer', dept: 'Engineering', avatar: 'AK', level: 2, parent_id: 'n2', sort_order: 0, user_id: '3' },
+        {
+          id: 'n1', name: 'Arjun Mehta', role: 'Admin', dept: 'Management', avatar: 'AM', level: 0, parent_id: null, sort_order: 0, user_id: '1',
+        },
+        {
+          id: 'n2', name: 'Rahul Sharma', role: 'Team Lead', dept: 'Operations', avatar: 'RS', level: 1, parent_id: 'n1', sort_order: 0, user_id: '2',
+        },
+        {
+          id: 'n3', name: 'Ananya Krishnan', role: 'Engineer', dept: 'Engineering', avatar: 'AK', level: 2, parent_id: 'n2', sort_order: 0, user_id: '3',
+        },
       ];
       const staticEmpMap: Record<string, EmployeeProfile> = {
-        '1': { id: '1', full_name: 'Arjun Mehta', job_title: 'Admin', department: 'Management', employee_id: 'EMP-001', avatar_url: null, org_node_id: 'n1' },
-        '2': { id: '2', full_name: 'Rahul Sharma', job_title: 'Team Lead', department: 'Operations', employee_id: 'EMP-002', avatar_url: null, org_node_id: 'n2' },
-        '3': { id: '3', full_name: 'Ananya Krishnan', job_title: 'Engineer', department: 'Engineering', employee_id: 'EMP-003', avatar_url: null, org_node_id: 'n3' },
+        1: {
+          id: '1', full_name: 'Arjun Mehta', job_title: 'Admin', department: 'Management', employee_id: 'EMP-001', avatar_url: null, org_node_id: 'n1',
+        },
+        2: {
+          id: '2', full_name: 'Rahul Sharma', job_title: 'Team Lead', department: 'Operations', employee_id: 'EMP-002', avatar_url: null, org_node_id: 'n2',
+        },
+        3: {
+          id: '3', full_name: 'Ananya Krishnan', job_title: 'Engineer', department: 'Engineering', employee_id: 'EMP-003', avatar_url: null, org_node_id: 'n3',
+        },
       };
       setRows(staticRows);
       setEmployeeMap(staticEmpMap);
@@ -267,10 +285,10 @@ export default function OrganogramPage() {
   // ── Persist parent change (local only — no backend) ───────────────────────
   const persistParentChange = useCallback(async (nodeId: string, newParentId: string) => {
     try {
-      const updatedRows = rows.map((r) => r.id === nodeId ? { ...r, parent_id: newParentId } : r);
+      const updatedRows = rows.map((r) => (r.id === nodeId ? { ...r, parent_id: newParentId } : r));
       setRows(updatedRows);
     } catch (err: any) {
-      showToast('Save failed: ' + (err?.message || 'Unknown error'));
+      showToast(`Save failed: ${err?.message || 'Unknown error'}`);
     }
   }, [rows]);
 
@@ -352,8 +370,8 @@ export default function OrganogramPage() {
 
   const handleMouseUp = () => { isPanning.current = false; };
 
-  const handleZoomIn = () => setZoom(z => Math.min(150, z + 10));
-  const handleZoomOut = () => setZoom(z => Math.max(40, z - 10));
+  const handleZoomIn = () => setZoom((z) => Math.min(150, z + 10));
+  const handleZoomOut = () => setZoom((z) => Math.max(40, z - 10));
   const handleZoomReset = () => setZoom(90);
 
   // ── Derived stats for Department View ────────────────────────────────────
@@ -404,7 +422,15 @@ export default function OrganogramPage() {
         <div>
           <h1 className="text-xl font-bold text-[#0f1f2e]">Organogram</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Visual hierarchy · {rows.length} positions · {linkedCount} linked to employees
+            Visual hierarchy ·
+            {' '}
+            {rows.length}
+            {' '}
+            positions ·
+            {' '}
+            {linkedCount}
+            {' '}
+            linked to employees
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -422,7 +448,8 @@ export default function OrganogramPage() {
                 className="text-xs font-semibold text-gray-600 w-12 text-center bg-white border border-gray-200 rounded-xl py-1.5 hover:bg-gray-50 transition-colors"
                 title="Reset Zoom"
               >
-                {zoom}%
+                {zoom}
+                %
               </button>
               <button
                 onClick={handleZoomIn}
@@ -434,7 +461,9 @@ export default function OrganogramPage() {
             </>
           )}
           <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors">
-            <Plus size={14} /> Add Position
+            <Plus size={14} />
+            {' '}
+            Add Position
           </button>
         </div>
       </div>
@@ -487,7 +516,7 @@ export default function OrganogramPage() {
               <p className="text-[10px] text-gray-400">Drag onto a card to reassign</p>
             </div>
             <div className="space-y-2">
-              {flattenTree(orgData).filter(n => n.id !== rows.find(r => !r.parent_id)?.id).map((person) => {
+              {flattenTree(orgData).filter((n) => n.id !== rows.find((r) => !r.parent_id)?.id).map((person) => {
                 const parent = findParent(orgData, person.id);
                 const gradient = DEPT_COLORS[person.dept] || 'from-gray-500 to-gray-600';
                 const orgRow = rows.find((r) => r.id === person.id);
@@ -575,7 +604,8 @@ export default function OrganogramPage() {
               </button>
               <div className="w-8 h-px bg-gray-200" />
               <button onClick={handleZoomReset} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors text-[9px] font-bold text-gray-500" title="Reset Zoom">
-                {zoom}%
+                {zoom}
+                %
               </button>
               <div className="w-8 h-px bg-gray-200" />
               <button onClick={handleZoomOut} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors" title="Zoom Out">
@@ -597,14 +627,21 @@ export default function OrganogramPage() {
                   </div>
                   <div>
                     <h3 className="text-white font-bold text-sm">{dept.name}</h3>
-                    <p className="text-white/70 text-xs">Head: {dept.head}</p>
+                    <p className="text-white/70 text-xs">
+                      Head:
+                      {dept.head}
+                    </p>
                   </div>
                 </div>
               </div>
               <div className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Users size={14} className="text-gray-400" />
-                  <span className="text-sm font-semibold text-gray-700">{dept.count} positions</span>
+                  <span className="text-sm font-semibold text-gray-700">
+                    {dept.count}
+                    {' '}
+                    positions
+                  </span>
                 </div>
                 <button className="text-xs font-semibold text-[#2D7A4F] hover:underline">View →</button>
               </div>
@@ -633,12 +670,21 @@ export default function OrganogramPage() {
                       return (
                         <span key={r.id} className="text-xs font-medium px-2.5 py-1 rounded-full bg-white border border-gray-200 text-gray-700">
                           {emp?.full_name || r.name}
-                          {emp && <span className="text-gray-400 ml-1">· {emp.job_title || r.role}</span>}
+                          {emp && (
+                          <span className="text-gray-400 ml-1">
+                            ·
+                            {emp.job_title || r.role}
+                          </span>
+                          )}
                         </span>
                       );
                     })}
                   </div>
-                  <span className="text-xs font-bold text-gray-500 flex-shrink-0">{levelRows.length} people</span>
+                  <span className="text-xs font-bold text-gray-500 flex-shrink-0">
+                    {levelRows.length}
+                    {' '}
+                    people
+                  </span>
                 </div>
               );
             })}
@@ -651,15 +697,25 @@ export default function OrganogramPage() {
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-[#0f1f2e]">Org Snapshots & History</h3>
             <button className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#2D7A4F] rounded-xl hover:bg-[#1e5c3a] transition-colors">
-              <Plus size={14} /> Save Snapshot
+              <Plus size={14} />
+              {' '}
+              Save Snapshot
             </button>
           </div>
           <div className="space-y-3">
             {[
-              { version: 'v3.0', date: 'Mar 2026', changes: 'Added Finance Executive role', active: true },
-              { version: 'v2.5', date: 'Jan 2026', changes: 'Kavya Menon promoted to HR Executive', active: false },
-              { version: 'v2.0', date: 'Sep 2025', changes: 'Operations team restructured', active: false },
-              { version: 'v1.0', date: 'Jan 2024', changes: 'Initial org structure created', active: false },
+              {
+                version: 'v3.0', date: 'Mar 2026', changes: 'Added Finance Executive role', active: true,
+              },
+              {
+                version: 'v2.5', date: 'Jan 2026', changes: 'Kavya Menon promoted to HR Executive', active: false,
+              },
+              {
+                version: 'v2.0', date: 'Sep 2025', changes: 'Operations team restructured', active: false,
+              },
+              {
+                version: 'v1.0', date: 'Jan 2024', changes: 'Initial org structure created', active: false,
+              },
             ].map((snap) => (
               <div key={snap.version} className={`flex items-center gap-4 p-4 rounded-xl border ${snap.active ? 'border-[#2D7A4F] bg-[#e8f5ee]/50' : 'border-gray-100 bg-gray-50'}`}>
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${snap.active ? 'bg-[#2D7A4F] text-white' : 'bg-gray-200 text-gray-600'}`}>

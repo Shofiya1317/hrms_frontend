@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { CheckCircle2, XCircle, Calendar, RotateCcw, Gift, ChevronDown, ChevronUp, AlertCircle, Inbox, Users, UserCog } from 'lucide-react';
+import {
+  CheckCircle2, XCircle, Calendar, RotateCcw, Gift, ChevronDown, ChevronUp, AlertCircle, Inbox, Users, UserCog,
+} from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { DEPT_COLORS } from '@/data/orgData';
 
@@ -34,9 +36,15 @@ interface HierarchyProfile {
 }
 
 const TYPE_CONFIG: Record<RequestType, { label: string; color: string; bg: string; icon: React.ElementType }> = {
-  leave: { label: 'Leave', color: '#3b82f6', bg: '#eff6ff', icon: Calendar },
-  compoff: { label: 'Comp Off', color: '#8b5cf6', bg: '#f5f3ff', icon: Gift },
-  regularization: { label: 'Regularize', color: '#f59e0b', bg: '#fffbeb', icon: RotateCcw },
+  leave: {
+    label: 'Leave', color: '#3b82f6', bg: '#eff6ff', icon: Calendar,
+  },
+  compoff: {
+    label: 'Comp Off', color: '#8b5cf6', bg: '#f5f3ff', icon: Gift,
+  },
+  regularization: {
+    label: 'Regularize', color: '#f59e0b', bg: '#fffbeb', icon: RotateCcw,
+  },
 };
 
 const STATUS_CONFIG: Record<RequestStatus, { label: string; color: string; bg: string }> = {
@@ -79,8 +87,12 @@ export default function ManagerApprovalPage() {
     try {
       // Static mock data — no backend
       const fetchedReportees: HierarchyProfile[] = [
-        { id: '2', full_name: 'Rahul Sharma', email: 'manager@impactree.in', job_title: 'Team Lead', department: 'Operations', avatar_url: null, employee_id: 'EMP-002', org_node_id: null },
-        { id: '3', full_name: 'Ananya Krishnan', email: 'employee@impactree.in', job_title: 'Engineer', department: 'Engineering', avatar_url: null, employee_id: 'EMP-003', org_node_id: null },
+        {
+          id: '2', full_name: 'Rahul Sharma', email: 'manager@impactree.in', job_title: 'Team Lead', department: 'Operations', avatar_url: null, employee_id: 'EMP-002', org_node_id: null,
+        },
+        {
+          id: '3', full_name: 'Ananya Krishnan', email: 'employee@impactree.in', job_title: 'Engineer', department: 'Engineering', avatar_url: null, employee_id: 'EMP-003', org_node_id: null,
+        },
       ];
       setManager(null);
       setReportees(fetchedReportees);
@@ -163,9 +175,7 @@ export default function ManagerApprovalPage() {
 
   const handleAction = (id: string, action: 'approved' | 'rejected') => {
     const note = noteInputs[id] || '';
-    setRequests(requests.map((r) =>
-      r.id === id ? { ...r, status: action, managerNote: note || undefined } : r
-    ));
+    setRequests(requests.map((r) => (r.id === id ? { ...r, status: action, managerNote: note || undefined } : r)));
     setExpandedId(null);
     setActionToast({
       msg: action === 'approved' ? 'Request approved. Employee notified.' : 'Request rejected. Employee notified.',
@@ -182,7 +192,8 @@ export default function ManagerApprovalPage() {
       {actionToast && (
         <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium animate-slide-up ${
           actionToast.type === 'success' ? 'bg-[#e8f5ee] border-[#bbddc9] text-[#2D7A4F]' : 'bg-red-50 border-red-200 text-red-700'
-        }`}>
+        }`}
+        >
           {actionToast.type === 'success' ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
           {actionToast.msg}
         </div>
@@ -192,13 +203,22 @@ export default function ManagerApprovalPage() {
         <div>
           <h1 className="text-xl font-bold text-gray-900">Approval Inbox</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {currentUserName} · {currentUserRole} · Review and action team requests
+            {currentUserName}
+            {' '}
+            ·
+            {currentUserRole}
+            {' '}
+            · Review and action team requests
           </p>
         </div>
         {pendingCount > 0 && (
           <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
             <AlertCircle size={14} className="text-amber-600" />
-            <span className="text-sm font-bold text-amber-700">{pendingCount} pending</span>
+            <span className="text-sm font-bold text-amber-700">
+              {pendingCount}
+              {' '}
+              pending
+            </span>
           </div>
         )}
       </div>
@@ -234,7 +254,13 @@ export default function ManagerApprovalPage() {
                 </div>
                 <div>
                   <p className="text-sm font-bold text-gray-900">{manager.full_name}</p>
-                  <p className="text-xs text-gray-500">{manager.job_title || 'Manager'} · {manager.department || 'N/A'}</p>
+                  <p className="text-xs text-gray-500">
+                    {manager.job_title || 'Manager'}
+                    {' '}
+                    ·
+                    {' '}
+                    {manager.department || 'N/A'}
+                  </p>
                   <p className="text-xs text-gray-400">{manager.email}</p>
                 </div>
               </div>
@@ -247,7 +273,11 @@ export default function ManagerApprovalPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
             <div className="flex items-center gap-2 mb-3">
               <Users size={14} className="text-[#2D7A4F]" />
-              <span className="text-xs font-bold text-gray-700">Your Team ({reportees.length})</span>
+              <span className="text-xs font-bold text-gray-700">
+                Your Team (
+                {reportees.length}
+                )
+              </span>
               <span className="text-[10px] text-gray-400 ml-1">— from Organogram</span>
             </div>
             {reportees.length > 0 ? (
@@ -367,7 +397,13 @@ export default function ManagerApprovalPage() {
                       </span>
                     </div>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      {req.employeeId} · {req.department} · Submitted {formatDate(req.submittedOn)}
+                      {req.employeeId}
+                      {' '}
+                      ·
+                      {req.department}
+                      {' '}
+                      · Submitted
+                      {formatDate(req.submittedOn)}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">

@@ -27,22 +27,20 @@ export function AuthLayout({
   const router = useRouter();
   const { isMobile } = useDeviceDetection();
   const isSignIn = ['/sign_in', '/forgot_password', '/reset_password'].some(
-    (path) => pathname.startsWith(path)
+    (path) => pathname.startsWith(path),
   );
 
   const isSignUp = [
     '/sign_up',
     '/accept_invitation',
-    '/accept-invitation',  // Add hyphenated version
+    '/accept-invitation', // Add hyphenated version
     '/email_verify',
     '/terms_of_service',
     '/privacy_policy',
     '/confirm_account',
   ].some((path) => pathname.startsWith(path));
 
-  const isAuthorized = ['/company_profile'].some((path) =>
-    pathname.startsWith(path)
-  );
+  const isAuthorized = ['/company_profile'].some((path) => pathname.startsWith(path));
 
   const isLanding = [
     '/dashboard',
@@ -74,23 +72,23 @@ export function AuthLayout({
         </div>
       );
     }
-    return isSignUp ||
-      pathname === '/forgot_password' ||
-      pathname.includes('reset_password') ? (
-      <Button
-        onClick={() => router.push('/sign_in')}
-        text="Sign In"
-        className="mt-1"
-        isSolid
-      />
-    ) : (
-      <Button
-        onClick={() => router.push('/sign_up')}
-        text="Sign up"
-        className="mt-1"
-        isSolid
-      />
-    );
+    return isSignUp
+      || pathname === '/forgot_password'
+      || pathname.includes('reset_password') ? (
+        <Button
+          onClick={() => router.push('/sign_in')}
+          text="Sign In"
+          className="mt-1"
+          isSolid
+        />
+      ) : (
+        <Button
+          onClick={() => router.push('/sign_up')}
+          text="Sign up"
+          className="mt-1"
+          isSolid
+        />
+      );
   };
 
   return (

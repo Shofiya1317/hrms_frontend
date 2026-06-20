@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import {
+  useEffect, useState, useRef, useCallback,
+} from 'react';
 import { useParams } from 'next/navigation';
 import {
   ZoomIn, ZoomOut, Maximize2, Users, Building2, Briefcase,
@@ -11,7 +13,8 @@ import { getOrganizationTree, IOrganogramNode } from '@/lib/service/organogram';
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 function initials(name: string) {
-  return name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '??';
+  return name?.split(' ').map((w) => w[0]).join('').slice(0, 2)
+    .toUpperCase() || '??';
 }
 
 const AVATAR_COLORS = [
@@ -28,8 +31,8 @@ function avatarGrad(name: string) {
 
 const CARD_W = 220;
 const CARD_H = 148;
-const H_GAP  = 48;
-const V_GAP  = 80;
+const H_GAP = 48;
+const V_GAP = 80;
 
 // ─── layout engine ────────────────────────────────────────────────────────────
 
@@ -49,10 +52,12 @@ function layoutTree(
   const visibleChildren = isExpanded ? (node.children ?? []) : [];
 
   if (visibleChildren.length === 0) {
-    return { node, x: 0, y: depth * (CARD_H + V_GAP), width: CARD_W, children: [] };
+    return {
+      node, x: 0, y: depth * (CARD_H + V_GAP), width: CARD_W, children: [],
+    };
   }
 
-  const laidOutChildren = visibleChildren.map(c => layoutTree(c, expandedIds, depth + 1));
+  const laidOutChildren = visibleChildren.map((c) => layoutTree(c, expandedIds, depth + 1));
 
   // compute total width
   const totalChildrenWidth = laidOutChildren.reduce((s, c) => s + c.width, 0)
@@ -76,7 +81,7 @@ function layoutTree(
 
   // actually: parent centered = first_child_center + half span - CARD_W/2
   const firstChildCenter = laidOutChildren[0].x + CARD_W / 2;
-  const lastChildCenter  = laidOutChildren[laidOutChildren.length - 1].x + CARD_W / 2;
+  const lastChildCenter = laidOutChildren[laidOutChildren.length - 1].x + CARD_W / 2;
   const cx = (firstChildCenter + lastChildCenter) / 2 - CARD_W / 2;
 
   return {
@@ -161,11 +166,11 @@ function EmployeeCard({
           userSelect: 'none',
           boxSizing: 'border-box',
         }}
-        onMouseEnter={e => {
+        onMouseEnter={(e) => {
           (e.currentTarget as HTMLDivElement).style.boxShadow = '0 8px 32px rgba(0,0,0,0.13)';
           (e.currentTarget as HTMLDivElement).style.borderColor = '#94a3b8';
         }}
-        onMouseLeave={e => {
+        onMouseLeave={(e) => {
           (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 24px rgba(0,0,0,0.07)';
           (e.currentTarget as HTMLDivElement).style.borderColor = '#e2e8f0';
         }}
@@ -174,16 +179,27 @@ function EmployeeCard({
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* avatar */}
           <div style={{
-            width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+            width: 40,
+            height: 40,
+            borderRadius: 10,
+            flexShrink: 0,
             background: `linear-gradient(135deg, ${from}, ${to})`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'white', fontWeight: 700, fontSize: 13,
-          }}>
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontWeight: 700,
+            fontSize: 13,
+          }}
+          >
             {initials(node.employee_name)}
           </div>
           {/* name + code */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 700, fontSize: 12, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{
+              fontWeight: 700, fontSize: 12, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}
+            >
               {node.employee_name}
             </div>
             <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 1 }}>{node.employee_code}</div>
@@ -198,16 +214,27 @@ function EmployeeCard({
         {/* designation + dept */}
         <div>
           {node.designation && (
-            <div style={{ fontSize: 10, color: '#475569', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{
+              fontSize: 10, color: '#475569', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}
+            >
               {node.designation}
             </div>
           )}
           {node.department && (
             <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 3,
-              marginTop: 4, padding: '2px 8px', borderRadius: 99,
-              background: '#f1f5f9', color: '#64748b', fontSize: 9, fontWeight: 600,
-            }}>
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 3,
+              marginTop: 4,
+              padding: '2px 8px',
+              borderRadius: 99,
+              background: '#f1f5f9',
+              color: '#64748b',
+              fontSize: 9,
+              fontWeight: 600,
+            }}
+            >
               <Building2 size={9} />
               {node.department}
             </div>
@@ -216,19 +243,41 @@ function EmployeeCard({
 
         {/* stats */}
         <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
-          <div style={{ flex: 1, background: '#f8fafc', borderRadius: 8, padding: '5px 8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 3, color: '#94a3b8', marginBottom: 2 }}>
+          <div style={{
+            flex: 1, background: '#f8fafc', borderRadius: 8, padding: '5px 8px',
+          }}
+          >
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 3, color: '#94a3b8', marginBottom: 2,
+            }}
+            >
               <Users size={9} />
               <span style={{ fontSize: 9, lineHeight: 1 }}>Reports</span>
             </div>
-            <div style={{ fontWeight: 700, fontSize: 13, color: '#0f172a', lineHeight: 1 }}>{node.direct_reports_count ?? 0}</div>
+            <div style={{
+              fontWeight: 700, fontSize: 13, color: '#0f172a', lineHeight: 1,
+            }}
+            >
+              {node.direct_reports_count ?? 0}
+            </div>
           </div>
-          <div style={{ flex: 1, background: '#f8fafc', borderRadius: 8, padding: '5px 8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 3, color: '#94a3b8', marginBottom: 2 }}>
+          <div style={{
+            flex: 1, background: '#f8fafc', borderRadius: 8, padding: '5px 8px',
+          }}
+          >
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 3, color: '#94a3b8', marginBottom: 2,
+            }}
+            >
               <Briefcase size={9} />
               <span style={{ fontSize: 9, lineHeight: 1 }}>Team</span>
             </div>
-            <div style={{ fontWeight: 700, fontSize: 13, color: '#0f172a', lineHeight: 1 }}>{node.total_team_size ?? 0}</div>
+            <div style={{
+              fontWeight: 700, fontSize: 13, color: '#0f172a', lineHeight: 1,
+            }}
+            >
+              {node.total_team_size ?? 0}
+            </div>
           </div>
         </div>
       </div>
@@ -242,19 +291,19 @@ export default function Organogram() {
   const params = useParams();
   const subdomain = params?.subdomain as string;
 
-  const [tree, setTree]         = useState<IOrganogramNode[]>([]);
-  const [loading, setLoading]   = useState(true);
+  const [tree, setTree] = useState<IOrganogramNode[]>([]);
+  const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   // canvas transform
-  const [scale, setScale]       = useState(1);
-  const [offset, setOffset]     = useState({ x: 0, y: 0 });
+  const [scale, setScale] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
 
-  const canvasRef   = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const isPanning   = useRef(false);
-  const panStart    = useRef({ x: 0, y: 0 });
-  const lastOffset  = useRef({ x: 0, y: 0 });
+  const isPanning = useRef(false);
+  const panStart = useRef({ x: 0, y: 0 });
+  const lastOffset = useRef({ x: 0, y: 0 });
 
   // ── fetch ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -267,7 +316,7 @@ export default function Organogram() {
         const roots = Array.isArray(data) ? data : [data];
         setTree(roots);
         // expand root nodes by default
-        setExpanded(new Set(roots.map(n => n.id)));
+        setExpanded(new Set(roots.map((n) => n.id)));
       } catch (e) {
         console.error(e);
       } finally {
@@ -277,10 +326,16 @@ export default function Organogram() {
   }, [subdomain]);
 
   // ── build layout ──────────────────────────────────────────────────────────
-  const { nodes: flatNodes, edges: flatEdges, totalW, totalH } = (() => {
-    if (tree.length === 0) return { nodes: [], edges: [], totalW: 0, totalH: 0 };
+  const {
+    nodes: flatNodes, edges: flatEdges, totalW, totalH,
+  } = (() => {
+    if (tree.length === 0) {
+      return {
+        nodes: [], edges: [], totalW: 0, totalH: 0,
+      };
+    }
 
-    const layouts = tree.map(r => layoutTree(r, expanded));
+    const layouts = tree.map((r) => layoutTree(r, expanded));
     const allNodes: FlatNode[] = [];
     const allEdges: FlatEdge[] = [];
 
@@ -292,7 +347,9 @@ export default function Organogram() {
 
     const maxX = allNodes.reduce((m, n) => Math.max(m, n.x + CARD_W), 0);
     const maxY = allNodes.reduce((m, n) => Math.max(m, n.y + CARD_H), 0);
-    return { nodes: allNodes, edges: allEdges, totalW: maxX, totalH: maxY };
+    return {
+      nodes: allNodes, edges: allEdges, totalW: maxX, totalH: maxY,
+    };
   })();
 
   // ── fit to screen ─────────────────────────────────────────────────────────
@@ -346,7 +403,7 @@ export default function Organogram() {
   const onWheel = useCallback((e: WheelEvent) => {
     e.preventDefault();
     const factor = e.deltaY < 0 ? 1.1 : 0.91;
-    setScale(s => Math.min(3, Math.max(0.15, s * factor)));
+    setScale((s) => Math.min(3, Math.max(0.15, s * factor)));
   }, []);
 
   useEffect(() => {
@@ -356,10 +413,10 @@ export default function Organogram() {
     return () => el.removeEventListener('wheel', onWheel);
   }, [onWheel]);
 
-  const zoom = (factor: number) => setScale(s => Math.min(3, Math.max(0.15, s * factor)));
+  const zoom = (factor: number) => setScale((s) => Math.min(3, Math.max(0.15, s * factor)));
 
   const toggleNode = (id: string) => {
-    setExpanded(prev => {
+    setExpanded((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
@@ -367,15 +424,13 @@ export default function Organogram() {
   };
 
   // ── counts for footer ────────────────────────────────────────────────────
-  const countAll = (node: IOrganogramNode): number =>
-    1 + (node.children?.reduce((s, c) => s + countAll(c), 0) ?? 0);
-  const getDepth = (node: IOrganogramNode): number =>
-    1 + (node.children?.length ? Math.max(...node.children.map(getDepth)) : 0);
+  const countAll = (node: IOrganogramNode): number => 1 + (node.children?.reduce((s, c) => s + countAll(c), 0) ?? 0);
+  const getDepth = (node: IOrganogramNode): number => 1 + (node.children?.length ? Math.max(...node.children.map(getDepth)) : 0);
   const depts = new Set<string>();
   const collectDepts = (n: IOrganogramNode) => { if (n.department) depts.add(n.department); n.children?.forEach(collectDepts); };
   tree.forEach(collectDepts);
-  const totalEmp   = tree.reduce((s, n) => s + countAll(n), 0);
-  const maxDepth   = tree.length ? Math.max(...tree.map(getDepth)) : 0;
+  const totalEmp = tree.reduce((s, n) => s + countAll(n), 0);
+  const maxDepth = tree.length ? Math.max(...tree.map(getDepth)) : 0;
 
   if (loading) {
     return (
@@ -394,9 +449,21 @@ export default function Organogram() {
           <p className="text-xs text-slate-400">Scroll to zoom · Drag to pan · Click a card to expand</p>
         </div>
         <div className="flex items-center gap-3 text-xs text-slate-500">
-          <span className="bg-slate-100 px-2.5 py-1 rounded-full font-medium">{totalEmp} employees</span>
-          <span className="bg-slate-100 px-2.5 py-1 rounded-full font-medium">{depts.size} departments</span>
-          <span className="bg-slate-100 px-2.5 py-1 rounded-full font-medium">{maxDepth} levels</span>
+          <span className="bg-slate-100 px-2.5 py-1 rounded-full font-medium">
+            {totalEmp}
+            {' '}
+            employees
+          </span>
+          <span className="bg-slate-100 px-2.5 py-1 rounded-full font-medium">
+            {depts.size}
+            {' '}
+            departments
+          </span>
+          <span className="bg-slate-100 px-2.5 py-1 rounded-full font-medium">
+            {maxDepth}
+            {' '}
+            levels
+          </span>
         </div>
       </div>
 
@@ -433,7 +500,10 @@ export default function Organogram() {
           </button>
           {/* zoom level badge */}
           <div className="w-9 h-9 bg-white border border-slate-200 rounded-xl flex items-center justify-center shadow-sm">
-            <span className="text-[9px] font-bold text-slate-500">{Math.round(scale * 100)}%</span>
+            <span className="text-[9px] font-bold text-slate-500">
+              {Math.round(scale * 100)}
+              %
+            </span>
           </div>
         </div>
 
@@ -452,7 +522,9 @@ export default function Organogram() {
         >
           {/* SVG edges */}
           <svg
-            style={{ position: 'absolute', top: 0, left: 0, width: totalW + 80, height: totalH + 80, overflow: 'visible', pointerEvents: 'none' }}
+            style={{
+              position: 'absolute', top: 0, left: 0, width: totalW + 80, height: totalH + 80, overflow: 'visible', pointerEvents: 'none',
+            }}
           >
             {flatEdges.map((e, i) => {
               const midY = (e.y1 + e.y2) / 2;

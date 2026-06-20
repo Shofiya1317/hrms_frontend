@@ -64,7 +64,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
           className="font-semibold my-0.5"
           style={{ color: p.color }}
         >
-          <span className="text-slate-400 font-normal">{p.name}: </span>
+          <span className="text-slate-400 font-normal">
+            {p.name}
+            :
+            {' '}
+          </span>
           {p.value}
         </p>
       ))}
@@ -157,53 +161,53 @@ export default function AdminDashboard() {
   });
 
   /* ── Loading state ── */
-if (loading) {
-  return (
-    <div className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8 space-y-5">
-      {/* Header Skeleton */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <div className="h-7 sm:h-8 w-32 bg-slate-200 rounded-lg animate-pulse"></div>
-          <div className="h-4 w-48 bg-slate-200 rounded-md mt-2 animate-pulse"></div>
-        </div>
-        <div className="h-8 w-24 bg-slate-200 rounded-full animate-pulse"></div>
-      </div>
-
-      {/* Stats Cards Skeleton */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="bg-white border border-slate-200 rounded-xl p-3">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="h-7 w-16 bg-slate-200 rounded animate-pulse"></div>
-                <div className="h-3 w-20 bg-slate-200 rounded mt-1.5 animate-pulse"></div>
-                <div className="h-2 w-24 bg-slate-200 rounded mt-1.5 animate-pulse"></div>
-              </div>
-              <div className="w-8 h-8 bg-slate-200 rounded-lg animate-pulse"></div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Chart Skeleton */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5">
-        <div className="flex items-start justify-between mb-4 gap-3 flex-wrap">
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8 space-y-5">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-6 h-6 bg-slate-200 rounded-lg animate-pulse"></div>
-              <div className="h-5 w-40 bg-slate-200 rounded animate-pulse"></div>
-            </div>
-            <div className="h-3 w-56 bg-slate-200 rounded ml-8 animate-pulse"></div>
+            <div className="h-7 sm:h-8 w-32 bg-slate-200 rounded-lg animate-pulse" />
+            <div className="h-4 w-48 bg-slate-200 rounded-md mt-2 animate-pulse" />
           </div>
-          <div className="flex items-center gap-3">
-            <div className="h-7 w-24 bg-slate-200 rounded-lg animate-pulse"></div>
-          </div>
+          <div className="h-8 w-24 bg-slate-200 rounded-full animate-pulse" />
         </div>
-        <div className="h-[250px] w-full bg-slate-100 rounded-lg animate-pulse"></div>
+
+        {/* Stats Cards Skeleton */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white border border-slate-200 rounded-xl p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="h-7 w-16 bg-slate-200 rounded animate-pulse" />
+                  <div className="h-3 w-20 bg-slate-200 rounded mt-1.5 animate-pulse" />
+                  <div className="h-2 w-24 bg-slate-200 rounded mt-1.5 animate-pulse" />
+                </div>
+                <div className="w-8 h-8 bg-slate-200 rounded-lg animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Chart Skeleton */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5">
+          <div className="flex items-start justify-between mb-4 gap-3 flex-wrap">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-6 h-6 bg-slate-200 rounded-lg animate-pulse" />
+                <div className="h-5 w-40 bg-slate-200 rounded animate-pulse" />
+              </div>
+              <div className="h-3 w-56 bg-slate-200 rounded ml-8 animate-pulse" />
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="h-7 w-24 bg-slate-200 rounded-lg animate-pulse" />
+            </div>
+          </div>
+          <div className="h-[250px] w-full bg-slate-100 rounded-lg animate-pulse" />
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   /* ── Error state ── */
   if (error) {
@@ -217,7 +221,9 @@ if (loading) {
             onClick={fetchDashboardData}
             className="flex items-center gap-2 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 active:scale-95 px-5 py-2 rounded-xl transition-all mt-2"
           >
-            <RefreshCw size={13} /> Retry
+            <RefreshCw size={13} />
+            {' '}
+            Retry
           </button>
         </div>
       </div>
@@ -225,17 +231,14 @@ if (loading) {
   }
 
   const s = stats!;
-  const attendanceRate =
-    s.totalEmployees > 0
-      ? Math.round((s.activeToday / s.totalEmployees) * 100)
-      : 0;
-  const leaveRate =
-    s.totalEmployees > 0 ? Math.round((s.onLeave / s.totalEmployees) * 100) : 0;
-  const totalAlerts =
-    s.missingCheckout +
-    s.pendingRegularizations +
-    s.lateToday +
-    s.overtimeFlagged;
+  const attendanceRate = s.totalEmployees > 0
+    ? Math.round((s.activeToday / s.totalEmployees) * 100)
+    : 0;
+  const leaveRate = s.totalEmployees > 0 ? Math.round((s.onLeave / s.totalEmployees) * 100) : 0;
+  const totalAlerts = s.missingCheckout
+    + s.pendingRegularizations
+    + s.lateToday
+    + s.overtimeFlagged;
 
   const STAT_CARDS = [
     {
@@ -374,7 +377,9 @@ if (loading) {
             Dashboard
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-0.5 font-medium truncate">
-            {today} · Workforce overview
+            {today}
+            {' '}
+            · Workforce overview
           </p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -466,7 +471,9 @@ if (loading) {
                     data={s.weeklyTrend}
                     barSize={20}
                     barGap={3}
-                    margin={{ top: 4, right: 4, left: -28, bottom: 0 }}
+                    margin={{
+                      top: 4, right: 4, left: -28, bottom: 0,
+                    }}
                   >
                     <CartesianGrid
                       strokeDasharray="3 3"
@@ -543,7 +550,8 @@ if (loading) {
                         <span
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${c.badge}`}
                         >
-                          {d.rate}%
+                          {d.rate}
+                          %
                         </span>
                       </div>
                       <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">

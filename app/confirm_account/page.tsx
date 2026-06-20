@@ -60,7 +60,7 @@ export default function ConfirmAccountPage() {
       .max(16, 'Password must not exceed 16 characters')
       .matches(
         /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,16}$/,
-        'Password must contain uppercase, lowercase, number and special character'
+        'Password must contain uppercase, lowercase, number and special character',
       )
       .required('Password is required'),
     confirm_password: string()
@@ -116,8 +116,8 @@ export default function ConfirmAccountPage() {
         <div className="text-center">
           <div className="mb-4">
             <svg width="80" height="80" viewBox="0 0 24 24" fill="none" className="mx-auto">
-              <circle cx="12" cy="12" r="10" stroke="#ef4444" strokeWidth="2"/>
-              <path d="M15 9l-6 6m0-6l6 6" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
+              <circle cx="12" cy="12" r="10" stroke="#ef4444" strokeWidth="2" />
+              <path d="M15 9l-6 6m0-6l6 6" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </div>
           <h3 className="fs-4 fw-bold text-danger mb-2">Invalid Link</h3>
@@ -181,11 +181,11 @@ export default function ConfirmAccountPage() {
               <div className="mb-4">
                 <CustomCheckbox
                   name="accept_terms_and_conditions"
-                  label={
+                  label={(
                     <span className="agree-terms">
                       I agree to the terms and conditions
                     </span>
-                  }
+                  )}
                   type="checkbox"
                   errors={errors}
                   validationSchema={validationSchema}
@@ -200,13 +200,13 @@ export default function ConfirmAccountPage() {
                   type="submit"
                   isSolid
                   className="w-100"
-                  sufixIconChildren={
+                  sufixIconChildren={(
                     <MdArrowForward
                       size={20}
                       color="var(--icon-color)"
                       className="ms-3"
                     />
-                  }
+                  )}
                 />
               </div>
             </Form>

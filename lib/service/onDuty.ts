@@ -8,15 +8,15 @@ import { Params } from '../utils';
 // ─────────────────────────────────────────────
 
 export enum OnDutyStatus {
-  PENDING   = 'pending',
-  APPROVED  = 'approved',
-  REJECTED  = 'rejected',
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
   CANCELLED = 'cancelled',
 }
 
 export enum OnDutyType {
   FULL_DAY = 'full_day',
-  PARTIAL  = 'partial',
+  PARTIAL = 'partial',
 }
 
 // ─────────────────────────────────────────────
