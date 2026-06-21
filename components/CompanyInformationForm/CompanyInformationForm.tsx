@@ -43,7 +43,7 @@ interface CompanyInformation {
   sectors: string[];
   company_website_url: string;
   phone_number: string;
-  tax_id: string;
+  tax_id?: string;
   standards: string[];
   time_frame: string;
 }

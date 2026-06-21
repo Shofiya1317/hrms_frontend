@@ -33,7 +33,7 @@ interface NewShift {
   description: string;
   start_time: string;
   end_time: string;
-  working_hours: number | '';
+  // working_hours: number | '';
 }
 interface NewSchedule {
   name: string;
@@ -83,7 +83,7 @@ const emptyShift: NewShift = {
   description: '',
   start_time: '',
   end_time: '',
-  working_hours: '',
+  // working_hours: '',
 };
 const emptySchedule: NewSchedule = {
   name: '',
@@ -347,10 +347,10 @@ export default function OrganisationSetupForm({
       toast.error('End time is required');
       return;
     }
-    if (!newShift.working_hours) {
-      toast.error('Working hours is required');
-      return;
-    }
+    // if (!newShift.working_hours) {
+    //   toast.error('Working hours is required');
+    //   return;
+    // }
     setSavingShift(true);
     try {
       const res = await MastersService.createShift(
@@ -359,7 +359,7 @@ export default function OrganisationSetupForm({
           description: newShift.description,
           start_time: newShift.start_time,
           end_time: newShift.end_time,
-          working_hours: newShift.working_hours,
+          // working_hours: newShift.working_hours,
         },
         slug,
       );
@@ -988,27 +988,7 @@ export default function OrganisationSetupForm({
                     />
                   </div>
                 </div>
-                <div className="mb-1">
-                  <label className="form-label">
-                    Working Hours
-                    {' '}
-                    <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    min={1}
-                    max={24}
-                    placeholder="e.g. 8"
-                    value={newShift.working_hours}
-                    onChange={(e) => setNewShift({
-                      ...newShift,
-                      working_hours: e.target.value
-                        ? parseInt(e.target.value)
-                        : '',
-                    })}
-                  />
-                </div>
+                
               </div>
               <div className="modal-footer">
                 <Button
