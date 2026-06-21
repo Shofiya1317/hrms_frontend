@@ -126,6 +126,46 @@ export interface IMyTeamResponse {
   team_members: ITeamMember[];
 }
 
+export interface UpdateEmployeeSelfDto {
+  personal_email?: string;
+  personal_phone?: string;
+  blood_group?: string;
+  current_address?: string;
+  permanent_address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  country?: string;
+  profile_photo_url?: string;
+  bank_ifsc?: string;
+  bank_name?: string;
+  bank_account_number?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  emergency_contact_relation?: string;
+}
+
+export const getEmployeeMe = (
+  tenantId: string,
+  token?: string,
+) => get(
+  '/v1/employees/me',
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const updateEmployeeSelf = (
+  body: UpdateEmployeeSelfDto,
+  tenantId: string,
+  token?: string,
+) => patch(
+  '/v1/employees/me',
+  body,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
 export const getMyTeam = (
   tenantId: string,
   token?: string,

@@ -92,27 +92,35 @@ export default function CheckInOutCard({
     return () => clearInterval(t);
   }, [isCheckedIn, checkInEpoch]);
 
-  useEffect(() => {
-    const s = localStorage.getItem('att_state');
-    if (s) { try { const { aId, epoch } = JSON.parse(s); if (aId && epoch) { setAttendanceId(aId); setCheckInEpoch(epoch); setIsCheckedIn(true); } } catch { localStorage.removeItem('att_state'); } }
-  }, []);
 
-  useEffect(() => {
-    if (isCheckedIn && attendanceId && checkInEpoch) localStorage.setItem('att_state', JSON.stringify({ aId: attendanceId, epoch: checkInEpoch }));
-    else localStorage.removeItem('att_state');
-  }, [isCheckedIn, attendanceId, checkInEpoch]);
 
-  const fetchRecentAttendance = async () => {
+  const fetchRecentAttendance = async (syncState = false) => {
     if (!employeeId) return;
     setLoadingRecent(true);
     getAttendances(apiKey || slug || '', { employee_id: employeeId, limit: 7 }, token)
-      .then((r) => setRecent(Array.isArray(r?.data?.data) ? r.data.data : []))
+      .then((r) => {
+        const data: any[] = Array.isArray(r?.data?.data) ? r.data.data : [];
+        setRecent(data);
+        if (syncState) {
+          const today = toDateString(new Date());
+          const todayRecord = data.find((d) => d.attendance_date === today);
+          if (todayRecord?.check_in_time && !todayRecord?.check_out_time) {
+            setAttendanceId(todayRecord.id);
+            setCheckInEpoch(new Date(todayRecord.check_in_time).getTime());
+            setIsCheckedIn(true);
+          } else {
+            setIsCheckedIn(false);
+            setAttendanceId(null);
+            setCheckInEpoch(null);
+          }
+        }
+      })
       .catch(() => {})
       .finally(() => setLoadingRecent(false));
   };
 
   useEffect(() => {
-    fetchRecentAttendance();
+    fetchRecentAttendance(true);
   }, [employeeId]);
 
   const showToast = (msg: string, type: 'success' | 'error' | 'info') => {
@@ -137,7 +145,7 @@ export default function CheckInOutCard({
         showToast(`Checked in at ${fmtTime(n)}`, 'success');
         // Refresh dashboard and recent attendance
         if (onAttendanceUpdate) onAttendanceUpdate();
-        fetchRecentAttendance();
+        fetchRecentAttendance(false);
       } else {
         if (!attendanceId) throw new Error('No record found.');
         const res = await checkOut(attendanceId, {
@@ -148,13 +156,13 @@ export default function CheckInOutCard({
         setIsCheckedIn(false); setElapsed(0); setAttendanceId(null); setCheckInEpoch(null);
         // Refresh dashboard and recent attendance
         if (onAttendanceUpdate) onAttendanceUpdate();
-        fetchRecentAttendance();
+        fetchRecentAttendance(false);
       }
     } catch (e: any) { showToast(e?.message || 'Something went wrong.', 'error'); } finally { setIsLoading(false); setShowModal(false); setLocationData(null); }
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white overflow-hidden">
+    <div className="flex flex-col bg-white overflow-hidden">
 
       {/* ── Toast ── */}
       {toast && (
@@ -228,7 +236,7 @@ export default function CheckInOutCard({
       {/* ══════════════════════════════════════════
           BOTTOM SECTION  ·  ~75% height  ·  Last 7 days
       ══════════════════════════════════════════ */}
-      <div className="flex-1 flex flex-col min-h-0 px-4 pt-4 pb-4">
+      <div className="flex-1 flex flex-col px-4 pt-4 pb-4">
 
         <div className="flex items-center justify-between mb-3 flex-shrink-0">
           <p className="text-sm font-bold text-slate-800">Recent Attendance</p>
