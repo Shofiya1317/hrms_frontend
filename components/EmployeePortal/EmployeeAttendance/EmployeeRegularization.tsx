@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { useParams } from 'next/navigation';
 import {
   CheckCircle2, XCircle, Clock, Loader2, X, AlertCircle,
@@ -11,6 +13,7 @@ import {
   IRegularization, RegularizationStatus, ICreateRegularizationPayload,
 } from '@/lib/service/regularization';
 import { getAttendances } from '@/lib/service/attendance';
+import '@/components/OrganisationSetupForm/OrganisationSetupForm.css';
 
 const STATUS_META: Record<RegularizationStatus, { label: string; bg: string; text: string; dot: string; border: string; icon: any }> = {
   [RegularizationStatus.PENDING]: {
@@ -35,6 +38,248 @@ function fmtTime(iso: string | null) {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
+// ─── Time Picker ──────────────────────────────────────────────────────────
+// ─── TimePicker (custom scroll columns — no library quirks) ───────────────
+function TimePicker({
+  label,
+  value,
+  onChange,
+  attendanceDate,   // 'YYYY-MM-DD' — needed to compute the maxTime cap
+}: {
+  label: string;
+  value: string;           // '' | 'HH:MM'
+  onChange: (v: string) => void;
+  attendanceDate?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pendingH, setPendingH] = useState<number | null>(null);
+  const [pendingM, setPendingM] = useState<number | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const hrRef  = useRef<HTMLDivElement>(null);
+  const minRef = useRef<HTMLDivElement>(null);
+
+  // ── helpers ──────────────────────────────────────────────────────────────
+  const isToday = (dateStr?: string): boolean => {
+    if (!dateStr) return false;
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const t = new Date();
+    return t.getFullYear() === y && t.getMonth() + 1 === m && t.getDate() === d;
+  };
+
+  /** Returns { h, m } cap only when the attendance date is today */
+  // const maxHM = (): { h: number; m: number } | null => {
+  //   if (!isToday(attendanceDate)) return null;
+  //   const n = new Date();
+  //   return { h: n.getHours(), m: n.getMinutes() };
+  // };
+
+
+  const maxHM = (): { h: number; m: number } | null => {
+  return null;
+};              /// this function could be change later for validation max time
+
+
+
+  const isHourDisabled = (h: number) => {
+    const cap = maxHM();
+    return cap !== null && h > cap.h;
+  };
+
+  const isMinDisabled = (m: number) => {
+    const cap = maxHM();
+    if (!cap || pendingH === null) return false;
+    return pendingH === cap.h && m > cap.m;
+  };
+
+  // ── open / close ─────────────────────────────────────────────────────────
+  const openPicker = () => {
+    if (!open) {
+      // Seed pending state from current value (or now as a sensible default)
+      if (value) {
+        const [h, m] = value.split(':').map(Number);
+        setPendingH(h); setPendingM(m);
+      } else {
+        const now = new Date();
+        setPendingH(now.getHours()); setPendingM(now.getMinutes());
+      }
+    }
+    setOpen((v) => !v);
+  };
+
+  // Scroll selected item into view after paint
+  useEffect(() => {
+    if (!open) return;
+    const scroll = (ref: React.RefObject<HTMLDivElement>, sel: number) => {
+      const item = ref.current?.querySelector<HTMLElement>(`[data-val="${sel}"]`);
+      item?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    };
+    setTimeout(() => {
+      if (pendingH !== null) scroll(hrRef, pendingH);
+      if (pendingM !== null) scroll(minRef, pendingM);
+    }, 50);
+  }, [open]);
+
+  // Click-outside to close
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (open && wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  // ── confirm / clear ───────────────────────────────────────────────────────
+  const confirm = () => {
+    if (pendingH !== null && pendingM !== null) {
+      onChange(`${String(pendingH).padStart(2, '0')}:${String(pendingM).padStart(2, '0')}`);
+    }
+    setOpen(false);
+  };
+
+  const clear = () => {
+    onChange('');
+    setPendingH(null); setPendingM(null);
+    setOpen(false);
+  };
+
+  // When the hour changes, clamp the minute if it now exceeds the cap
+  const pickHour = (h: number) => {
+    if (isHourDisabled(h)) return;
+    const cap = maxHM();
+    if (cap && h === cap.h && pendingM !== null && pendingM > cap.m) {
+      setPendingM(cap.m);
+    }
+    setPendingH(h);
+  };
+
+  const pickMin = (m: number) => {
+    if (isMinDisabled(m)) return;
+    setPendingM(m);
+  };
+
+  const cap = maxHM();
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <label className="block text-xs font-semibold text-gray-600 mb-1.5">{label}</label>
+
+      {/* Trigger */}
+      <button
+        type="button"
+        onClick={openPicker}
+        className={`
+          w-full flex items-center gap-2 px-3 py-2 text-sm
+          bg-gray-50 border rounded-xl transition-all text-left
+          ${open
+            ? 'border-[#0f766e] ring-2 ring-[#0f766e]/20'
+            : 'border-gray-200 hover:border-gray-300'}
+        `}
+      >
+        <Clock size={13} className="text-gray-400 flex-shrink-0" />
+        <span className={`flex-1 ${value ? 'text-gray-800 font-medium' : 'text-gray-400'}`}>
+          {value || 'HH : MM'}
+        </span>
+        {value && (
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={(e) => { e.stopPropagation(); clear(); }}
+            onKeyDown={(e) => e.key === 'Enter' && clear()}
+            className="text-gray-400 hover:text-red-500 text-base leading-none"
+            aria-label="Clear time"
+          >
+            ×
+          </span>
+        )}
+      </button>
+
+      {/* Hint when today */}
+      {cap && attendanceDate && (
+        <p className="text-[10px] text-gray-400 mt-1">
+          Max: {String(cap.h).padStart(2, '0')}:{String(cap.m).padStart(2, '0')} (now)
+        </p>
+      )}
+
+      {/* Popup */}
+      {open && (
+        <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+          <div className="grid grid-cols-2" style={{ height: 180 }}>
+            {/* Hours column */}
+            <div ref={hrRef} className="overflow-y-auto border-r border-gray-100 scroll-smooth" style={{ scrollbarWidth: 'none' }}>
+              <div className="sticky top-0 bg-white text-[9px] font-bold text-gray-400 text-center py-1.5 border-b border-gray-100 uppercase tracking-widest">
+                Hour
+              </div>
+              {Array.from({ length: 24 }, (_, h) => (
+                <button
+                  key={h}
+                  type="button"
+                  data-val={h}
+                  disabled={isHourDisabled(h)}
+                  onClick={() => pickHour(h)}
+                  className={`
+                    w-full py-1.5 text-sm text-center transition-colors
+                    ${pendingH === h
+                      ? 'bg-[#0f766e] text-white font-semibold'
+                      : 'text-gray-700 hover:bg-gray-50'}
+                    ${isHourDisabled(h) ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}
+                  `}
+                >
+                  {String(h).padStart(2, '0')}
+                </button>
+              ))}
+            </div>
+
+            {/* Minutes column */}
+            <div ref={minRef} className="overflow-y-auto scroll-smooth" style={{ scrollbarWidth: 'none' }}>
+              <div className="sticky top-0 bg-white text-[9px] font-bold text-gray-400 text-center py-1.5 border-b border-gray-100 uppercase tracking-widest">
+                Min
+              </div>
+              {Array.from({ length: 60 }, (_, m) => (
+                <button
+                  key={m}
+                  type="button"
+                  data-val={m}
+                  disabled={isMinDisabled(m)}
+                  onClick={() => pickMin(m)}
+                  className={`
+                    w-full py-1.5 text-sm text-center transition-colors
+                    ${pendingM === m
+                      ? 'bg-[#0f766e] text-white font-semibold'
+                      : 'text-gray-700 hover:bg-gray-50'}
+                    ${isMinDisabled(m) ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}
+                  `}
+                >
+                  {String(m).padStart(2, '0')}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 px-3 py-2 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={clear}
+              className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              onClick={confirm}
+              className="px-3 py-1.5 text-xs bg-[#0f766e] text-white rounded-lg hover:bg-[#0d6460]"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Drawer ───────────────────────────────────────────────────────────────
 function CreateRequestDrawer({ onClose, onDone, attendanceLogs }: {
   onClose: () => void;
   onDone: () => void;
@@ -42,130 +287,209 @@ function CreateRequestDrawer({ onClose, onDone, attendanceLogs }: {
 }) {
   const params = useParams();
   const subdomain = params?.subdomain as string;
+
   const [attendanceLogId, setAttendanceLogId] = useState('');
-  const [requestedCheckIn, setRequestedCheckIn] = useState('');
-  const [requestedCheckOut, setRequestedCheckOut] = useState('');
-  const [remarks, setRemarks] = useState('');
+  const [remarks, setRemarks]                 = useState('');
+  const [requestedCheckIn, setRequestedCheckIn]   = useState('');   // 'HH:MM' | ''
+  const [requestedCheckOut, setRequestedCheckOut] = useState('');   // 'HH:MM' | ''
   const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState('');
+  const [err, setErr]       = useState('');
 
-  const selectedLog = attendanceLogs.find((log) => log.id === attendanceLogId);
+  const selectedLog = attendanceLogs.find((l) => l.id === attendanceLogId);
 
+  // Reset times whenever the log changes
+  useEffect(() => {
+    setRequestedCheckIn('');
+    setRequestedCheckOut('');
+    setErr('');
+  }, [attendanceLogId]);
+
+  // ── helpers ──────────────────────────────────────────────────────────────
+  /**
+   * Builds an ISO datetime string from a 'HH:MM' picker value + the
+   * attendance record's 'YYYY-MM-DD' date, anchored in LOCAL time
+   * (same as the IST-based backend logic). Clamps to "now" so a
+   * future timestamp can never reach the backend even if the picker
+   * is somehow bypassed.
+   */
+  const buildISO = (hhmm: string, attendanceDate: string): string => {
+    const [h, m]          = hhmm.split(':').map(Number);
+    const [y, mo, d]      = attendanceDate.split('-').map(Number);
+    const dt              = new Date(y, mo - 1, d, h, m, 0, 0);
+    const now             = new Date();
+    return (dt > now ? now : dt).toISOString();
+  };
+
+  /** Returns true if 'HH:MM' exceeds the current wall-clock time on
+   *  a "today" attendance date — final guard before submission. */
+  const exceedsNow = (hhmm: string): boolean => {
+    if (!selectedLog) return false;
+    const [ly, lm, ld] = selectedLog.attendance_date.split('-').map(Number);
+    const logDate = new Date(ly, lm - 1, ld);
+    const today   = new Date();
+    const isToday = (
+      logDate.getFullYear() === today.getFullYear() &&
+      logDate.getMonth()    === today.getMonth()    &&
+      logDate.getDate()     === today.getDate()
+    );
+    if (!isToday) return false;
+    const [h, m] = hhmm.split(':').map(Number);
+    const now    = new Date();
+    return h > now.getHours() || (h === now.getHours() && m > now.getMinutes());
+  };
+
+  // ── submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!attendanceLogId) { setErr('Please select an attendance log'); return; }
-    setSaving(true); setErr('');
+    setErr('');
+
+    if (!attendanceLogId || !selectedLog) {
+      setErr('Please select an attendance date.');
+      return;
+    }
+
+    // Client-side mirrors of every backend validation in the service
+    if (requestedCheckIn && exceedsNow(requestedCheckIn)) {
+      setErr('Requested check-in time cannot be later than the current time.');
+      return;
+    }
+    if (requestedCheckOut && exceedsNow(requestedCheckOut)) {
+      setErr('Requested check-out time cannot be later than the current time.');
+      return;
+    }
+    if (requestedCheckIn && requestedCheckOut) {
+      const [ch, cm] = requestedCheckIn.split(':').map(Number);
+      const [oh, om] = requestedCheckOut.split(':').map(Number);
+      if (oh < ch || (oh === ch && om <= cm)) {
+        setErr('Check-out time must be after check-in time.');
+        return;
+      }
+      const diffMin = (oh * 60 + om) - (ch * 60 + cm);
+      if (diffMin > 24 * 60) {
+        setErr('Worked duration cannot exceed 24 hours.');
+        return;
+      }
+    }
+
+    setSaving(true);
     try {
       const payload: ICreateRegularizationPayload = {
         attendance_log_id: attendanceLogId,
-        remarks,
+        ...(remarks.trim()         && { remarks: remarks.trim() }),
+        ...(requestedCheckIn       && {
+          requested_check_in:  buildISO(requestedCheckIn,  selectedLog.attendance_date),
+        }),
+        ...(requestedCheckOut      && {
+          requested_check_out: buildISO(requestedCheckOut, selectedLog.attendance_date),
+        }),
       };
 
-      // Convert time to ISO 8601 datetime format
-      if (requestedCheckIn && selectedLog) {
-        const date = new Date(selectedLog.attendance_date);
-        const [hours, minutes] = requestedCheckIn.split(':');
-        date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-        payload.requested_check_in = date.toISOString();
-      }
+      const res = await createRegularization(payload, subdomain);
 
-      if (requestedCheckOut && selectedLog) {
-        const date = new Date(selectedLog.attendance_date);
-        const [hours, minutes] = requestedCheckOut.split(':');
-        date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-        payload.requested_check_out = date.toISOString();
+      if (res?.data?.success === false) {
+        const apiErr = res.data.error;
+        setErr(Array.isArray(apiErr) ? apiErr[0] : (typeof apiErr === 'string' ? apiErr : 'Failed to create request'));
+        return;
       }
-
-      await createRegularization(payload, subdomain);
       onDone();
-    } catch (e: any) {
-      setErr(e?.response?.data?.message || 'Failed to create request');
-    } finally { setSaving(false); }
+    } catch {
+      setErr('Failed to create request. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex">
       <div className="flex-1 bg-black/30" onClick={onClose} />
-      <div className="w-full max-w-md bg-white shadow-2xl flex flex-col overflow-y-auto">
+      <div className="w-full max-w-md bg-white shadow-2xl flex flex-col h-full">
+
+        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <h2 className="text-sm font-bold text-[#0f1f2e]">New Regularization Request</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
             <X size={15} />
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="flex-1 px-5 py-4 space-y-4">
+
+        {/* Body */}
+        <form onSubmit={handleSubmit} className="flex-1 px-5 py-4 space-y-4 overflow-y-auto overflow-x-visible">
+
+          {/* Attendance log select */}
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Select Attendance Log *</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+              Select Attendance Date *
+            </label>
             <select
               value={attendanceLogId}
               onChange={(e) => setAttendanceLogId(e.target.value)}
               required
               className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20 focus:border-[#0f766e] transition-all"
             >
-              <option value="">-- Select date --</option>
+              <option value="">— Select date —</option>
               {attendanceLogs.map((log) => (
                 <option key={log.id} value={log.id}>
-                  {fmtDate(log.attendance_date)}
-                  {' '}
-                  -
-                  {log.attendance_status}
+                  {fmtDate(log.attendance_date)} · {log.attendance_status}
+                  {log.check_in_time ? ` · in ${fmtTime(log.check_in_time)}` : ''}
+                  {log.check_out_time ? ` out ${fmtTime(log.check_out_time)}` : ''}
                 </option>
               ))}
             </select>
+
+            {/* Show original times as a subtle reminder */}
+            {selectedLog && (
+              <p className="text-[10px] text-gray-400 mt-1.5 flex gap-3">
+                <span>Original in: <strong>{fmtTime(selectedLog.check_in_time)}</strong></span>
+                <span>Original out: <strong>{fmtTime(selectedLog.check_out_time)}</strong></span>
+              </p>
+            )}
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Requested Check-in (Optional)</label>
-            <input
-              type="time"
+
+          {/* Time pickers side-by-side */}
+          <div className="grid grid-cols-2 gap-3">
+            <TimePicker
+              label="Requested Check-in (optional)"
               value={requestedCheckIn}
-              onChange={(e) => setRequestedCheckIn(e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20 focus:border-[#0f766e] transition-all"
+              onChange={setRequestedCheckIn}
+              attendanceDate={selectedLog?.attendance_date}
             />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Requested Check-out (Optional)</label>
-            <input
-              type="time"
+            <TimePicker
+              label="Requested Check-out (optional)"
               value={requestedCheckOut}
-              onChange={(e) => setRequestedCheckOut(e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20 focus:border-[#0f766e] transition-all"
+              onChange={setRequestedCheckOut}
+              attendanceDate={selectedLog?.attendance_date}
             />
           </div>
+
+          {/* Remarks */}
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Remarks *</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Remarks</label>
             <textarea
               value={remarks}
               onChange={(e) => setRemarks(e.target.value)}
-              required
-              rows={4}
-              placeholder="Explain why you need regularization..."
-              className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20 focus:border-[#0f766e] transition-all resize-none"
+              rows={3}
+              placeholder="Explain why you need regularization…"
+              className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20 focus:border-[#0f766e] resize-none"
             />
           </div>
+
+          {/* Error */}
           {err && (
             <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-xl">
               <AlertCircle size={13} className="text-red-500 mt-0.5 flex-shrink-0" />
               <p className="text-xs text-red-600">{err}</p>
             </div>
           )}
+
+          {/* Submit */}
           <button
             type="submit"
             disabled={saving}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d6460] transition-colors disabled:opacity-60"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d6460] disabled:opacity-60"
           >
-            {saving ? (
-              <>
-                <Loader2 size={14} className="animate-spin" />
-                {' '}
-                Submitting...
-              </>
-            ) : (
-              <>
-                <Plus size={14} />
-                {' '}
-                Create Request
-              </>
-            )}
+            {saving
+              ? <><Loader2 size={14} className="animate-spin" /> Submitting…</>
+              : <><Plus size={14} /> Create Request</>}
           </button>
         </form>
       </div>
@@ -266,7 +590,7 @@ function RequestCard({ req, onDelete }: { req: IRegularization; onDelete: (id: s
   );
 }
 
-export default function EmployeeRegularization() {
+export default function EmployeeRegularization({ employeeId }: { employeeId: string }) {
   const params = useParams();
   const subdomain = params?.subdomain as string;
   const [requests, setRequests] = useState<IRegularization[]>([]);
@@ -276,22 +600,36 @@ export default function EmployeeRegularization() {
   const [statusFilter, setStatusFilter] = useState<RegularizationStatus | 'ALL'>('ALL');
   const [showCreateDrawer, setShowCreateDrawer] = useState(false);
 
-  useEffect(() => { if (subdomain) { fetchRequests(); fetchAttendanceLogs(); } }, [subdomain]);
+  useEffect(() => { if (subdomain && employeeId) { fetchRequests(); fetchAttendanceLogs(); } }, [subdomain, employeeId]);
 
-  const fetchRequests = async () => {
-    setLoading(true);
-    try {
-      const res = await getRegularizations(subdomain, { limit: 100 });
-      const raw = Array.isArray(res?.data) ? res.data : (res?.data?.data ?? []);
-      setRequests(raw);
-    } catch { /* silent */ } finally { setLoading(false); }
-  };
+const fetchRequests = async () => {
+  setLoading(true);
+  try {
+    const res = await getRegularizations(subdomain, { limit: 100, employee_id: employeeId });
+    const raw = Array.isArray(res?.data) ? res.data : (res?.data?.data ?? []);
+    setRequests(raw);
+  } catch { /* silent */ } finally { setLoading(false); }
+};
 
   const fetchAttendanceLogs = async () => {
     try {
-      const res = await getAttendances(subdomain, { limit: 30 });
+      const res = await getAttendances(subdomain, { limit: 30, employee_id: employeeId  });
       const raw = Array.isArray(res?.data) ? res.data : (res?.data?.data ?? []);
-      setAttendanceLogs(raw);
+
+      // Dedupe by date — keeps the dropdown from showing the same date
+      // multiple times if the API returns duplicate/split records.
+      // If you actually need multiple distinct logs per day shown separately,
+      // change the key below to `log.id` instead.
+      const byDate = new Map<string, any>();
+      raw.forEach((log: any) => {
+        const key = new Date(log.attendance_date).toDateString();
+        byDate.set(key, log); // last one wins
+      });
+      const deduped = Array.from(byDate.values()).sort(
+        (a, b) => new Date(b.attendance_date).getTime() - new Date(a.attendance_date).getTime(),
+      );
+
+      setAttendanceLogs(deduped);
     } catch { /* silent */ }
   };
 

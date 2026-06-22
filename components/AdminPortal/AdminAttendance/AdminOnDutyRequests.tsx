@@ -9,7 +9,7 @@ import {
 import {
   getAllOnDutyApplications, approveRejectOnDuty,
   IOnDuty, OnDutyStatus, OnDutyType, IApproveRejectOnDutyPayload,
-} from '@/lib/service/onduty';
+} from '@/lib/service/onDuty';
 
 // ─────────────────────────────────────────────
 // Constants

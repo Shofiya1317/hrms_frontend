@@ -210,9 +210,6 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
         <CheckInOutCard
           apiKey={apiKey}
           token={token}
-          fullName={fullName}
-          employeeId={employeeId}
-          designation={designation}
           defaultLocation={location}
           onAttendanceUpdate={fetchAttendanceDashboard}
         />

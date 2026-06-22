@@ -106,6 +106,7 @@
     "react-bootstrap": "^2.10.5",
     "react-country-state-city": "^1.1.12",
     "react-data-table-component": "^7.6.2",
+    "react-datepicker": "^9.1.0",
     "react-device-detect": "^2.2.3",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",

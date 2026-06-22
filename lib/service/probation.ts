@@ -132,6 +132,19 @@ export const submitProbationReview = (
   { bearerToken: token, isFetchToken: !token },
 );
 
+export const reviewProbation = (
+  tenantId: string,
+  employeeId: string,
+  payload: { remarks: string },
+  token?: string,
+) => post(
+  `/v1/employees/probation/${employeeId}/review`,
+  payload,
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
 export const confirmProbation = (
   employeeId: string,
   payload: IConfirmProbationPayload,

@@ -153,6 +153,70 @@ export const deleteAttendance = (
   { bearerToken: token, isFetchToken: !token },
 );
 
+export interface ICheckOutContext {
+  check_out_status?: 'normal' | 'early_checkout' | 'overtime';
+  badge?: string;
+  badge_color?: string;
+  title?: string;
+  subtitle?: string;
+  warning_message?: string;
+  worked_time?: string;
+  worked_minutes?: number;
+  shift_end?: string;
+  shift_end_24hr?: string;
+  overtime_minutes?: number;
+  early_exit_minutes?: number;
+  // internal — set by frontend to carry local timer snapshot through to completion screen
+  _workedSecs?: number;
+}
+
+export interface ICheckInContext {
+  state: 'not_checked_in' | 'checked_in' | 'checked_out' | 'completed';
+  employee_name?: string;
+  greeting?: string;
+  message?: string;
+  current_time?: string;
+  current_time_24hr?: string;
+  attendance_id?: string;
+  check_in_time?: string;
+  check_in_time_24hr?: string;
+  check_out_time?: string;
+  check_out_time_24hr?: string;
+  worked_time?: string;
+  worked_minutes?: number;
+  attendance_status?: string;
+  // status fields (from check-in response status object)
+  day_type?: string;
+  is_comp_off_eligible?: boolean;
+  comp_off_credited?: number;
+  status_message?: string;
+  // nested context objects
+  check_in_context?: {
+    check_in_status?: string;
+    badge?: string;
+    badge_color?: string;
+    title?: string;
+    subtitle?: string;
+    shift_start?: string;
+    shift_end?: string;
+    shift_start_24hr?: string;
+    shift_end_24hr?: string;
+    late_by_minutes?: number;
+    minutes_to_shift?: number;
+  };
+  check_out_context?: ICheckOutContext;
+}
+
+export const getCheckInContext = (
+  tenantId: string,
+  token?: string,
+) => get(
+  '/v1/attendance/check-in/context',
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
 export const checkIn = (
   body: ICheckInPayload,
   tenantId: string,
