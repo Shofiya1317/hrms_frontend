@@ -371,10 +371,10 @@ export const onboardingStep1 = (
 
 export const onboardingStep2 = (
   params: {
-    work_location_ids: string[];
-    department_ids: string[];
-    shift_ids: string[];
-    work_schedule_ids: string[];
+    work_location_ids?: string[];
+    department_ids?: string[];
+    shift_ids?: string[];
+    work_schedule_ids?: string[];
   },
   slug: string,
 ) => put(
@@ -382,6 +382,17 @@ export const onboardingStep2 = (
   params,
   undefined,
   slug,
+);
+
+export const getOnboardingStep2 = (
+  slug: string,
+ 
+  token?: string,
+) => get(
+  '/v1/auth/onboarding/step2',
+  undefined,
+  slug,
+  { bearerToken: token, isFetchToken: !token },
 );
 
 export const invitePeople = (

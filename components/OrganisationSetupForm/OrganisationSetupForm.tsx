@@ -9,7 +9,7 @@ import { IoMdAdd } from 'react-icons/io';
 import Select from 'react-select';
 import { useEffect, useRef, useState } from 'react';
 import CreatableSelect from 'react-select/creatable';
-import { onboardingStep2 } from '@/lib/service/auth';
+import { onboardingStep2, getOnboardingStep2 } from '@/lib/service/auth';
 import { MastersService } from '@/lib/service';
 import { IAccount } from '@/lib/interface/IAccount.interface';
 import {
@@ -33,7 +33,6 @@ interface NewShift {
   description: string;
   start_time: string;
   end_time: string;
-  // working_hours: number | '';
 }
 interface NewSchedule {
   name: string;
@@ -83,7 +82,6 @@ const emptyShift: NewShift = {
   description: '',
   start_time: '',
   end_time: '',
-  // working_hours: '',
 };
 const emptySchedule: NewSchedule = {
   name: '',
@@ -171,9 +169,13 @@ export default function OrganisationSetupForm({
   const [apiSchedules, setApiSchedules] = useState<IWorkSchedule[]>([]);
   const [loadingMasters, setLoadingMasters] = useState(true);
 
+  const [savedDepartments, setSavedDepartments] = useState<string[]>([]);
+  const [savedShifts, setSavedShifts] = useState<string[]>([]);
+  const [savedLocations, setSavedLocations] = useState<string[]>([]);
+  const [savedSchedules, setSavedSchedules] = useState<string[]>([]);
+
   const [showCustomDeptModal, setShowCustomDeptModal] = useState(false);
   const [showCustomShiftModal, setShowCustomShiftModal] = useState(false);
-  const [showCustomScheduleModal, setShowCustomScheduleModal] = useState(false);
 
   const [savingDept, setSavingDept] = useState(false);
   const [savingShift, setSavingShift] = useState(false);
@@ -184,10 +186,10 @@ export default function OrganisationSetupForm({
   const [newSchedule, setNewSchedule] = useState<NewSchedule>(emptySchedule);
 
   const initialValues: OrganisationSetup = {
-    branches_locations: [],
-    departments: account?.department_ids || [], // Map existing department IDs
-    work_shifts: account?.shift_ids || [], // Map existing shift IDs
-    work_schedules: account?.work_schedule_ids || [], // Map existing schedule IDs
+    branches_locations: savedLocations.length ? savedLocations : [],
+    departments: savedDepartments.length ? savedDepartments : (account?.department_ids || []),
+    work_shifts: savedShifts.length ? savedShifts : (account?.shift_ids || []),
+    work_schedules: savedSchedules.length ? savedSchedules : (account?.work_schedule_ids || []),
   };
 
   // ── Fetch helpers ───────────────────────────────────────────────
@@ -206,7 +208,6 @@ export default function OrganisationSetupForm({
 
   const fetchWorkSchedules = async () => {
     const res = await MastersService.getWorkSchedules(slug);
-    // GET /v1/masters/work-schedules returns a plain array, not { success, data, meta }
     const data = res?.data;
     if (Array.isArray(data)) {
       setApiSchedules(data as IWorkSchedule[]);
@@ -222,6 +223,39 @@ export default function OrganisationSetupForm({
           fetchDepartments(),
           fetchShifts(),
           fetchWorkSchedules(),
+          (async () => {
+            try {
+              const res = await getOnboardingStep2(slug);
+              const data = res?.data?.data ?? res?.data;
+              if (data) {
+                if (Array.isArray(data.department_ids)) setSavedDepartments(data.department_ids);
+                if (Array.isArray(data.shift_ids)) setSavedShifts(data.shift_ids);
+                if (Array.isArray(data.work_location_ids)) setSavedLocations(data.work_location_ids);
+                if (Array.isArray(data.work_schedule_ids)) setSavedSchedules(data.work_schedule_ids);
+                if (Array.isArray(data.work_location) && !data.work_location_ids) setSavedLocations(data.work_location);
+
+                // ── Populate schedule builder from saved work_schedule object ──
+                if (data.work_schedule && typeof data.work_schedule === 'object') {
+                  const ws = data.work_schedule;
+                  setNewSchedule({
+                    name:             ws.name             ?? '',
+                    description:      ws.description      ?? '',
+                    monday:           ws.monday           ?? false,
+                    tuesday:          ws.tuesday          ?? false,
+                    wednesday:        ws.wednesday        ?? false,
+                    thursday:         ws.thursday         ?? false,
+                    friday:           ws.friday           ?? false,
+                    sunday:           ws.sunday           ?? false,
+                    saturday_week_1:  ws.saturday_week_1  ?? false,
+                    saturday_week_2:  ws.saturday_week_2  ?? false,
+                    saturday_week_3:  ws.saturday_week_3  ?? false,
+                    saturday_week_4:  ws.saturday_week_4  ?? false,
+                    saturday_week_5:  ws.saturday_week_5  ?? false,
+                  });
+                }
+              }
+            } catch { /* silent — form still works without pre-fill */ }
+          })(),
         ]);
       } catch {
         toast.error('Failed to load master data');
@@ -257,29 +291,27 @@ export default function OrganisationSetupForm({
 
   const onSubmit = async (values: OrganisationSetup) => {
     try {
-      // Prepare the payload with work_schedule as JSONB object
       const payload: any = {
-        work_location: values.branches_locations,
-        department_ids: values.departments,
-        shift_ids: values.work_shifts,
+        ...(values.branches_locations && { work_location: values.branches_locations }),
+        ...(values.departments?.length && { department_ids: values.departments }),
+        ...(values.work_shifts?.length && { shift_ids: values.work_shifts }),
       };
 
-      // Add work_schedule as JSONB object if configured
-      if (newSchedule.name.trim()) {
+      if (newSchedule.name?.trim()) {
         payload.work_schedule = {
-          name: newSchedule.name.trim(),
-          description: newSchedule.description || '',
-          monday: newSchedule.monday,
-          tuesday: newSchedule.tuesday,
-          wednesday: newSchedule.wednesday,
-          thursday: newSchedule.thursday,
-          friday: newSchedule.friday,
-          saturday_week_1: newSchedule.saturday_week_1,
-          saturday_week_2: newSchedule.saturday_week_2,
-          saturday_week_3: newSchedule.saturday_week_3,
-          saturday_week_4: newSchedule.saturday_week_4,
-          saturday_week_5: newSchedule.saturday_week_5,
-          sunday: newSchedule.sunday,
+          name:             newSchedule.name.trim(),
+          ...(newSchedule.description      && { description:      newSchedule.description }),
+          ...(newSchedule.monday    !== undefined && { monday:           newSchedule.monday }),
+          ...(newSchedule.tuesday   !== undefined && { tuesday:          newSchedule.tuesday }),
+          ...(newSchedule.wednesday !== undefined && { wednesday:        newSchedule.wednesday }),
+          ...(newSchedule.thursday  !== undefined && { thursday:         newSchedule.thursday }),
+          ...(newSchedule.friday    !== undefined && { friday:           newSchedule.friday }),
+          ...(newSchedule.saturday_week_1 !== undefined && { saturday_week_1: newSchedule.saturday_week_1 }),
+          ...(newSchedule.saturday_week_2 !== undefined && { saturday_week_2: newSchedule.saturday_week_2 }),
+          ...(newSchedule.saturday_week_3 !== undefined && { saturday_week_3: newSchedule.saturday_week_3 }),
+          ...(newSchedule.saturday_week_4 !== undefined && { saturday_week_4: newSchedule.saturday_week_4 }),
+          ...(newSchedule.saturday_week_5 !== undefined && { saturday_week_5: newSchedule.saturday_week_5 }),
+          ...(newSchedule.sunday    !== undefined && { sunday:           newSchedule.sunday }),
         };
       }
 
@@ -288,6 +320,7 @@ export default function OrganisationSetupForm({
         success: boolean;
         error?: string[] | string;
       };
+
       if (success) {
         toast.success('Organisation setup completed successfully');
         router.push('/dashboard');
@@ -297,7 +330,11 @@ export default function OrganisationSetupForm({
         toast.error(errorMsg);
       }
     } catch (err: any) {
-      const errorMsg = err?.response?.data?.error?.[0] || err?.response?.data?.message || err?.message || 'Something went wrong';
+      const errorMsg =
+        err?.response?.data?.error?.[0] ||
+        err?.response?.data?.message ||
+        err?.message ||
+        'Something went wrong';
       toast.error(errorMsg);
     }
   };
@@ -347,10 +384,6 @@ export default function OrganisationSetupForm({
       toast.error('End time is required');
       return;
     }
-    // if (!newShift.working_hours) {
-    //   toast.error('Working hours is required');
-    //   return;
-    // }
     setSavingShift(true);
     try {
       const res = await MastersService.createShift(
@@ -359,7 +392,6 @@ export default function OrganisationSetupForm({
           description: newShift.description,
           start_time: newShift.start_time,
           end_time: newShift.end_time,
-          // working_hours: newShift.working_hours,
         },
         slug,
       );
@@ -401,7 +433,6 @@ export default function OrganisationSetupForm({
       if (success) {
         await fetchWorkSchedules();
         toast.success('Work schedule created successfully');
-        // Don't reset here, let the Save & Select button handle it
       } else {
         toast.error(error ?? 'Failed to create work schedule');
       }
@@ -434,7 +465,6 @@ export default function OrganisationSetupForm({
     const hours = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
     const minutes = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
-    // Parse external value into local state only on open
     const handleOpen = () => {
       if (value) {
         const [h, m] = value.split(':').map(Number);
@@ -449,7 +479,6 @@ export default function OrganisationSetupForm({
       setOpen((o) => !o);
     };
 
-    // Close on outside click
     useEffect(() => {
       const handler = (e: MouseEvent) => {
         if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); }
@@ -458,24 +487,18 @@ export default function OrganisationSetupForm({
       return () => document.removeEventListener('mousedown', handler);
     }, []);
 
-    // Scroll active item into view when dropdown opens
     useEffect(() => {
       if (!open) return;
       setTimeout(() => {
         [hourRef, minRef].forEach((r) => {
-          const active = r.current?.querySelector(
-            '.tp-item--active',
-          ) as HTMLElement;
+          const active = r.current?.querySelector('.tp-item--active') as HTMLElement;
           if (active && r.current) {
-            r.current.scrollTop = active.offsetTop
-              - r.current.clientHeight / 2
-              + active.clientHeight / 2;
+            r.current.scrollTop = active.offsetTop - r.current.clientHeight / 2 + active.clientHeight / 2;
           }
         });
       }, 50);
     }, [open]);
 
-    // Only emit to parent on Done
     const handleDone = () => {
       let h24 = parseInt(hour);
       if (period === 'AM' && h24 === 12) h24 = 0;
@@ -500,30 +523,14 @@ export default function OrganisationSetupForm({
           className={`tp-trigger${open ? ' tp-trigger--open' : ''}`}
           onClick={handleOpen}
         >
-          <svg
-            width="15"
-            height="15"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            className="tp-icon"
-          >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="tp-icon">
             <circle cx="12" cy="12" r="10" />
             <polyline points="12 6 12 12 16 14" />
           </svg>
           <span className={displayValue ? 'tp-value' : 'tp-placeholder'}>
             {displayValue || placeholder}
           </span>
-          <svg
-            width="13"
-            height="13"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            className="tp-chevron"
-          >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="tp-chevron">
             <polyline points="6 9 12 15 18 9" />
           </svg>
         </div>
@@ -533,47 +540,28 @@ export default function OrganisationSetupForm({
             <div className="tp-col" ref={hourRef}>
               <div className="tp-col-label">HH</div>
               {hours.map((h) => (
-                <div
-                  key={h}
-                  className={`tp-item${h === hour ? ' tp-item--active' : ''}`}
-                  onClick={() => setHour(h)}
-                >
+                <div key={h} className={`tp-item${h === hour ? ' tp-item--active' : ''}`} onClick={() => setHour(h)}>
                   {h}
                 </div>
               ))}
             </div>
-
             <div className="tp-sep">:</div>
-
             <div className="tp-col" ref={minRef}>
               <div className="tp-col-label">MM</div>
               {minutes.map((m) => (
-                <div
-                  key={m}
-                  className={`tp-item${m === minute ? ' tp-item--active' : ''}`}
-                  onClick={() => setMinute(m)}
-                >
+                <div key={m} className={`tp-item${m === minute ? ' tp-item--active' : ''}`} onClick={() => setMinute(m)}>
                   {m}
                 </div>
               ))}
             </div>
-
             <div className="tp-period-col">
               <div className="tp-col-label">--</div>
               {(['AM', 'PM'] as const).map((p) => (
-                <div
-                  key={p}
-                  className={`tp-period-item${p === period ? ' tp-item--active' : ''}`}
-                  onClick={() => setPeriod(p)}
-                >
+                <div key={p} className={`tp-period-item${p === period ? ' tp-item--active' : ''}`} onClick={() => setPeriod(p)}>
                   {p}
                 </div>
               ))}
-              <button
-                type="button"
-                className="tp-done-btn"
-                onClick={handleDone}
-              >
+              <button type="button" className="tp-done-btn" onClick={handleDone}>
                 Done
               </button>
             </div>
@@ -587,13 +575,7 @@ export default function OrganisationSetupForm({
 
   return (
     <>
-      <div style={{ width: '680px', maxWidth: '95%', margin: '0 auto' }}>
-        <div className="text-center mb-4 company-profile-header">
-          <h5 className="page-title">Set Up Your Organisation</h5>
-          <span className="page-subtitle">
-            Configure your workspace structure before getting started
-          </span>
-        </div>
+      <div style={{margin: '0 auto' }}>
 
         <div className="mt-4">
           <Formik
@@ -602,35 +584,24 @@ export default function OrganisationSetupForm({
             validationSchema={validationSchema}
             validateOnChange={false}
             validateOnBlur={false}
+            enableReinitialize
           >
-            {({
-              handleSubmit,
-              isSubmitting,
-              setFieldValue,
-              values,
-              errors,
-            }) => (
+            {({ handleSubmit, isSubmitting, setFieldValue, values, errors }) => (
               <Form onSubmit={handleSubmit}>
                 {/* Row 1: Branches + Departments */}
                 <div className="row g-3 mt-2">
                   <div className="col-12 col-md-12">
                     <label className="form-label fw-medium">
-                      Branches / Locations
-                      {' '}
-                      <span className="text-danger">*</span>
+                      Branches / Locations <span className="text-danger">*</span>
                     </label>
                     <CreatableSelect
                       styles={CustomStyles(false)}
                       isMulti
                       options={[]}
-                      value={values.branches_locations.map((v) => ({
-                        value: v,
-                        label: v,
-                      }))}
-                      onChange={(selected: any) => setFieldValue(
-                        'branches_locations',
-                        selected.map((s: any) => s.value),
-                      )}
+                      value={values.branches_locations.map((v) => ({ value: v, label: v }))}
+                      onChange={(selected: any) =>
+                        setFieldValue('branches_locations', selected.map((s: any) => s.value))
+                      }
                       placeholder="e.g. Chennai HQ, Mumbai Office…"
                       noOptionsMessage={() => 'Type a location and press Enter'}
                       formatCreateLabel={(input) => `Add "${input}"`}
@@ -638,18 +609,12 @@ export default function OrganisationSetupForm({
                       classNamePrefix="react-select"
                     />
                     {errors.branches_locations && (
-                      <div className="text-danger small mt-1">
-                        {String(errors.branches_locations)}
-                      </div>
+                      <div className="text-danger small mt-1">{String(errors.branches_locations)}</div>
                     )}
                   </div>
 
                   <div className="col-12 col-md-12">
-                    <label className="form-label fw-medium">
-                      Departments
-                      {' '}
-                      <span className="text-danger">*</span>
-                    </label>
+                    <label className="form-label fw-medium">Departments</label>
                     <div className="d-flex gap-2 align-items-start">
                       <div className="flex-grow-1">
                         <Select
@@ -658,26 +623,18 @@ export default function OrganisationSetupForm({
                           isLoading={loadingMasters}
                           options={departmentOptions}
                           value={departmentOptions.filter((d) => values.departments.includes(d.value))}
-                          onChange={(selected: any) => setFieldValue(
-                            'departments',
-                            selected.map((s: any) => s.value),
-                          )}
-                          placeholder={
-                            loadingMasters ? 'Loading…' : 'Select departments…'
+                          onChange={(selected: any) =>
+                            setFieldValue('departments', selected.map((s: any) => s.value))
                           }
+                          placeholder={loadingMasters ? 'Loading…' : 'Select departments…'}
                           className="react-select-container"
                           classNamePrefix="react-select"
                         />
                       </div>
-                      <AddCustomBtn
-                        label="Custom"
-                        onClick={() => setShowCustomDeptModal(true)}
-                      />
+                      <AddCustomBtn label="Create dept" onClick={() => setShowCustomDeptModal(true)} />
                     </div>
                     {errors.departments && (
-                      <div className="text-danger small mt-1">
-                        {String(errors.departments)}
-                      </div>
+                      <div className="text-danger small mt-1">{String(errors.departments)}</div>
                     )}
                   </div>
                 </div>
@@ -685,11 +642,7 @@ export default function OrganisationSetupForm({
                 {/* Row 2: Work Shift + Work Schedule */}
                 <div className="row g-3 mt-2 mb-2">
                   <div className="col-12 col-md-12">
-                    <label className="form-label fw-medium">
-                      Work Shift
-                      {' '}
-                      <span className="text-danger">*</span>
-                    </label>
+                    <label className="form-label fw-medium">Work Shift</label>
                     <div className="d-flex gap-2 align-items-start">
                       <div className="flex-grow-1">
                         <Select
@@ -698,73 +651,24 @@ export default function OrganisationSetupForm({
                           isLoading={loadingMasters}
                           options={shiftOptions}
                           value={shiftOptions.filter((o) => values.work_shifts.includes(o.value))}
-                          onChange={(selected: any) => setFieldValue(
-                            'work_shifts',
-                            selected.map((s: any) => s.value),
-                          )}
-                          placeholder={
-                            loadingMasters ? 'Loading…' : 'Select shifts…'
+                          onChange={(selected: any) =>
+                            setFieldValue('work_shifts', selected.map((s: any) => s.value))
                           }
+                          placeholder={loadingMasters ? 'Loading…' : 'Select shifts…'}
                           className="react-select-container"
                           classNamePrefix="react-select"
                         />
                       </div>
-                      <AddCustomBtn
-                        label="Custom"
-                        onClick={() => setShowCustomShiftModal(true)}
-                      />
+                      <AddCustomBtn label="Create shift" onClick={() => setShowCustomShiftModal(true)} />
                     </div>
                     {errors.work_shifts && (
-                      <div className="text-danger small mt-1">
-                        {String(errors.work_shifts)}
-                      </div>
+                      <div className="text-danger small mt-1">{String(errors.work_shifts)}</div>
                     )}
                   </div>
 
-                  {/* <div className="col-12 col-md-6">
-                    <label className="form-label fw-medium">
-                      Work Schedule <span className="text-danger">*</span>
-                    </label>
-                    <div className="d-flex gap-2 align-items-start">
-                      <div className="flex-grow-1">
-                        <Select
-                          styles={CustomStyles(false)}
-                          isMulti
-                          isLoading={loadingMasters}
-                          options={scheduleOptions}
-                          value={scheduleOptions.filter((o) =>
-                            values.work_schedules.includes(o.value)
-                          )}
-                          onChange={(selected: any) =>
-                            setFieldValue(
-                              'work_schedules',
-                              selected.map((s: any) => s.value)
-                            )
-                          }
-                          placeholder={
-                            loadingMasters ? 'Loading…' : 'Select schedules…'
-                          }
-                          className="react-select-container"
-                          classNamePrefix="react-select"
-                        />
-                      </div>
-                      <AddCustomBtn
-                        label="Custom"
-                        onClick={() => setShowCustomScheduleModal(true)}
-                      />
-                    </div>
-                    {errors.work_schedules && (
-                      <div className="text-danger small mt-1">
-                        {String(errors.work_schedules)}
-                      </div>
-                    )}
-                  </div> */}
-
-                  {/* Work Schedule Visual Builder */}
+                  {/* Work Schedule Visual Builder — pre-filled from GET response */}
                   <div className="col-12 col-md-12">
-                    <label className="form-label fw-medium">
-                      Configure Schedule
-                    </label>
+                    <label className="form-label fw-medium">Configure Schedule</label>
                     <div className="schedule-builder-card">
                       <div className="mb-3">
                         <input
@@ -787,10 +691,9 @@ export default function OrganisationSetupForm({
                               <input
                                 type="checkbox"
                                 checked={newSchedule[key] as boolean}
-                                onChange={(e) => setNewSchedule({
-                                  ...newSchedule,
-                                  [key]: e.target.checked,
-                                })}
+                                onChange={(e) =>
+                                  setNewSchedule({ ...newSchedule, [key]: e.target.checked })
+                                }
                               />
                               {label.substring(0, 3)}
                             </label>
@@ -809,10 +712,9 @@ export default function OrganisationSetupForm({
                               <input
                                 type="checkbox"
                                 checked={newSchedule[key] as boolean}
-                                onChange={(e) => setNewSchedule({
-                                  ...newSchedule,
-                                  [key]: e.target.checked,
-                                })}
+                                onChange={(e) =>
+                                  setNewSchedule({ ...newSchedule, [key]: e.target.checked })
+                                }
                               />
                               {label}
                             </label>
@@ -833,11 +735,7 @@ export default function OrganisationSetupForm({
                     isSolid
                     className="company-info-btn"
                     sufixIconChildren={(
-                      <MdArrowForward
-                        size={20}
-                        color="var(--icon-color)"
-                        className="ms-3"
-                      />
+                      <MdArrowForward size={20} color="var(--icon-color)" className="ms-3" />
                     )}
                   />
                 </div>
@@ -849,11 +747,7 @@ export default function OrganisationSetupForm({
 
       {/* ── Custom Department Modal ── */}
       {showCustomDeptModal && (
-        <div
-          className="modal show d-block"
-          tabIndex={-1}
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-        >
+        <div className="modal show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -861,19 +755,12 @@ export default function OrganisationSetupForm({
                 <button
                   type="button"
                   className="btn-close"
-                  onClick={() => {
-                    setShowCustomDeptModal(false);
-                    setNewDept(emptyDept);
-                  }}
+                  onClick={() => { setShowCustomDeptModal(false); setNewDept(emptyDept); }}
                 />
               </div>
               <div className="modal-body">
                 <div className="mb-3">
-                  <label className="form-label">
-                    Name
-                    {' '}
-                    <span className="text-danger">*</span>
-                  </label>
+                  <label className="form-label">Name</label>
                   <input
                     type="text"
                     className="form-control"
@@ -898,10 +785,7 @@ export default function OrganisationSetupForm({
                   text="Cancel"
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    setShowCustomDeptModal(false);
-                    setNewDept(emptyDept);
-                  }}
+                  onClick={() => { setShowCustomDeptModal(false); setNewDept(emptyDept); }}
                 />
                 <Button
                   text={savingDept ? 'Saving…' : 'Add Department'}
@@ -919,11 +803,7 @@ export default function OrganisationSetupForm({
 
       {/* ── Custom Shift Modal ── */}
       {showCustomShiftModal && (
-        <div
-          className="modal show d-block"
-          tabIndex={-1}
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-        >
+        <div className="modal show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -931,19 +811,12 @@ export default function OrganisationSetupForm({
                 <button
                   type="button"
                   className="btn-close"
-                  onClick={() => {
-                    setShowCustomShiftModal(false);
-                    setNewShift(emptyShift);
-                  }}
+                  onClick={() => { setShowCustomShiftModal(false); setNewShift(emptyShift); }}
                 />
               </div>
               <div className="modal-body">
                 <div className="mb-3">
-                  <label className="form-label">
-                    Name
-                    {' '}
-                    <span className="text-danger">*</span>
-                  </label>
+                  <label className="form-label">Name</label>
                   <input
                     type="text"
                     className="form-control"
@@ -964,11 +837,7 @@ export default function OrganisationSetupForm({
                 </div>
                 <div className="row g-3 mb-3">
                   <div className="col-6">
-                    <label className="form-label">
-                      Start Time
-                      {' '}
-                      <span className="text-danger">*</span>
-                    </label>
+                    <label className="form-label">Start Time</label>
                     <TimePickerInput
                       value={newShift.start_time}
                       onChange={(val) => setNewShift({ ...newShift, start_time: val })}
@@ -976,11 +845,7 @@ export default function OrganisationSetupForm({
                     />
                   </div>
                   <div className="col-6">
-                    <label className="form-label">
-                      End Time
-                      {' '}
-                      <span className="text-danger">*</span>
-                    </label>
+                    <label className="form-label">End Time</label>
                     <TimePickerInput
                       value={newShift.end_time}
                       onChange={(val) => setNewShift({ ...newShift, end_time: val })}
@@ -988,17 +853,13 @@ export default function OrganisationSetupForm({
                     />
                   </div>
                 </div>
-                
               </div>
               <div className="modal-footer">
                 <Button
                   text="Cancel"
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    setShowCustomShiftModal(false);
-                    setNewShift(emptyShift);
-                  }}
+                  onClick={() => { setShowCustomShiftModal(false); setNewShift(emptyShift); }}
                 />
                 <Button
                   text={savingShift ? 'Saving…' : 'Add Shift'}
@@ -1013,129 +874,6 @@ export default function OrganisationSetupForm({
           </div>
         </div>
       )}
-
-      {/* ── Custom Schedule Modal ── */}
-      {/* {showCustomScheduleModal && (
-        <div
-          className="modal show d-block"
-          tabIndex={-1}
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-        >
-          <div className="modal-dialog modal-dialog-centered modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Create Custom Schedule</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => {
-                    setShowCustomScheduleModal(false);
-                    setNewSchedule(emptySchedule);
-                  }}
-                />
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <label className="form-label">
-                    Name <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="e.g. 5-Day Week"
-                    value={newSchedule.name}
-                    onChange={(e) =>
-                      setNewSchedule({ ...newSchedule, name: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">Description</label>
-                  <textarea
-                    className="form-control"
-                    rows={2}
-                    placeholder="Enter description"
-                    value={newSchedule.description}
-                    onChange={(e) =>
-                      setNewSchedule({
-                        ...newSchedule,
-                        description: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label fw-semibold">Working Days</label>
-                  <div className="d-flex flex-wrap gap-2">
-                    {DAY_FIELDS.map(({ key, label }) => (
-                      <label
-                        key={key}
-                        className={`day-pill${newSchedule[key] ? ' day-pill--active' : ''}`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={newSchedule[key] as boolean}
-                          onChange={(e) =>
-                            setNewSchedule({
-                              ...newSchedule,
-                              [key]: e.target.checked,
-                            })
-                          }
-                        />
-                        {label}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div className="mb-1">
-                  <label className="form-label fw-semibold">
-                    Saturday Working Weeks
-                  </label>
-                  <div className="d-flex flex-wrap gap-2">
-                    {SATURDAY_FIELDS.map(({ key, label }) => (
-                      <label
-                        key={key}
-                        className={`day-pill day-pill--sat${newSchedule[key] ? ' day-pill--active' : ''}`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={newSchedule[key] as boolean}
-                          onChange={(e) =>
-                            setNewSchedule({
-                              ...newSchedule,
-                              [key]: e.target.checked,
-                            })
-                          }
-                        />
-                        {label}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <Button
-                  text="Cancel"
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setShowCustomScheduleModal(false);
-                    setNewSchedule(emptySchedule);
-                  }}
-                />
-                <Button
-                  text={savingSchedule ? 'Saving…' : 'Add Schedule'}
-                  isDisabled={savingSchedule}
-                  isLoading={savingSchedule}
-                  type="button"
-                  onClick={handleAddCustomSchedule}
-                  isSolid
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )} */}
     </>
   );
 }

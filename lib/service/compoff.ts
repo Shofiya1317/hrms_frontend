@@ -59,14 +59,17 @@ export interface IApproveRejectCompOffPayload {
   rejection_reason?: string;
 }
 
-export interface ITeamCompOffQueryParams extends Params {
-  employee_id?: string;
+export interface IMyCompOffQueryParams extends Params {
   status?: CompOffStatus | string;
   from_worked_date?: string;
   to_worked_date?: string;
   from_comp_off_date?: string;
   to_comp_off_date?: string;
   is_availed?: boolean;
+}
+
+export interface ITeamCompOffQueryParams extends IMyCompOffQueryParams {
+  employee_id?: string;
 }
 
 // ─────────────────────────────────────────────
@@ -102,6 +105,18 @@ export const getCompOffs = (
   token?: string,
 ) => get(
   '/v1/comp-off',
+  params,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+/** Get my comp-off requests — employee_id auto-injected from JWT */
+export const getMyCompOffRequests = (
+  tenantId: string,
+  params?: IMyCompOffQueryParams,
+  token?: string,
+) => get(
+  '/v1/comp-off/my-requests',
   params,
   tenantId,
   { bearerToken: token, isFetchToken: !token },

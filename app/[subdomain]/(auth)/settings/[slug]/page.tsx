@@ -1,12 +1,15 @@
 import AddorEditUser from '@/components/AddorEditUser/AddorEditUser';
+import MastersSetup from '@/components/MastersSetup/MastersSetup';
 import OrganisationSetupForm from '@/components/OrganisationSetupForm/OrganisationSetupForm';
 import ChangePassword from '@/components/ChangePassword/ChangePassword';
 import CompanyInformationForm from '@/components/CompanyInformationForm/CompanyInformationForm';
 import UserInviteForm from '@/components/UserInviteForm/UserInviteForm';
 import PageNotFound from '@/components/PageNotFound/PageNotFound';
+import EmployeeProfileEdit from '@/components/EmployeePortal/EmployeeProfile/EmployeeProfileEdit';
 import { auth } from '@/lib/auth';
 import { IUser } from '@/lib/interface/IUser.interface';
 import { UserService } from '@/lib/service';
+import { getEmployeeMe } from '@/lib/service/employee';
 import { redirect } from 'next/navigation';
 import './SettingsLayout.css';
 
@@ -17,9 +20,10 @@ const ROLE_ALLOWED_SLUGS: Record<string, string[]> = {
     'change_password',
     'company_profile',
     'organisation_setup',
-    'invite_users',
+    'masters_setup',
+    // 'invite_users',
   ],
-  HR: ['profile', 'change_password', 'organisation_setup', 'invite_users'],
+  // HR: ['profile', 'change_password', 'organisation_setup', 'invite_users'],
   EMPLOYEE: ['profile', 'change_password'],
 };
 
@@ -37,13 +41,20 @@ export default async function page({ params }: { params: { slug?: string } }) {
   const userRes = await UserService.getCurrentUser(apiKey, accessToken);
   const { user } = userRes?.data as { user: IUser; success: boolean };
 
-  const role = user?.role as 'ADMIN' | 'HR' | 'EMPLOYEE';
+  const role = user?.role as 'ADMIN' | 'EMPLOYEE';
   const slug = params.slug ?? '';
 
   // Guard: redirect to profile if role has no access to requested slug
   const allowedSlugs = ROLE_ALLOWED_SLUGS[role] ?? [];
   if (slug && !allowedSlugs.includes(slug)) {
     return redirect('/settings/profile');
+  }
+
+  // Only fetch the employee record when an EMPLOYEE is viewing their own profile
+  let employee: any = null;
+  if (slug === 'profile' && role === 'EMPLOYEE') {
+    const empRes = await getEmployeeMe(apiKey, accessToken).catch(() => null);
+    employee = empRes?.data?.data ?? null;
   }
 
   type PageConfig = {
@@ -58,9 +69,16 @@ export default async function page({ params }: { params: { slug?: string } }) {
         return {
           title: 'My Profile',
           subTitle: 'Manage your personal information and preferences',
-          component: (
-            <AddorEditUser apiKey={apiKey} isCurrentUser user={user} id={id} />
-          ),
+          component:
+            role === 'EMPLOYEE' ? (
+              <EmployeeProfileEdit
+                employee={employee}
+                token={accessToken}
+                slug={apiKey}
+              />
+            ) : (
+              <AddorEditUser apiKey={apiKey} isCurrentUser user={user} id={id} />
+            ),
         };
 
       case 'change_password':
@@ -88,12 +106,19 @@ export default async function page({ params }: { params: { slug?: string } }) {
           component: <OrganisationSetupForm slug={apiKey} />,
         };
 
-      case 'invite_users':
+      case 'masters_setup':
         return {
-          title: 'Invite Users',
-          subTitle: 'Send invitations to onboard new employees into the system',
-          component: <UserInviteForm slug={apiKey} />,
+          title: 'Masters Setup',
+          subTitle: 'Manage departments, designations, shifts, and industries',
+          component: <MastersSetup slug={apiKey} />,
         };
+
+      // case 'invite_users':
+      //   return {
+      //     title: 'Invite Users',
+      //     subTitle: 'Send invitations to onboard new employees into the system',
+      //     component: <UserInviteForm slug={apiKey} />,
+      //   };
 
       default:
         return {

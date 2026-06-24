@@ -67,7 +67,7 @@ export const adminMenuItems: IMenuItem[] = [
     path: '',
     icon: <CalendarClock size={16} />,
     menuItems: [
-      { label: 'Dashboard', path: '/attendance/dashboard' },
+      // { label: 'Dashboard', path: '/attendance/dashboard' },
       { label: 'Attendance Logs', path: '/attendance/logs' },
       { label: 'Leave Management', path: '/attendance/leave' },
       { label: 'Attendance Policies', path: '/attendance/policies' },

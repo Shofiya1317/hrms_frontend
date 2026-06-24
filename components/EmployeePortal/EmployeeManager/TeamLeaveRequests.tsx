@@ -232,26 +232,25 @@ export default function TeamLeaveRequests({ teamIds }: { teamIds: string[] }) {
   const [apps, setApps] = useState<ILeaveApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<LeaveStatus | 'ALL'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<LeaveStatus | 'ALL'>(LeaveStatus.PENDING);
   const [selectedApp, setSelectedApp] = useState<ILeaveApplication | null>(null);
 
-  useEffect(() => { if (subdomain) fetchApps(); }, [subdomain]);
+  useEffect(() => { if (subdomain) fetchApps(LeaveStatus.PENDING); }, [subdomain]);
 
-  const fetchApps = async () => {
+  const fetchApps = async (status: LeaveStatus | 'ALL') => {
     setLoading(true);
     try {
-      const res = await getTeamLeaves(subdomain);
+      const params = status !== 'ALL' ? { status } : undefined;
+      const res = await getTeamLeaves(subdomain, params);
       const raw = Array.isArray(res?.data) ? res.data : (res?.data?.data ?? []);
       setApps(raw);
     } catch { /* silent */ } finally { setLoading(false); }
   };
 
   const filtered = useMemo(() => {
-    let list = apps;
-    if (statusFilter !== 'ALL') list = list.filter((a) => a.status === statusFilter);
-    if (search.trim()) list = list.filter((a) => (a.employee?.name || a.employee_name || '').toLowerCase().includes(search.toLowerCase()));
-    return list;
-  }, [apps, statusFilter, search]);
+    if (!search.trim()) return apps;
+    return apps.filter((a) => (a.employee?.name || a.employee_name || '').toLowerCase().includes(search.toLowerCase()));
+  }, [apps, search]);
 
   const stats = useMemo(() => ({
     total: apps.length,
@@ -286,7 +285,7 @@ export default function TeamLeaveRequests({ teamIds }: { teamIds: string[] }) {
             {(['ALL', LeaveStatus.PENDING, LeaveStatus.APPROVED, LeaveStatus.REJECTED] as const).map((s) => (
               <button
                 key={s}
-                onClick={() => setStatusFilter(s)}
+                onClick={() => { setStatusFilter(s); fetchApps(s); }}
                 className={`px-2 py-1 text-[9px] font-bold rounded-lg transition-colors capitalize ${statusFilter === s ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 {s === 'ALL' ? 'All' : STATUS_META[s].label}
@@ -348,7 +347,7 @@ export default function TeamLeaveRequests({ teamIds }: { teamIds: string[] }) {
         </div>
       )}
       {selectedApp && (
-        <ApprovalDrawer app={selectedApp} onClose={() => setSelectedApp(null)} onDone={() => { setSelectedApp(null); fetchApps(); }} />
+        <ApprovalDrawer app={selectedApp} onClose={() => setSelectedApp(null)} onDone={() => { setSelectedApp(null); fetchApps(statusFilter); }} />
       )}
     </div>
   );

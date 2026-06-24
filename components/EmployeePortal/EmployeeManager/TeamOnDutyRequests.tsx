@@ -356,32 +356,29 @@ export default function TeamOnDutyRequests() {
   const [requests, setRequests] = useState<IOnDuty[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<OnDutyStatus | 'ALL'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<OnDutyStatus | 'ALL'>(OnDutyStatus.PENDING);
   const [selected, setSelected] = useState<IOnDuty | null>(null);
 
-  useEffect(() => { if (tenantId) fetchRequests(); }, [tenantId]);
+  useEffect(() => { if (tenantId) fetchRequests(OnDutyStatus.PENDING); }, [tenantId]);
 
-  const fetchRequests = async () => {
+  const fetchRequests = async (status: OnDutyStatus | 'ALL') => {
     setLoading(true);
     try {
-      const res = await getTeamOnDutyApplications(tenantId);
+      const params = status !== 'ALL' ? { status } : undefined;
+      const res = await getTeamOnDutyApplications(tenantId, params);
       const raw: IOnDuty[] = Array.isArray(res?.data) ? res.data : (res?.data?.data ?? []);
       setRequests(raw);
     } catch { /* silent */ } finally { setLoading(false); }
   };
 
   const filtered = useMemo(() => {
-    let list = requests;
-    if (statusFilter !== 'ALL') list = list.filter((r) => r.status === statusFilter);
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter((r) => getEmployeeName(r).toLowerCase().includes(q)
-        || r.employee?.employee_code?.toLowerCase().includes(q)
-        || r.location?.toLowerCase().includes(q)
-        || r.purpose?.toLowerCase().includes(q));
-    }
-    return list;
-  }, [requests, statusFilter, search]);
+    if (!search.trim()) return requests;
+    const q = search.toLowerCase();
+    return requests.filter((r) => getEmployeeName(r).toLowerCase().includes(q)
+      || r.employee?.employee_code?.toLowerCase().includes(q)
+      || r.location?.toLowerCase().includes(q)
+      || r.purpose?.toLowerCase().includes(q));
+  }, [requests, search]);
 
   const stats = useMemo(() => ({
     total: requests.length,
@@ -416,7 +413,7 @@ export default function TeamOnDutyRequests() {
             {(['ALL', ...ALL_STATUSES] as const).map((s) => (
               <button
                 key={s}
-                onClick={() => setStatusFilter(s)}
+                onClick={() => { setStatusFilter(s); fetchRequests(s); }}
                 className={`px-2 py-1 text-[9px] font-bold rounded-lg transition-colors capitalize ${
                   statusFilter === s ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'
                 }`}
@@ -485,7 +482,7 @@ export default function TeamOnDutyRequests() {
       )}
 
       {selected && (
-        <ApprovalDrawer req={selected} onClose={() => setSelected(null)} onDone={() => { setSelected(null); fetchRequests(); }} />
+        <ApprovalDrawer req={selected} onClose={() => setSelected(null)} onDone={() => { setSelected(null); fetchRequests(statusFilter); }} />
       )}
     </div>
   );

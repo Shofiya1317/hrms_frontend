@@ -85,12 +85,17 @@ export interface IApproveRejectOnDutyPayload {
   rejection_reason?: string;
 }
 
-export interface IOnDutyQueryParams extends Params {
-  employee_id?: string;
+export interface IMyOnDutyQueryParams extends Params {
   status?: OnDutyStatus | string;
   onduty_type?: OnDutyType | string;
   from_date?: string;
   to_date?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface IOnDutyQueryParams extends IMyOnDutyQueryParams {
+  employee_id?: string;
 }
 
 // ─────────────────────────────────────────────
@@ -119,7 +124,7 @@ export const applyOnDuty = (
  */
 export const getMyOnDutyApplications = (
   tenantId: string,
-  params?: IOnDutyQueryParams,
+  params?: IMyOnDutyQueryParams,
   token?: string,
 ) => get(
   '/v1/onduty/my-applications',

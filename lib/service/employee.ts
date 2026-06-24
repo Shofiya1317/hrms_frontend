@@ -166,6 +166,19 @@ export const updateEmployeeSelf = (
   { bearerToken: token, isFetchToken: !token },
 );
 
+export const getEmployeeSelf = (
+  body: UpdateEmployeeSelfDto,
+  tenantId: string,
+  token?: string,
+) => patch(
+  '/v1/employees/me',
+  body,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+// GET /api/v1/employees/me
+
 export const getMyTeam = (
   tenantId: string,
   token?: string,

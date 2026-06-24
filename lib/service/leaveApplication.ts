@@ -44,6 +44,8 @@ export interface ILeaveApplicationFilters {
   leave_type_id?: string;
   from_date?: string;
   to_date?: string;
+  page?: number;
+  limit?: number;
 }
 
 export interface ILeaveApplication {
