@@ -114,7 +114,7 @@
   width: min(490px, 78%);
   left: 72px;
   top: 88px;
-  bottom: auto;
+  bottom: 88px;
   z-index: 2;
   color: #ffffff;
 }
@@ -150,13 +150,13 @@
 }
 
 .hrms-auth-metrics {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 54px;
+  width: 100%;
+  gap: 30px;
+  margin-top: 0px;
 }
 
 .hrms-auth-metrics div {
+  width: 30%;
   padding: 14px 16px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 8px;

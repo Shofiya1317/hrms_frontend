@@ -50,8 +50,8 @@ export default function LandingLayout({
         pathname={pathname}
         menuItems={menuItems}
       />
-      <main className="min-h-screen w-full bg-[#f5f7f6] pt-16 sm:pt-20">
-        <div className="mx-auto w-full max-w-[1600px] px-3 py-3 transition-all duration-base sm:px-4 lg:px-5 xl:px-6">
+      <main className="min-h-screen w-full bg-[#f5f7f6] pt-10 sm:pt-20">
+        <div className="mx-auto w-full max-w-[1600px] px-4 py-1 transition-all duration-base sm:px-4 lg:px-5 xl:px-6">
           {children}
         </div>
       </main>

@@ -289,12 +289,12 @@ function ChartView({ apps }: { apps: ILeaveApplication[] }) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+      <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-3">
         <div className="flex items-center gap-2 mb-1">
           <TrendingUp size={14} className="text-teal-600" />
-          <p className="text-xs font-bold text-slate-900">Monthly Applications</p>
+          <p className="text-sm font-bold text-slate-900">Monthly Applications</p>
         </div>
-        <p className="text-[10px] text-slate-400 mb-5 ml-5">Stacked by status across the year</p>
+        <p className="text-[12px] text-slate-400 mb-5 ml-5">Stacked by status across the year</p>
         <div className="flex items-end gap-1.5 h-36 px-1">
           {Object.entries(monthData).map(([mIdx, counts]) => {
             const total = Object.values(counts).reduce((a, b) => a + b, 0);
@@ -311,7 +311,7 @@ function ChartView({ apps }: { apps: ILeaveApplication[] }) {
                     />
                   ) : null))}
                 </div>
-                <span className="text-[8px] text-slate-400 font-semibold">{MONTHS[Number(mIdx)]}</span>
+                <span className="text-[12px] text-slate-500 font-semibold">{MONTHS[Number(mIdx)]}</span>
               </div>
             );
           })}
@@ -319,25 +319,25 @@ function ChartView({ apps }: { apps: ILeaveApplication[] }) {
         <div className="flex items-center gap-4 mt-4 flex-wrap border-t border-slate-50 pt-3">
           {ALL_STATUSES.map((s) => (
             <div key={s} className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: BAR_COLORS[s] }} />
-              <span className="text-[9px] text-slate-500 font-semibold">{STATUS_META[s].label}</span>
+              <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: BAR_COLORS[s] }} />
+              <span className="text-[12px] text-slate-500 font-semibold">{STATUS_META[s].label}</span>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-3">
         <div className="flex items-center gap-2 mb-1">
           <BarChart2 size={14} className="text-blue-500" />
-          <p className="text-xs font-bold text-slate-900">By Leave Type</p>
+          <p className="text-sm font-bold text-slate-900">By Leave Type</p>
         </div>
-        <p className="text-[10px] text-slate-400 mb-5 ml-5">Total applications per type</p>
+        <p className="text-[12px] text-slate-400 mb-3 ml-5">Total applications per type</p>
         <div className="space-y-3.5">
           {byType.slice(0, 6).map((t, i) => (
             <div key={t.name}>
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[10px] font-semibold text-slate-700 truncate">{t.name}</span>
-                <span className="text-[10px] font-bold ml-2 px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">{t.count}</span>
+                <span className="text-[12px] font-semibold text-slate-700 truncate">{t.name}</span>
+                <span className="text-[13px] font-bold ml-2 px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">{t.count}</span>
               </div>
               <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div
@@ -586,12 +586,12 @@ export default function RequestsTab() {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5 mt-4">
 
       {/* header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-bold text-slate-900">Leave Requests</h3>
+          <h3 className="text-lg font-bold text-slate-900">Leave Requests</h3>
           <p className="text-xs text-slate-400 mt-0.5">
             {stats.total}
             {' '}
@@ -608,14 +608,14 @@ export default function RequestsTab() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search employee, type…"
-              className="pl-8 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all w-44"
+              placeholder="Search employee"
+              className="pl-8 pr-3 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all w-44"
             />
           </div>
           <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1">
             <button
               onClick={() => setStatusFilter('ALL')}
-              className={`px-2.5 py-1 text-[9px] font-bold rounded-lg transition-all ${statusFilter === 'ALL' ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`px-2.5 py-1 text-[12px] font-bold rounded-lg transition-all ${statusFilter === 'ALL' ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
             >
               All
             </button>
@@ -623,7 +623,7 @@ export default function RequestsTab() {
               <button
                 key={s}
                 onClick={() => setStatusFilter(s)}
-                className={`px-2.5 py-1 text-[9px] font-bold rounded-lg transition-all capitalize ${statusFilter === s ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`px-2.5 py-1 text-[12px] font-bold rounded-lg transition-all capitalize ${statusFilter === s ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 {STATUS_META[s].label}
               </button>
@@ -634,9 +634,9 @@ export default function RequestsTab() {
               <button
                 key={v}
                 onClick={() => setView(v)}
-                className={`p-1.5 rounded-lg transition-all ${view === v ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                className={`p-2 rounded-lg transition-all ${view === v ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
               >
-                <Icon size={13} />
+                <Icon size={15} />
               </button>
             ))}
           </div>
@@ -647,12 +647,12 @@ export default function RequestsTab() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {STAT_CARDS.map((s) => (
           <div key={s.label} className={`bg-gradient-to-br ${s.accent} border border-white rounded-2xl px-4 py-3.5 shadow-sm flex items-center gap-3`}>
-            <div className="w-9 h-9 rounded-xl bg-white/70 flex items-center justify-center flex-shrink-0 shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-white/70 flex items-center justify-center flex-shrink-0 shadow-sm">
               <s.icon size={15} className={s.text} />
             </div>
             <div>
               <p className={`text-xl font-bold leading-none ${s.text}`}>{s.value}</p>
-              <p className="text-[10px] text-slate-500 mt-0.5 font-semibold">{s.label}</p>
+              <p className="text-[12px] text-slate-500 mt-0.5 font-semibold">{s.label}</p>
             </div>
           </div>
         ))}

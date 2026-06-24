@@ -63,27 +63,72 @@ interface Employee {
   employmentType?: string;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
-  ACTIVE: { label: 'Active', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: CheckCircle },
-  active: { label: 'Active', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: CheckCircle },
-  ON_NOTICE: { label: 'On Notice', color: 'bg-amber-50 text-amber-700 border-amber-200', icon: Clock },
-  EXITED: { label: 'Exited', color: 'bg-gray-50 text-gray-600 border-gray-200', icon: XCircle },
-  INACTIVE: { label: 'Inactive', color: 'bg-gray-50 text-gray-600 border-gray-200', icon: XCircle },
-  inactive: { label: 'Inactive', color: 'bg-gray-50 text-gray-600 border-gray-200', icon: XCircle },
-  ON_LEAVE: { label: 'On Leave', color: 'bg-amber-50 text-amber-700 border-amber-200', icon: Clock },
-  'on-leave': { label: 'On Leave', color: 'bg-amber-50 text-amber-700 border-amber-200', icon: Clock },
-  PROBATION: { label: 'Probation', color: 'bg-blue-50 text-blue-700 border-blue-200', icon: Clock },
-  TERMINATED: { label: 'Terminated', color: 'bg-red-50 text-red-600 border-red-200', icon: XCircle },
+const STATUS_CONFIG: Record<
+  string,
+  { label: string; color: string; icon: any }
+> = {
+  ACTIVE: {
+    label: 'Active',
+    color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    icon: CheckCircle,
+  },
+  active: {
+    label: 'Active',
+    color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    icon: CheckCircle,
+  },
+  ON_NOTICE: {
+    label: 'On Notice',
+    color: 'bg-amber-50 text-amber-700 border-amber-200',
+    icon: Clock,
+  },
+  EXITED: {
+    label: 'Exited',
+    color: 'bg-gray-50 text-gray-600 border-gray-200',
+    icon: XCircle,
+  },
+  INACTIVE: {
+    label: 'Inactive',
+    color: 'bg-gray-50 text-gray-600 border-gray-200',
+    icon: XCircle,
+  },
+  inactive: {
+    label: 'Inactive',
+    color: 'bg-gray-50 text-gray-600 border-gray-200',
+    icon: XCircle,
+  },
+  ON_LEAVE: {
+    label: 'On Leave',
+    color: 'bg-amber-50 text-amber-700 border-amber-200',
+    icon: Clock,
+  },
+  'on-leave': {
+    label: 'On Leave',
+    color: 'bg-amber-50 text-amber-700 border-amber-200',
+    icon: Clock,
+  },
+  PROBATION: {
+    label: 'Probation',
+    color: 'bg-blue-50 text-blue-700 border-blue-200',
+    icon: Clock,
+  },
+  TERMINATED: {
+    label: 'Terminated',
+    color: 'bg-red-50 text-red-600 border-red-200',
+    icon: XCircle,
+  },
 };
 
-const DEFAULT_STATUS = { label: 'Unknown', color: 'bg-gray-50 text-gray-500 border-gray-200', icon: Clock };
+const DEFAULT_STATUS = {
+  label: 'Unknown',
+  color: 'bg-gray-50 text-gray-500 border-gray-200',
+  icon: Clock,
+};
 
 // Stats Card Component
-function StatCard({
-  title, value, icon: Icon, color, bgColor,
-}: any) {
+function StatCard({ title, value, icon: Icon, color, bgColor }: any) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-all duration-200">
+    <div className="bg-white rounded-xl border border-gray-200 p-3 hover:shadow-md transition-all duration-200">
       <div className="flex items-center justify-between mb-2">
         <div
           className={`w-10 h-10 rounded-xl ${bgColor} flex items-center justify-center`}
@@ -118,7 +163,7 @@ function EmployeeCard({
     <div className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-lg transition-all duration-200">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#2D7A4F] to-[#1e5c3a] flex items-center justify-center flex-shrink-0 shadow-sm">
+          <div className="w-12 h-12 rounded-xl bg-[#0f766e] flex items-center justify-center flex-shrink-0 shadow-sm">
             <span className="text-white text-base font-bold">
               {employee.avatar}
             </span>
@@ -147,9 +192,7 @@ function EmployeeCard({
                 }}
                 className="w-full px-3 py-2 text-left text-xs hover:bg-gray-50 flex items-center gap-2"
               >
-                <Eye size={12} />
-                {' '}
-                View Details
+                <Eye size={12} /> View Details
               </button>
               <button
                 onClick={() => {
@@ -158,9 +201,7 @@ function EmployeeCard({
                 }}
                 className="w-full px-3 py-2 text-left text-xs hover:bg-gray-50 flex items-center gap-2"
               >
-                <Edit size={12} />
-                {' '}
-                Edit
+                <Edit size={12} /> Edit
               </button>
               <button
                 onClick={() => {
@@ -169,9 +210,7 @@ function EmployeeCard({
                 }}
                 className="w-full px-3 py-2 text-left text-xs hover:bg-red-50 text-red-600 flex items-center gap-2"
               >
-                <Trash2 size={12} />
-                {' '}
-                Delete
+                <Trash2 size={12} /> Delete
               </button>
             </div>
           )}
@@ -201,10 +240,7 @@ function EmployeeCard({
         )}
         <div className="flex items-center gap-2 text-xs text-gray-600">
           <Calendar size={12} className="text-gray-400 flex-shrink-0" />
-          <span> 
-            Joined {' '}
-            {employee.joinDate} 
-          </span>
+          <span>Joined {employee.joinDate}</span>
         </div>
       </div>
 
@@ -379,9 +415,13 @@ export default function EmployeesRegistry() {
   const params = useParams();
   const subdomain = params?.subdomain as string;
 
-  const [activeTab, setActiveTab] = useState<'registry' | 'probation'>('registry');
+  const [activeTab, setActiveTab] = useState<'registry' | 'probation'>(
+    'registry'
+  );
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [departments, setDepartments] = useState<Array<{ id: string; name: string }>>([]);
+  const [departments, setDepartments] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState<string>('');
@@ -390,7 +430,7 @@ export default function EmployeesRegistry() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
-    null,
+    null
   );
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
   const [showFilters, setShowFilters] = useState(false);
@@ -398,9 +438,17 @@ export default function EmployeesRegistry() {
   // Stats calculations
   const stats = {
     total: employees.length,
-    active: employees.filter((e) => e.status === 'ACTIVE' || e.status === 'active').length,
-    onLeave: employees.filter((e) => e.status === 'ON_LEAVE' || e.status === 'on-leave' || e.status === 'PROBATION').length,
-    departments: new Set(employees.map((e) => e.department).filter(Boolean)).size,
+    active: employees.filter(
+      (e) => e.status === 'ACTIVE' || e.status === 'active'
+    ).length,
+    onLeave: employees.filter(
+      (e) =>
+        e.status === 'ON_LEAVE' ||
+        e.status === 'on-leave' ||
+        e.status === 'PROBATION'
+    ).length,
+    departments: new Set(employees.map((e) => e.department).filter(Boolean))
+      .size,
   };
 
   // Fetch departments
@@ -430,39 +478,53 @@ export default function EmployeesRegistry() {
 
       const response = await getEmployees(subdomain, params);
       const raw = response?.data;
-      const list: any[] = raw?.employees ?? (Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : []);
+      const list: any[] =
+        raw?.employees ??
+        (Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : []);
 
       setEmployees(
         list.map((emp: any) => {
           const initials = emp.name
-            ? emp.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2)
-              .toUpperCase()
+            ? emp.name
+                .split(' ')
+                .map((w: string) => w[0])
+                .join('')
+                .slice(0, 2)
+                .toUpperCase()
             : (emp.id?.slice(0, 2) ?? 'E').toUpperCase();
           return {
             id: emp.id,
-            name: emp.name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim(),
+            name:
+              emp.name ||
+              `${emp.first_name || ''} ${emp.last_name || ''}`.trim(),
             avatar: initials,
             role: emp.role || 'EMPLOYEE',
             department: emp.department || '',
             email: emp.email || '',
             phone: emp.phone || emp.personal_phone || '',
             location: emp.location || '',
-            manager: emp.reporting_manager_name || emp.reporting_manager?.name || '',
-            managerId: emp.reportingManagerId || emp.reporting_manager_id || null,
+            manager:
+              emp.reporting_manager_name || emp.reporting_manager?.name || '',
+            managerId:
+              emp.reportingManagerId || emp.reporting_manager_id || null,
             reporting_manager_name: emp.reporting_manager_name || '',
             joinDate: emp.joinDate
               ? emp.joinDate
               : emp.date_of_joining
-                ? new Date(emp.date_of_joining).toLocaleDateString('default', { month: 'short', year: 'numeric' })
+                ? new Date(emp.date_of_joining).toLocaleDateString('default', {
+                    month: 'short',
+                    year: 'numeric',
+                  })
                 : '',
             status: emp.status || 'ACTIVE',
             employeeId: emp.employee_code || `EMP-${emp.id?.slice(0, 6)}`,
             dateOfBirth: emp.dateOfBirth || emp.date_of_birth || '',
             gender: emp.gender || '',
             designation: emp.designation || emp.designation?.name || '',
-            employmentType: emp.employmentType || emp.employment_type?.name || '',
+            employmentType:
+              emp.employmentType || emp.employment_type?.name || '',
           };
-        }),
+        })
       );
     } catch {
       // silent
@@ -535,7 +597,7 @@ export default function EmployeesRegistry() {
     <div className="min-h-screen">
       <div className="px-3 sm:px-5 lg:px-8">
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-6 mt-3">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-12 h-12 rounded-xl bg-[#0f766e] flex items-center justify-center shadow-md">
               <Users size={22} className="text-white" />
@@ -660,13 +722,13 @@ export default function EmployeesRegistry() {
                     }}
                     className="flex-1 flex items-center justify-center px-2 py-2 text-white bg-[#0f766e] rounded-lg"
                   >
-                    <Plus size={16} />
-                    {' '}
-                    Add
+                    <Plus size={16} /> Add
                   </button>
 
                   <button
-                    onClick={() => setViewMode(viewMode === 'table' ? 'cards' : 'table')}
+                    onClick={() =>
+                      setViewMode(viewMode === 'table' ? 'cards' : 'table')
+                    }
                     className="flex-1 flex items-center justify-center px-2 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg"
                   >
                     {viewMode === 'table' ? (
@@ -714,13 +776,13 @@ export default function EmployeesRegistry() {
                   }}
                   className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#0f766e] rounded-xl shadow-sm hover:bg-teal-700 transition-all whitespace-nowrap"
                 >
-                  <Plus size={16} />
-                  {' '}
-                  Add Employee
+                  <Plus size={16} /> Add Employee
                 </button>
 
                 <button
-                  onClick={() => setViewMode(viewMode === 'table' ? 'cards' : 'table')}
+                  onClick={() =>
+                    setViewMode(viewMode === 'table' ? 'cards' : 'table')
+                  }
                   className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors whitespace-nowrap"
                 >
                   {viewMode === 'table' ? (
@@ -736,236 +798,243 @@ export default function EmployeesRegistry() {
 
               {/* Filter Options - Below for both views */}
               {showFilters && (
-              <div className="flex flex-col sm:flex-row gap-3 mt-3 animate-fade-in">
-                <select
-                  value={deptFilter}
-                  onChange={(e) => setDeptFilter(e.target.value)}
-                  className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                >
-                  <option value="">All Departments</option>
-                  {departments.map((d) => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
-                  ))}
-                </select>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as EmploymentStatus | '')}
-                  className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                >
-                  <option value="">All Status</option>
-                  <option value={EmploymentStatus.ACTIVE}>Active</option>
-                  <option value={EmploymentStatus.ON_NOTICE}>On Notice</option>
-                  <option value={EmploymentStatus.EXITED}>Exited</option>
-                </select>
-              </div>
+                <div className="flex flex-col sm:flex-row gap-3 mt-3 animate-fade-in">
+                  <select
+                    value={deptFilter}
+                    onChange={(e) => setDeptFilter(e.target.value)}
+                    className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                  >
+                    <option value="">All Departments</option>
+                    {departments.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) =>
+                      setStatusFilter(e.target.value as EmploymentStatus | '')
+                    }
+                    className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                  >
+                    <option value="">All Status</option>
+                    <option value={EmploymentStatus.ACTIVE}>Active</option>
+                    <option value={EmploymentStatus.ON_NOTICE}>
+                      On Notice
+                    </option>
+                    <option value={EmploymentStatus.EXITED}>Exited</option>
+                  </select>
+                </div>
               )}
             </div>
 
             {/* Results Info */}
             <div className="mb-3 flex items-center justify-between">
               <p className="text-xs text-gray-500">
-                Showing
-                {' '}
+                Showing{' '}
                 <span className="font-semibold text-gray-700">
                   {filtered.length}
-                </span>
-                {' '}
-                of
-                {' '}
+                </span>{' '}
+                of{' '}
                 <span className="font-semibold text-gray-700">
                   {employees.length}
-                </span>
-                {' '}
+                </span>{' '}
                 employees
               </p>
               {search && (
-              <button
-                onClick={() => setSearch('')}
-                className="text-xs text-[#2D7A4F] hover:underline"
-              >
-                Clear search
-              </button>
+                <button
+                  onClick={() => setSearch('')}
+                  className="text-xs text-[#2D7A4F] hover:underline"
+                >
+                  Clear search
+                </button>
               )}
             </div>
 
             {/* Card View (Mobile Default) */}
             {viewMode === 'cards' && (
-            <div className="space-y-3">
-              {loading ? (
-                <div className="flex items-center justify-center py-12 bg-white rounded-xl border border-gray-200">
-                  <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 border-2 border-[#2D7A4F] border-t-transparent rounded-full animate-spin" />
-                    <span className="text-sm text-gray-500">
-                      Loading employees...
-                    </span>
+              <div className="space-y-3">
+                {loading ? (
+                  <div className="flex items-center justify-center py-12 bg-white rounded-xl border border-gray-200">
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 border-2 border-[#2D7A4F] border-t-transparent rounded-full animate-spin" />
+                      <span className="text-sm text-gray-500">
+                        Loading employees...
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ) : filtered.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Users size={24} className="text-gray-400" />
+                ) : filtered.length === 0 ? (
+                  <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Users size={24} className="text-gray-400" />
+                    </div>
+                    <p className="text-sm text-gray-500 font-medium">
+                      No employees found
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Try adjusting your search or filters
+                    </p>
+                    <button
+                      onClick={() => {
+                        setSearch('');
+                        setDeptFilter('');
+                        setStatusFilter('');
+                      }}
+                      className="mt-3 text-sm text-[#2D7A4F] hover:underline"
+                    >
+                      Clear all filters
+                    </button>
                   </div>
-                  <p className="text-sm text-gray-500 font-medium">
-                    No employees found
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Try adjusting your search or filters
-                  </p>
-                  <button
-                    onClick={() => {
-                      setSearch('');
-                      setDeptFilter('');
-                      setStatusFilter('');
-                    }}
-                    className="mt-3 text-sm text-[#2D7A4F] hover:underline"
-                  >
-                    Clear all filters
-                  </button>
-                </div>
-              ) : (
-                filtered.map((emp) => (
-                  <EmployeeCard
-                    key={emp.id}
-                    employee={emp}
-                    onView={() => handleViewEmployee(emp)}
-                    onEdit={() => handleEditEmployee(emp)}
-                    onDelete={() => handleDeleteEmployee(emp.id)}
-                  />
-                ))
-              )}
-            </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {' '}
+                    {/* 👈 grid wrapper */}
+                    {filtered.map((emp) => (
+                      <EmployeeCard
+                        key={emp.id}
+                        employee={emp}
+                        onView={() => handleViewEmployee(emp)}
+                        onEdit={() => handleEditEmployee(emp)}
+                        onDelete={() => handleDeleteEmployee(emp.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Table View (Desktop) */}
             {viewMode === 'table' && (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Employee
-                      </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">
-                        Department
-                      </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                        Designation
-                      </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                        Joined
-                      </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {loading ? (
-                      <tr>
-                        <td colSpan={6} className="px-4 py-12 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <div className="w-5 h-5 border-2 border-[#2D7A4F] border-t-transparent rounded-full animate-spin" />
-                            <span className="text-sm text-gray-500">
-                              Loading employees...
-                            </span>
-                          </div>
-                        </td>
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-200">
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          Employee
+                        </th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                          Department
+                        </th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                          Designation
+                        </th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                          Joined
+                        </th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
                       </tr>
-                    ) : filtered.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={6}
-                          className="px-4 py-12 text-center text-sm text-gray-500"
-                        >
-                          No employees found
-                        </td>
-                      </tr>
-                    ) : (
-                      filtered.map((emp) => {
-                        const statusCfg = STATUS_CONFIG[emp.status] ?? DEFAULT_STATUS;
-                        const StatusIcon = statusCfg.icon;
-                        return (
-                          <tr
-                            key={emp.id}
-                            className="hover:bg-gray-50 transition-colors"
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {loading ? (
+                        <tr>
+                          <td colSpan={6} className="px-4 py-12 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <div className="w-5 h-5 border-2 border-[#2D7A4F] border-t-transparent rounded-full animate-spin" />
+                              <span className="text-sm text-gray-500">
+                                Loading employees...
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : filtered.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={6}
+                            className="px-4 py-12 text-center text-sm text-gray-500"
                           >
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-xl bg-[#0f766e] flex items-center justify-center flex-shrink-0">
-                                  <span className="text-white text-xs font-bold">
-                                    {emp.avatar}
-                                  </span>
-                                </div>
-                                <div>
-                                  <p className="text-sm font-semibold text-gray-900">
-                                    {emp.name}
-                                  </p>
-                                  {/* <p className="text-xs text-gray-500">
+                            No employees found
+                          </td>
+                        </tr>
+                      ) : (
+                        filtered.map((emp) => {
+                          const statusCfg =
+                            STATUS_CONFIG[emp.status] ?? DEFAULT_STATUS;
+                          const StatusIcon = statusCfg.icon;
+                          return (
+                            <tr
+                              key={emp.id}
+                              className="hover:bg-gray-50 transition-colors"
+                            >
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-9 h-9 rounded-xl bg-[#0f766e] flex items-center justify-center flex-shrink-0">
+                                    <span className="text-white text-xs font-bold">
+                                      {emp.avatar}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-semibold text-gray-900">
+                                      {emp.name}
+                                    </p>
+                                    {/* <p className="text-xs text-gray-500">
                                     {emp.employeeId}
                                   </p> */}
+                                  </div>
                                 </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 hidden md:table-cell">
-                              <span className="text-sm text-gray-600">
-                                {emp.department}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 hidden lg:table-cell">
-                              <span className="text-sm text-gray-600">
-                                {emp.designation || '—'}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 hidden lg:table-cell">
-                              <span className="text-sm text-gray-600">
-                                {emp.joinDate || '—'}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <span
-                                className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${statusCfg.color}`}
-                              >
-                                <StatusIcon size={10} />
-                                {statusCfg.label}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center justify-end gap-1">
-                                <button
-                                  onClick={() => handleViewEmployee(emp)}
-                                  className="p-1.5 rounded-lg text-gray-400 hover:text-[#2D7A4F] hover:bg-emerald-50 transition-colors"
-                                  title="View Profile"
+                              </td>
+                              <td className="px-4 py-3 hidden md:table-cell">
+                                <span className="text-sm text-gray-600">
+                                  {emp.department}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 hidden lg:table-cell">
+                                <span className="text-sm text-gray-600">
+                                  {emp.designation || '—'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 hidden lg:table-cell">
+                                <span className="text-sm text-gray-600">
+                                  {emp.joinDate || '—'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span
+                                  className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${statusCfg.color}`}
                                 >
-                                  <Eye size={14} />
-                                </button>
-                                <button
-                                  onClick={() => handleEditEmployee(emp)}
-                                  className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                                  title="Edit Employee"
-                                >
-                                  <Edit size={14} />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteEmployee(emp.id)}
-                                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                                  title="Delete Employee"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
+                                  <StatusIcon size={10} />
+                                  {statusCfg.label}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center justify-end gap-1">
+                                  <button
+                                    onClick={() => handleViewEmployee(emp)}
+                                    className="p-1.5 rounded-lg text-gray-400 hover:text-[#2D7A4F] hover:bg-emerald-50 transition-colors"
+                                    title="View Profile"
+                                  >
+                                    <Eye size={14} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleEditEmployee(emp)}
+                                    className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                    title="Edit Employee"
+                                  >
+                                    <Edit size={14} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteEmployee(emp.id)}
+                                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                    title="Delete Employee"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
             )}
           </>
         )}

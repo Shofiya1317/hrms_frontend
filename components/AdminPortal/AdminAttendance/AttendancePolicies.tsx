@@ -706,7 +706,7 @@ export default function AttendancePolicies() {
           ) : (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {policies.map((p) => (
-                <div key={p.id} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm space-y-4">
+                <div key={p.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm space-y-4 py-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-xl bg-[#e8f5ee] flex items-center justify-center flex-shrink-0">
@@ -763,7 +763,7 @@ export default function AttendancePolicies() {
       {/* ── Tab: Work Schedule ── */}
       {activeTab === 'work-schedule' && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-          <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100">
             <div className="w-8 h-8 rounded-xl bg-[#e8f5ee] flex items-center justify-center">
               <CalendarDays size={15} className="text-[#2D7A4F]" />
             </div>
@@ -778,7 +778,7 @@ export default function AttendancePolicies() {
               <Loader2 size={22} className="animate-spin text-[#0f766e]" />
             </div>
           ) : (
-            <div className="p-5 space-y-5">
+            <div className="p-4 space-y-5">
               {/* Name & Description */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -806,7 +806,7 @@ export default function AttendancePolicies() {
               {/* Weekdays */}
               <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 space-y-3">
                 <p className="text-xs font-semibold text-gray-700">Weekdays</p>
-                <div className="space-y-2.5">
+                <div className="space-y-4">
                   {WEEKDAYS.map(({ key, label }) => (
                     <div key={key} className="flex items-center justify-between">
                       <span className="text-sm text-gray-700">{label}</span>
@@ -893,7 +893,7 @@ export default function AttendancePolicies() {
       {/* ── Tab: Work Location ── */}
       {activeTab === 'work-location' && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-          <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100">
             <div className="w-8 h-8 rounded-xl bg-[#e8f5ee] flex items-center justify-center">
               <MapPin size={15} className="text-[#2D7A4F]" />
             </div>
@@ -908,8 +908,8 @@ export default function AttendancePolicies() {
               <Loader2 size={22} className="animate-spin text-[#0f766e]" />
             </div>
           ) : (
-            <div className="p-5 space-y-4">
-              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 space-y-2.5">
+            <div className="p-4 space-y-4">
+              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 space-y-4">
                 {LOCATION_DAYS.map(({ key, label }) => {
                   const isOffice = wlForm[key] === 'office';
                   return (

@@ -34,6 +34,7 @@ export function AuthLayout({
     '/sign_up',
     '/accept_invitation',
     '/accept-invitation', // Add hyphenated version
+    '/setup-account',
     '/email_verify',
     '/terms_of_service',
     '/privacy_policy',
@@ -141,8 +142,9 @@ export function AuthLayout({
                 priority
               />
               <div className="hrms-auth-overlay" />
-              <div className="absolute hrms-auth-copy">
-                <div className="mb-5">
+              <div className=" d-flex flex-column justify-content-between absolute hrms-auth-copy">
+                <div>
+                  <div className="mb-5">
                   <Image
                     src={rubicrDashboardLogo}
                     alt="Rubicr"
@@ -158,7 +160,8 @@ export function AuthLayout({
                   Track attendance, leaves, employees, documents, approvals, and
                   workforce insights from one calm HR portal.
                 </p>
-                <div className="hrms-auth-metrics">
+                </div>
+                <div className=" d-flex flex-row justify-content-between hrms-auth-metrics">
                   <div>
                     <strong>24</strong>
                     <span>Pending approvals</span>

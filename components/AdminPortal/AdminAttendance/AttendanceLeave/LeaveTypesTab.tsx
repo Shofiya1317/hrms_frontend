@@ -583,9 +583,9 @@ export default function LeaveTypesTab({ apiKey, token }: LeaveTypesTabProps) {
     <>
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-4 border-b border-slate-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-b border-slate-100">
           <div>
-            <h3 className="text-sm font-bold text-slate-900">Leave types</h3>
+            <h3 className="text-lg font-bold text-slate-900">Leave types</h3>
             <p className="text-xs text-slate-400 mt-0.5">
               {loading ? 'Loading…' : `${leaveTypes.length} types configured`}
             </p>

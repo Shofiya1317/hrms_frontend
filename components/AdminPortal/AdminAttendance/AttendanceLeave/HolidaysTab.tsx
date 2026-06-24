@@ -128,14 +128,14 @@ function getDayKind(date: Date, workSchedule: IWorkSchedule | null): DayKind {
   if (dow === 6) {
     // Saturday — check which week
     const nth = getNthSaturdayOfMonth(date); // 1–5
-    const key = `saturday_week_${nth}` as keyof typeof workSchedule.schedule;
+    const key = `saturday_week_${nth}` as keyof NonNullable<typeof workSchedule>['schedule'];
     const isWork = workSchedule ? !!workSchedule.schedule[key] : false;
     return isWork ? 'working_saturday' : 'non_working_saturday';
   }
 
   // Mon–Fri
   const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-  const key = dayNames[dow] as keyof typeof workSchedule.schedule;
+  const key = dayNames[dow] as keyof NonNullable<typeof workSchedule>['schedule'];
   const isWork = workSchedule ? !!workSchedule.schedule[key] : true; // default working
   return isWork ? 'working' : 'weekend';
 }
@@ -173,18 +173,18 @@ function WorkLocationCard({ wls }: { wls: IWorkLocationSchedule }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3">
       <div className="flex items-center gap-2 mb-3">
         <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center">
           <MapPin size={14} className="text-purple-700" />
         </div>
         <div>
-          <p className="text-xs font-bold text-slate-800">Work Location Schedule</p>
+          <p className="text-sm font-bold text-slate-800">Work Location Schedule</p>
           <p className="text-[10px] text-slate-400">Office vs Work from Home</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-8 gap-2">
+      <div className="grid grid-cols-8 gap-2 pt-3">
         {dayOrder.map((day) => {
           const location = wls.schedule[day as keyof typeof wls.schedule];
           const meta = LOCATION_META[location as keyof typeof LOCATION_META] || LOCATION_META.office;
@@ -193,11 +193,11 @@ function WorkLocationCard({ wls }: { wls: IWorkLocationSchedule }) {
           return (
             <div key={day} className={`text-center py-2 rounded-lg ${meta.bg} ${meta.border} border`}>
               <div className="flex flex-col items-center gap-1">
-                <IconComponent size={12} className={meta.color} />
-                <span className="text-[9px] font-semibold text-slate-600">
+                <IconComponent size={14} className={meta.color} />
+                <span className="text-[11px] font-semibold text-slate-600">
                   {dayLabels[day as keyof typeof dayLabels]}
                 </span>
-                <span className={`text-[8px] font-bold ${meta.color}`}>
+                <span className={`text-[10px] font-bold ${meta.color}`}>
                   {meta.label}
                 </span>
               </div>
@@ -208,16 +208,16 @@ function WorkLocationCard({ wls }: { wls: IWorkLocationSchedule }) {
 
       <div className="mt-3 pt-3 border-t border-slate-50 flex items-center gap-3">
         <div className="flex items-center gap-1">
-          <Building size={10} className="text-blue-600" />
-          <span className="text-[10px] font-medium text-slate-600">
+          <Building size={12} className="text-blue-600" />
+          <span className="text-[11px] font-medium text-slate-600">
             {Object.values(wls.schedule).filter((loc) => loc === 'office').length}
             {' '}
             Office days
           </span>
         </div>
         <div className="flex items-center gap-1">
-          <Home size={10} className="text-green-600" />
-          <span className="text-[10px] font-medium text-slate-600">
+          <Home size={12} className="text-green-600" />
+          <span className="text-[11px] font-medium text-slate-600">
             {Object.values(wls.schedule).filter((loc) => loc === 'wfh').length}
             {' '}
             WFH days
@@ -232,31 +232,31 @@ function WorkLocationCard({ wls }: { wls: IWorkLocationSchedule }) {
 // ─────────────────────────────────────────────
 function WorkScheduleCard({ ws }: { ws: IWorkSchedule }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3">
       <div className="flex items-center gap-2 mb-3">
         <div className="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center">
           <Building size={14} className="text-teal-700" />
         </div>
         <div>
-          <p className="text-xs font-bold text-slate-800">{ws.name}</p>
-          {ws.description && <p className="text-[10px] text-slate-400">{ws.description}</p>}
+          <p className="text-sm font-bold text-slate-800">{ws.name}</p>
+          {ws.description && <p className="text-[12px] text-slate-400">{ws.description}</p>}
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Working days</p>
+          <p className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Working days</p>
           <div className="flex flex-wrap gap-1">
             {ws.working_days.map((d) => (
-              <span key={d} className="text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded-full">{d}</span>
+              <span key={d} className="text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded-full">{d}</span>
             ))}
           </div>
         </div>
         <div>
-          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Off days</p>
+          <p className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Off days</p>
           <div className="flex flex-wrap gap-1">
             {ws.non_working_days.map((d) => (
-              <span key={d} className="text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200 px-1.5 py-0.5 rounded-full">{d}</span>
+              <span key={d} className="text-[11px] font-medium bg-slate-100 text-slate-500 border border-slate-200 px-1.5 py-0.5 rounded-full">{d}</span>
             ))}
           </div>
         </div>
@@ -264,13 +264,13 @@ function WorkScheduleCard({ ws }: { ws: IWorkSchedule }) {
 
       {/* Saturday week breakdown */}
       <div className="mt-3 pt-3 border-t border-slate-50">
-        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Saturday schedule</p>
+        <p className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Saturday schedule</p>
         <div className="grid grid-cols-5 gap-1">
           {[1, 2, 3, 4, 5].map((n) => {
             const key = `saturday_week_${n}` as keyof typeof ws.schedule;
             const isWork = !!ws.schedule[key];
             return (
-              <div key={n} className={`text-center py-1.5 rounded-lg text-[9px] font-bold ${isWork ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}>
+              <div key={n} className={`text-center py-1.5 rounded-lg text-[11px] font-bold ${isWork ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}>
                 <div>
                   {n}
                   {n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'}
@@ -566,7 +566,7 @@ function MiniMonth({
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-visible">
       {/* Month header */}
-      <div className="px-3 py-2.5 bg-gradient-to-r from-slate-50 to-white rounded-t-2xl border-b border-gray-100">
+      <div className="px-3 py-3 bg-gradient-to-r from-slate-50 to-white rounded-t-2xl border-b border-gray-100">
         <div className="flex items-center justify-between mb-1">
           <span className="text-[11px] font-bold text-[#0f1f2e] uppercase tracking-wider">{MONTH_FULL[monthIdx]}</span>
           <div className="flex items-center gap-1">
@@ -583,7 +583,7 @@ function MiniMonth({
               return (
                 <>
                   {p > 0 && (
-                  <span className="text-[9px] font-bold text-green-700 bg-green-50 px-1.5 py-0.5 rounded-full border border-green-100">
+                  <span className="text-[12px] font-bold text-green-700 bg-green-50 px-1.5 py-0.5 rounded-full border border-green-100">
                     {p}
                     P
                   </span>
@@ -625,7 +625,7 @@ function MiniMonth({
           </div>
         </div>
         {/* Working/off summary */}
-        <div className="flex items-center gap-2 text-[9px] text-gray-400">
+        <div className="flex items-center gap-2 text-[11px] text-gray-400">
           <span title="Working days" className="flex items-center gap-0.5">
             <Briefcase size={8} className="text-emerald-500" />
             {' '}
@@ -949,12 +949,12 @@ export default function HolidaysTab({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pt-3">
 
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-bold text-[#0f1f2e]">Holiday & Work Calendar</h3>
+          <h3 className="text- font-bold text-[#0f1f2e]">Holiday & Work Calendar</h3>
           <p className="text-xs text-gray-400 mt-0.5">
             {stats.total}
             {' '}
@@ -973,16 +973,17 @@ export default function HolidaysTab({
         <div className="flex items-center gap-2 flex-wrap">
           {/* Location Schedule Toggle */}
           {workLocationSchedule && (
-            <div className="flex items-center gap-1 bg-purple-50 rounded-xl px-2 py-1">
+            <div className="flex items-center gap-1 bg-purple-100 rounded-xl px-1 py-1">
               <button
                 onClick={() => setShowLocationSchedule(!showLocationSchedule)}
                 className="flex items-center gap-1 p-1 rounded-lg hover:bg-purple-100 transition-colors text-purple-700"
                 title={showLocationSchedule ? 'Hide work location schedule' : 'Show work location schedule'}
               >
-                {showLocationSchedule ? <EyeOff size={12} /> : <Eye size={12} />}
-                <MapPin size={12} />
+                {showLocationSchedule ? <EyeOff size={14} /> : <Eye size={14} />}
+                
               </button>
-              <span className="text-[10px] font-medium text-purple-700">
+              <span className="text-[12px] font-medium text-purple-700">
+               
                 {showLocationSchedule ? 'Hide' : 'Show'}
                 {' '}
                 Locations
@@ -990,7 +991,7 @@ export default function HolidaysTab({
             </div>
           )}
           {/* Year nav */}
-          <div className="flex items-center gap-1 bg-gray-100 rounded-xl px-2 py-1">
+          <div className="flex items-center gap-1 border border-gray-100 bg-gray-100 rounded-xl px-2 py-1">
             <button onClick={() => { setYear((y) => { const n = y - 1; onYearChange?.(n); return n; }); }} className="p-1 rounded-lg hover:bg-white transition-colors text-gray-500"><ChevronLeft size={13} /></button>
             <span className="text-xs font-bold text-[#0f1f2e] px-1 min-w-[36px] text-center">{year}</span>
             <button onClick={() => { setYear((y) => { const n = y + 1; onYearChange?.(n); return n; }); }} className="p-1 rounded-lg hover:bg-white transition-colors text-gray-500"><ChevronRight size={13} /></button>
@@ -1001,7 +1002,7 @@ export default function HolidaysTab({
               <button
                 key={t}
                 onClick={() => setFilterType(t)}
-                className={`px-2.5 py-1 text-[10px] font-semibold rounded-lg transition-colors capitalize ${
+                className={`px-2.5 py-1 text-[12px] font-semibold rounded-lg transition-colors capitalize ${
                   filterType === t ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 {t === 'all' ? 'All' : TYPE_META[t].label}
@@ -1032,7 +1033,7 @@ export default function HolidaysTab({
       </div>
 
       {/* ── Work Schedule Cards ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
         {workSchedule && <WorkScheduleCard ws={workSchedule} />}
         {workLocationSchedule && showLocationSchedule && (
           <WorkLocationCard wls={workLocationSchedule} />
@@ -1040,7 +1041,7 @@ export default function HolidaysTab({
       </div>
 
       {/* ── Stat Cards ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-2 pt-2">
         {([
           {
             label: 'Total Holidays', value: stats.total, color: 'text-teal-700', bg: 'bg-teal-50', icon: CalendarDays,
@@ -1072,13 +1073,13 @@ export default function HolidaysTab({
         ] as const).map((s) => {
           const Icon = s.icon;
           return (
-            <div key={s.label} className="bg-white rounded-2xl border border-gray-100 px-3 py-2.5 shadow-sm flex items-center gap-2">
-              <div className={`w-7 h-7 rounded-xl ${s.bg} flex items-center justify-center flex-shrink-0`}>
-                <Icon size={13} className={s.color} />
+            <div key={s.label} className="bg-white rounded-2xl border border-gray-100 px-3 py-3 shadow-sm flex items-center gap-2">
+              <div className={`w-6 h-6 rounded-xl ${s.bg} flex items-center justify-center flex-shrink-0`}>
+                <Icon size={10} className={s.color} />
               </div>
               <div className="min-w-0">
                 <p className={`text-base font-bold leading-none ${s.color}`}>{s.value}</p>
-                <p className="text-[9px] text-gray-400 mt-0.5 font-medium truncate">{s.label}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5 font-medium truncate">{s.label}</p>
               </div>
             </div>
           );
@@ -1086,19 +1087,19 @@ export default function HolidaysTab({
       </div>
 
       {/* ── Legend ── */}
-      <div className="flex items-center gap-3 px-1 flex-wrap">
+      <div className="flex items-center gap-3 px-1 flex-wrap pt-3">
         {HOLIDAY_TYPES.map((t) => {
           const m = TYPE_META[t];
           return (
             <div key={t} className="flex items-center gap-1.5">
               <span className={`w-3 h-3 rounded-sm ${m.bg} border ${m.border}`} />
-              <span className="text-[10px] text-gray-500 font-medium">{m.label}</span>
+              <span className="text-[11px] text-gray-500 font-medium">{m.label}</span>
             </div>
           );
         })}
         <div className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-sm bg-orange-100 border border-orange-200" />
-          <span className="text-[10px] text-gray-500 font-medium">Working Day (Override)</span>
+          <span className="text-[11px] text-gray-500 font-medium">Working Day (Override)</span>
         </div>
         {([
           { label: 'Working Sat', dot: 'bg-emerald-400' },
@@ -1107,10 +1108,10 @@ export default function HolidaysTab({
         ] as const).map((l) => (
           <div key={l.label} className="flex items-center gap-1.5">
             <span className={`w-3 h-3 rounded-sm ${l.dot}`} />
-            <span className="text-[10px] text-gray-500 font-medium">{l.label}</span>
+            <span className="text-[11px] text-gray-500 font-medium">{l.label}</span>
           </div>
         ))}
-        <span className="text-[10px] text-gray-400 ml-auto hidden sm:block">{viewOnly ? 'Hover a day to see attendance details' : 'Hover a day to add / edit / delete entries'}</span>
+        <span className="text-[11px] text-gray-400 ml-auto hidden sm:block">{viewOnly ? 'Hover a day to see attendance details' : 'Hover a day to add / edit / delete entries'}</span>
       </div>
 
       {/* ── Year Grid ── */}
@@ -1119,7 +1120,7 @@ export default function HolidaysTab({
           <Loader2 size={22} className="animate-spin text-[#0f766e]" />
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4 pt-2">
           {Array.from({ length: 12 }, (_, i) => (
             <MiniMonth
               key={i}
@@ -1143,9 +1144,9 @@ export default function HolidaysTab({
 
       {/* ── Add / Edit Modal ── */}
       {!viewOnly && showModal && (
-        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col" style={{ maxHeight: 'calc(100vh - 4rem)' }}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center pt-4">
+          <div className="h-[80vh] bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col">
+            <div className="flex items-center justify-between px-3 py-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center">
                   <CalendarDays size={15} className="text-teal-700" />
@@ -1156,11 +1157,11 @@ export default function HolidaysTab({
                 <X size={16} />
               </button>
             </div>
-            <div className="overflow-y-auto p-5 space-y-4">
+            <div className="overflow-y-auto px-4 py-3 space-y-4">
 
               {/* Entry type: Holiday vs Working Day Override */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                <label className="block text-xs font-semibold text-gray-600 mb-2">
                   Entry Type
                   {' '}
                   <span className="text-red-500">*</span>

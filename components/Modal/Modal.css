@@ -1,12 +1,21 @@
 .modal-content {
   color: var(--textdark) !important;
   background-color: var(--white) !important;
-  border-radius: 4px !important;
+  border-radius: 8px !important;
   border: none !important;
-  min-width: 550px !important;
+  min-width: 460px !important;
+  max-width: 1043px !important;
+  gap: 0 !important;
 }
+
+.modal-content.add-ticket-modal {
+  width: 630px !important;
+  max-width: 630px !important;
+  min-width: 630px !important;
+}
+
 .modal-sm {
-  --bs-modal-width: 550px !important;
+  --bs-modal-width: 460px !important;
 }
 @media screen and (max-width: 540px) {
   .modal-content {
@@ -22,7 +31,82 @@
   border-bottom: none !important; 
   display: flex;
   height: 80px !important;
+  position: relative;
+  padding: 0 20px;
 }
 .modal-header .btn-close {
-  margin-right: 10px !important;
+  position: absolute;
+  top: -12px;
+  right: -9px;
+  width: 22px;
+  height: 22px;
+  background: #383838;
+  color: #fff;
+  z-index: 10;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  margin: 0 !important;
+  padding: 0 !important;
+  background-image: none;
+}
+.modal-header .btn-close::before {
+  content: '×';
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+}
+.modal-header .btn-close:hover {
+  background: #383838;
+  opacity: 0.8;
+}
+.cancel-circle-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #e0e0e0;
+  background: #a52121;
+  color: #333!important;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.modal-body input[type="text"],
+.modal-body input[type="email"],
+.modal-body input[type="password"],
+.modal-body input[type="number"],
+.modal-body input[type="tel"],
+.modal-body input[type="url"],
+.modal-body input[type="date"],
+.modal-body input[type="time"],
+.modal-body input[type="datetime-local"],
+.modal-body input[type="search"],
+.modal-body select,
+.modal-body textarea {
+  height: 42px !important;
+  min-height: 42px !important;
+  width: 100% !important;
+}
+.modal-body textarea {
+  min-height: 42px !important;
+  height: auto !important;
+}
+.modal-body {
+  padding: 0 20px 20px 20px !important;
+}
+.modal-body label {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #1e1e1e;
+  
+}
+.modal-body .common_hallow_button .btn{
+  height: 44px!important;
+  border: 1px solid #000000;
 }

@@ -367,6 +367,16 @@ export default function SignUpForm() {
                     errors={errors}
                   />
                 </div>
+                 <div>
+                  <FormikField
+                    name="phone_number"
+                    errors={errors}
+                    validationSchema={validationSchema}
+                    label="Phone Number (Optional)"
+                    type="tel"
+                    placeholder="Enter your phone number"
+                  />
+                </div>
                 <div>
                   <FormikField
                     name="email"
@@ -377,16 +387,7 @@ export default function SignUpForm() {
                     placeholder="Enter your email address"
                   />
                 </div>
-                <div>
-                  <FormikField
-                    name="phone_number"
-                    errors={errors}
-                    validationSchema={validationSchema}
-                    label="Phone Number (Optional)"
-                    type="tel"
-                    placeholder="Enter your phone number"
-                  />
-                </div>
+               
                 <div>
                   <FormikField
                     name="password"

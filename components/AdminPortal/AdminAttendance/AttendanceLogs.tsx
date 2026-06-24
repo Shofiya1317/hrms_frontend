@@ -466,7 +466,7 @@ export default function AttendanceLogs() {
           {/* today button */}
           <button
             onClick={handleToday}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-[#0f766e] bg-[#e8f5ee] rounded-xl hover:bg-teal-100 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[#0f766e] bg-[#e8f5ee] rounded-xl hover:bg-teal-100 transition-colors"
           >
             <Calendar size={12} />
             Today
@@ -474,7 +474,7 @@ export default function AttendanceLogs() {
           {/* show all button */}
           <button
             onClick={handleShowAll}
-            className={`px-3 py-1.5 text-[10px] font-bold rounded-xl transition-colors ${
+            className={`px-3 py-1.5 text-[12px] font-bold rounded-xl transition-colors ${
               !selectedDate ? 'bg-[#0f766e] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -539,8 +539,8 @@ export default function AttendanceLogs() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search employee..."
-              className="pl-7 pr-3 py-1.5 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20 focus:border-[#0f766e] transition-all w-40"
+              placeholder="Search employee"
+              className="pl-6 pr-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20 focus:border-[#0f766e] transition-all w-40"
             />
           </div>
           {/* status filter */}
@@ -549,7 +549,7 @@ export default function AttendanceLogs() {
               <button
                 key={s}
                 onClick={() => setStatusFilter(s)}
-                className={`px-2 py-1 text-[9px] font-bold rounded-lg transition-colors capitalize ${statusFilter === s ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`px-2 py-1 text-[12px] font-bold rounded-lg transition-colors capitalize ${statusFilter === s ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 {s === 'ALL' ? 'All' : STATUS_META[s]?.label ?? s}
               </button>

@@ -376,7 +376,7 @@ export default function MastersSetup({ slug }: { slug: string }) {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1 flex-wrap">
+      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
         {TABS.map((tab) => (
           <button
             key={tab.key}

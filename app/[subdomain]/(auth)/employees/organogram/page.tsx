@@ -11,16 +11,8 @@ export default function page() {
   ];
 
   return (
-    <PageHeaderWrapper
-      title={(
-        <div className="flex items-center gap-2">
-          <Users size={24} className="text-[#2D7A4F]" />
-          <span>Organization Chart</span>
-        </div>
-              )}
-      breadCrumbMenu={breadCrumbs}
-    >
+   
       <Organogram />
-    </PageHeaderWrapper>
+   
   );
 }

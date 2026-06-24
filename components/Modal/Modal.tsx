@@ -57,7 +57,7 @@ export function Modal({
         </BootstrapModal.Header>
       )}
       <BootstrapModal.Body data-testid="Test Content" className="p-0">
-        <div style={{ padding: '39px 42px' }}>{children}</div>
+        <div style={{ padding: '20px 42px' }}>{children}</div>
       </BootstrapModal.Body>
     </BootstrapModal>
   );

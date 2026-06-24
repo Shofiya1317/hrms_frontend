@@ -110,7 +110,7 @@ export default async function layout({
           </div>
 
           {/* Nav items — scrollable independently */}
-          <div className="flex-1 overflow-y-auto px-3 py-5">
+          <div className="flex-1 overflow-y-auto px-4 py-4">
 
             {/* My account */}
             <p className="px-2 mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
@@ -156,7 +156,7 @@ export default async function layout({
 
         {/* ── Main content area ── */}
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-full mx-auto px-6 py-8 lg:px-10 lg:py-10">
+          <div className="max-w-full mx-auto px-3 py-2 lg:px-10 lg:py-5">
             {children}
           </div>
         </main>

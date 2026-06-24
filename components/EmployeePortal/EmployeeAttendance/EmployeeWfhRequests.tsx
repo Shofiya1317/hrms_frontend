@@ -115,7 +115,7 @@ function ApplyModal({
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         <div className={`h-1 w-full ${isEdit ? 'bg-amber-400' : 'bg-gradient-to-r from-teal-400 to-emerald-500'}`} />
 
-        <div className="p-5">
+        <div className="p-4">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -466,7 +466,7 @@ const EmployeeWfhRequests = () => {
     <>
       {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
-      <div className="space-y-4">
+      <div className="space-y-4 p-3">
 
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -507,10 +507,10 @@ const EmployeeWfhRequests = () => {
               label: 'Rejected', value: stats.rejected, color: 'text-red-500', bg: 'bg-red-50', dot: 'bg-red-400',
             },
           ].map((s) => (
-            <div key={s.label} className={`${s.bg} rounded-xl px-3 py-2 border border-white`}>
+            <div key={s.label} className={`${s.bg} rounded-xl px-3 py-3 border border-white`}>
               <div className="flex items-center gap-1.5 mb-1">
-                <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-                <p className="text-[9px] font-bold text-gray-500 uppercase">{s.label}</p>
+                <span className={`w-2 h-2 rounded-full ${s.dot}`} />
+                <p className="text-[12px] font-bold text-gray-500 uppercase">{s.label}</p>
               </div>
               <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
             </div>
@@ -521,7 +521,7 @@ const EmployeeWfhRequests = () => {
         <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 w-fit">
           <button
             onClick={() => { setStatusFilter('ALL'); fetchRequests('ALL'); }}
-            className={`px-2.5 py-1 text-[9px] font-bold rounded-lg transition-colors ${statusFilter === 'ALL' ? 'bg-white text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-2.5 py-1 text-[12px] font-bold rounded-lg transition-colors ${statusFilter === 'ALL' ? 'bg-white text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
           >
             All
           </button>
@@ -529,7 +529,7 @@ const EmployeeWfhRequests = () => {
             <button
               key={s}
               onClick={() => { setStatusFilter(s); fetchRequests(s); }}
-              className={`px-2.5 py-1 text-[9px] font-bold rounded-lg transition-colors capitalize ${statusFilter === s ? 'bg-white text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`px-2.5 py-1 text-[12px] font-bold rounded-lg transition-colors capitalize ${statusFilter === s ? 'bg-white text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               {STATUS_META[s].label}
             </button>

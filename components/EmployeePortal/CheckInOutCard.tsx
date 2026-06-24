@@ -374,7 +374,7 @@ export default function CheckInOutCard({
               : 'bg-emerald-500'
         }`}
         />
-        <div className="px-4 pt-5 pb-5 flex flex-col gap-4">
+        <div className="px-4 pt-3 pb-3 flex flex-col gap-4">
 
           {/* Greeting */}
           {greetingMsg && (
@@ -400,11 +400,11 @@ export default function CheckInOutCard({
           {/* In / Out times row */}
           {(checkInDisplay || checkOutDisplay) && (
             <div className="grid grid-cols-2 gap-2">
-              <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+              <div className="bg-slate-100 rounded-xl p-3 border border-slate-100">
                 <p className="text-[10px] font-semibold text-slate-400 uppercase mb-1">Check In</p>
                 <p className="text-sm font-bold text-slate-800">{checkInDisplay ?? '—'}</p>
               </div>
-              <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+              <div className="bg-slate-100 rounded-xl p-3 border border-slate-100">
                 <p className="text-[10px] font-semibold text-slate-400 uppercase mb-1">Check Out</p>
                 <p className="text-sm font-bold text-slate-800">{checkOutDisplay ?? '—'}</p>
               </div>
@@ -450,10 +450,10 @@ export default function CheckInOutCard({
     );
   }
 
-  return (
+return (
     <div className="flex flex-col bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
 
-      <div className="px-4 pt-5 pb-4">
+      <div className="px-4 pt-2 pb-4">
         {loadingCtx ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 size={22} className="animate-spin text-slate-300" />
@@ -464,7 +464,7 @@ export default function CheckInOutCard({
             <div className="flex items-start justify-between mb-3">
               <div>
                 {context?.greeting && (
-                  <p className="text-[11px] font-semibold text-slate-400 tracking-wide uppercase">
+                  <p className="text-[12px] font-semibold text-slate-400 tracking-wide uppercase">
                     {context.greeting}
                   </p>
                 )}
@@ -480,7 +480,6 @@ export default function CheckInOutCard({
                   </span>
                 </div>
               </div>
-              {/* Live HH:MM:SS timer */}
               <p className={`font-mono text-2xl font-black tabular-nums tracking-tight ${isCheckedIn ? 'text-slate-900' : 'text-slate-200'}`}>
                 {timerStr}
               </p>
@@ -498,8 +497,7 @@ export default function CheckInOutCard({
               const bs = badgeColorMap[ci.badge_color ?? 'blue'] ?? badgeColorMap.blue;
               return (
                 <div className="mb-3 flex flex-col gap-2">
-                  {/* shift info */}
-                  <div className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-100">
+                  <div className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-3 border border-slate-100">
                     <div>
                       <p className="text-xs font-bold text-slate-700">{ci.title}</p>
                       {ci.subtitle && <p className="text-[11px] text-slate-500 mt-0.5">{ci.subtitle}</p>}
@@ -513,10 +511,9 @@ export default function CheckInOutCard({
                       </span>
                     )}
                   </div>
-                  {/* shift times */}
                   {(ci.shift_start || ci.shift_end) && (
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
+                      <div className="bg-slate-50 rounded-xl px-3 py-3 border border-slate-100">
                         <p className="text-[10px] font-semibold text-slate-400 uppercase">Shift Start</p>
                         <p className="text-xs font-bold text-slate-800 mt-0.5">{ci.shift_start}</p>
                       </div>
@@ -543,7 +540,6 @@ export default function CheckInOutCard({
                       <span className="text-slate-400"> · {remainingStr} remaining</span>
                     </span>
                   )}
-                  {/* Dynamic badge */}
                   {dynamicBadge && (
                     <span
                       className="text-[10px] font-bold px-2.5 py-0.5 rounded-full border"
@@ -553,7 +549,6 @@ export default function CheckInOutCard({
                     </span>
                   )}
                 </div>
-                {/* Late / badge info from check-in response */}
                 {(() => {
                   const ciCtx = context?.check_in_context;
                   if (!ciCtx?.badge && !ciCtx?.subtitle) return null;
@@ -611,9 +606,9 @@ export default function CheckInOutCard({
                     : dynamicBadge?.status === 'shift_complete'
                       ? 'linear-gradient(90deg,#34d399,#10b981)'
                       : isCheckedIn
-                        ? 'linear-gradient(90deg,#fbbf24,#f59e0b)'
+                        ? 'linear-gradient(90deg,#0f766e,#14b8a6)'
                         : '#e2e8f0',
-                  boxShadow: isCheckedIn ? '0 0 6px rgba(52,211,153,0.4)' : 'none',
+                  boxShadow: isCheckedIn ? '0 0 6px rgba(15,118,110,0.4)' : 'none',
                 }}
               />
             </div>
@@ -625,7 +620,7 @@ export default function CheckInOutCard({
               className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all active:scale-[0.97] disabled:opacity-60 ${
                 isCheckedIn
                   ? 'bg-rose-500 text-white shadow-[0_4px_14px_rgba(239,68,68,0.4)] hover:bg-rose-600'
-                  : 'bg-emerald-500 text-white shadow-[0_4px_14px_rgba(16,185,129,0.4)] hover:bg-emerald-600'
+                  : 'bg-[#0f766e] text-white shadow-[0_4px_14px_rgba(15,118,110,0.4)] hover:bg-[#0d6b64]'
               }`}
             >
               {isRefreshing
@@ -648,20 +643,19 @@ export default function CheckInOutCard({
             className="w-full max-w-sm rounded-t-3xl bg-white shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className={`h-1 w-full ${isCheckedIn ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+            <div className={`h-1 w-full ${isCheckedIn ? 'bg-rose-500' : 'bg-[#0f766e]'}`} />
             <div className="p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${isCheckedIn ? 'bg-rose-50' : 'bg-emerald-50'}`}>
-                  {isCheckedIn ? <LogOut size={18} className="text-rose-500" /> : <LogIn size={18} className="text-emerald-500" />}
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${isCheckedIn ? 'bg-rose-50' : 'bg-teal-50'}`}>
+                  {isCheckedIn ? <LogOut size={18} className="text-rose-500" /> : <LogIn size={18} className="text-[#0f766e]" />}
                 </div>
                 <div>
                   <p className="text-sm font-bold text-slate-900">{isCheckedIn ? 'Check out' : 'Check in'}</p>
                   <p className="text-xs text-slate-400">
                     {isCheckedIn ? `${workedStr} worked` : fmtTime(now)}
                   </p>
-                  {/* Context status badge in modal */}
                   {(() => {
-                    const ci = isCheckedIn ? context?.check_in_context : context?.check_in_context;
+                    const ci = context?.check_in_context;
                     if (!ci?.badge) return null;
                     const bm: Record<string, string> = {
                       red: 'text-red-600 bg-red-50 border-red-100',
@@ -710,7 +704,11 @@ export default function CheckInOutCard({
                 <button
                   onClick={handleConfirm}
                   disabled={isLoading || isFetchingLoc}
-                  className={`flex-1 flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-60 ${isCheckedIn ? 'bg-rose-500 shadow-[0_4px_14px_rgba(239,68,68,0.4)]' : 'bg-emerald-500 shadow-[0_4px_14px_rgba(16,185,129,0.4)]'}`}
+                  className={`flex-1 flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-60 ${
+                    isCheckedIn
+                      ? 'bg-rose-500 shadow-[0_4px_14px_rgba(239,68,68,0.4)]'
+                      : 'bg-[#0f766e] shadow-[0_4px_14px_rgba(15,118,110,0.4)]'
+                  }`}
                 >
                   {isLoading ? <Loader2 size={14} className="animate-spin" /> : isCheckedIn ? 'Confirm Check Out' : 'Confirm Check In'}
                 </button>
@@ -741,15 +739,12 @@ export default function CheckInOutCard({
                   <p className="text-xs text-slate-400">You're leaving before shift end</p>
                 </div>
               </div>
-
-              {/* warning_message from API — exact string, used as-is */}
               <div className="bg-amber-50 border border-amber-100 rounded-2xl p-3.5 mb-5">
                 <p className="text-xs text-amber-700 font-medium leading-relaxed">
                   {context?.check_out_context?.warning_message
                     ?? `Shift ends at ${shiftEndDisplay}. Checking out now will be marked as early checkout.`}
                 </p>
               </div>
-
               <div className="flex gap-2.5">
                 <button
                   onClick={() => { setShowEarlyWarning(false); setPendingLoc(null); }}

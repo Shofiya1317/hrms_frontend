@@ -145,13 +145,13 @@ export default function ChangePassword({ slug }: Readonly<{ slug: string }>) {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 sm:p-6">
-      <div className="flex items-center gap-2 mb-5">
+    <div className="p-3 sm:p-5">
+      {/* <div className="flex items-center gap-2 mb-5">
         <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600">
           <KeyRound size={15} />
         </div>
         <h3 className="text-sm font-bold text-slate-800">Change Password</h3>
-      </div>
+      </div> */}
 
       <Formik
         initialValues={{

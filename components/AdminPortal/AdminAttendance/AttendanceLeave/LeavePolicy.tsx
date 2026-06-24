@@ -530,7 +530,7 @@ export default function LeavePolicyTab({ apiKey, token }: LeavePolicyTabProps) {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-4 border-b border-slate-100">
           <div>
-            <h3 className="text-sm font-bold text-slate-900">Leave policies</h3>
+            <h3 className="text-lg font-bold text-slate-900">Leave policies</h3>
             <p className="text-xs text-slate-400 mt-0.5">
               {loading ? 'Loading…' : `${policies.length} polic${policies.length !== 1 ? 'ies' : 'y'} configured`}
             </p>

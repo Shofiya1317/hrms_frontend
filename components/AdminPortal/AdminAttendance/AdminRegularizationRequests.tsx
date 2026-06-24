@@ -350,7 +350,7 @@ export default function AdminRegularizationRequests() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search..."
-              className="pl-7 pr-3 py-1.5 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20 focus:border-[#0f766e] transition-all w-36"
+              className="pl-7 pr-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20 focus:border-[#0f766e] transition-all w-36"
             />
           </div>
           <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
@@ -358,7 +358,7 @@ export default function AdminRegularizationRequests() {
               <button
                 key={s}
                 onClick={() => setStatusFilter(s)}
-                className={`px-2 py-1 text-[9px] font-bold rounded-lg transition-colors capitalize ${
+                className={`px-2 py-1 text-[12px] font-bold rounded-lg transition-colors capitalize ${
                   statusFilter === s ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >

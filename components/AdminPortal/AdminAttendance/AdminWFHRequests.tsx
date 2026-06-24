@@ -281,24 +281,24 @@ function RequestRow({ req, onSelect }: { req: IWFH; onSelect: () => void }) {
         <div className="flex items-center gap-2 mt-1 flex-wrap">
           {req.employee?.employee_code && (
             <>
-              <span className="text-[10px] text-gray-500 font-medium">{req.employee.employee_code}</span>
+              <span className="text-[12px] text-gray-500 font-medium">{req.employee.employee_code}</span>
               <span className="text-gray-300">·</span>
             </>
           )}
-          <span className="flex items-center gap-1 text-[10px] text-gray-500">
+          <span className="flex items-center gap-1 text-[12px] text-gray-500">
             <Home size={9} className="text-teal-500" />
             WFH on
             {' '}
             <span className="font-semibold ml-0.5">{fmtDate(req.date)}</span>
           </span>
           <span className="text-gray-300">·</span>
-          <span className="text-[10px] text-gray-400">
+          <span className="text-[12px] text-gray-400">
             Applied
             {fmtDate(req.applied_on)}
           </span>
         </div>
         {req.reason && (
-          <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{req.reason}</p>
+          <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{req.reason}</p>
         )}
       </div>
       <span className="text-[10px] text-gray-400 group-hover:text-[#0f766e] transition-colors flex-shrink-0 hidden sm:block font-bold">
@@ -367,20 +367,20 @@ export default function AdminWFHRequests() {
         </p>
         <div className="flex items-center gap-2 flex-wrap">
           {/* Search */}
-          <div className="relative">
-            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <div className="relative min-w-[150px]">
+            <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search employee…"
-              className="pl-7 pr-3 py-1.5 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20 focus:border-[#0f766e] transition-all w-36"
+              placeholder="Search Employee"
+              className=" pl-6 pr-1 py-2  text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20 focus:border-[#0f766e] transition-all w-36"
             />
           </div>
           {/* Status filter */}
           <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
             <button
               onClick={() => setStatusFilter('ALL')}
-              className={`px-2 py-1 text-[9px] font-bold rounded-lg transition-colors ${statusFilter === 'ALL' ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`px-2 py-1 text-[12px] font-bold rounded-lg transition-colors ${statusFilter === 'ALL' ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               All
             </button>
@@ -388,7 +388,7 @@ export default function AdminWFHRequests() {
               <button
                 key={s}
                 onClick={() => setStatusFilter(s)}
-                className={`px-2 py-1 text-[9px] font-bold rounded-lg transition-colors capitalize ${statusFilter === s ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`px-2 py-1 text-[12px] font-bold rounded-lg transition-colors capitalize ${statusFilter === s ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 {STATUS_META[s].label}
               </button>
@@ -416,7 +416,7 @@ export default function AdminWFHRequests() {
           <div key={s.label} className={`${s.bg} rounded-xl px-3 py-2 border border-gray-100`}>
             <div className="flex items-center gap-1.5 mb-1">
               <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-              <p className="text-[9px] font-bold text-gray-500 uppercase">{s.label}</p>
+              <p className="text-[12px] font-bold text-gray-500 uppercase">{s.label}</p>
             </div>
             <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
           </div>

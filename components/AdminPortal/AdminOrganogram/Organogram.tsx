@@ -1,29 +1,44 @@
 'use client';
 
-import {
-  useEffect, useState, useRef, useCallback,
-} from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import {
-  ZoomIn, ZoomOut, Maximize2, Users, Building2, Briefcase,
-  ChevronDown, ChevronRight, Loader2,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Users,
+  Building2,
+  Briefcase,
+  ChevronDown,
+  ChevronRight,
+  Loader2,
 } from 'lucide-react';
 import { getOrganizationTree, IOrganogramNode } from '@/lib/service/organogram';
-
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 function initials(name: string) {
-  return name?.split(' ').map((w) => w[0]).join('').slice(0, 2)
-    .toUpperCase() || '??';
+  return (
+    name
+      ?.split(' ')
+      .map((w) => w[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || '??'
+  );
 }
 
 const AVATAR_COLORS = [
-  ['#6366f1', '#8b5cf6'], ['#0ea5e9', '#06b6d4'], ['#10b981', '#14b8a6'],
-  ['#f59e0b', '#f97316'], ['#ec4899', '#f43f5e'], ['#8b5cf6', '#a855f7'],
+  ['#6366f1', '#8b5cf6'],
+  ['#0ea5e9', '#06b6d4'],
+  ['#10b981', '#14b8a6'],
+  ['#f59e0b', '#f97316'],
+  ['#ec4899', '#f43f5e'],
+  ['#8b5cf6', '#a855f7'],
 ];
 function avatarGrad(name: string) {
   let h = 0;
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % AVATAR_COLORS.length;
+  for (let i = 0; i < name.length; i++)
+    h = (h * 31 + name.charCodeAt(i)) % AVATAR_COLORS.length;
   return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
 }
 
@@ -46,22 +61,29 @@ interface LayoutNode {
 function layoutTree(
   node: IOrganogramNode,
   expandedIds: Set<string>,
-  depth = 0,
+  depth = 0
 ): LayoutNode & { children: (LayoutNode & { children: any[] })[] } {
   const isExpanded = expandedIds.has(node.id);
   const visibleChildren = isExpanded ? (node.children ?? []) : [];
 
   if (visibleChildren.length === 0) {
     return {
-      node, x: 0, y: depth * (CARD_H + V_GAP), width: CARD_W, children: [],
+      node,
+      x: 0,
+      y: depth * (CARD_H + V_GAP),
+      width: CARD_W,
+      children: [],
     };
   }
 
-  const laidOutChildren = visibleChildren.map((c) => layoutTree(c, expandedIds, depth + 1));
+  const laidOutChildren = visibleChildren.map((c) =>
+    layoutTree(c, expandedIds, depth + 1)
+  );
 
   // compute total width
-  const totalChildrenWidth = laidOutChildren.reduce((s, c) => s + c.width, 0)
-    + H_GAP * (laidOutChildren.length - 1);
+  const totalChildrenWidth =
+    laidOutChildren.reduce((s, c) => s + c.width, 0) +
+    H_GAP * (laidOutChildren.length - 1);
 
   // offset children so they're centered under parent
   let cursor = 0;
@@ -73,15 +95,21 @@ function layoutTree(
   const subtreeWidth = Math.max(CARD_W, totalChildrenWidth);
 
   // center parent over children
-  const childrenSpan = laidOutChildren[laidOutChildren.length - 1].x + CARD_W / 2
-    - (laidOutChildren[0].x + CARD_W / 2);
-  const parentX = laidOutChildren[0].x + (totalChildrenWidth > CARD_W
-    ? childrenSpan / 2 - (CARD_W / 2 - laidOutChildren[0].x - CARD_W / 2 + laidOutChildren[0].x)
-    : 0);
+  const childrenSpan =
+    laidOutChildren[laidOutChildren.length - 1].x +
+    CARD_W / 2 -
+    (laidOutChildren[0].x + CARD_W / 2);
+  const parentX =
+    laidOutChildren[0].x +
+    (totalChildrenWidth > CARD_W
+      ? childrenSpan / 2 -
+        (CARD_W / 2 - laidOutChildren[0].x - CARD_W / 2 + laidOutChildren[0].x)
+      : 0);
 
   // actually: parent centered = first_child_center + half span - CARD_W/2
   const firstChildCenter = laidOutChildren[0].x + CARD_W / 2;
-  const lastChildCenter = laidOutChildren[laidOutChildren.length - 1].x + CARD_W / 2;
+  const lastChildCenter =
+    laidOutChildren[laidOutChildren.length - 1].x + CARD_W / 2;
   const cx = (firstChildCenter + lastChildCenter) / 2 - CARD_W / 2;
 
   return {
@@ -95,14 +123,23 @@ function layoutTree(
 
 // ─── flatten layout into renderable arrays ────────────────────────────────────
 
-interface FlatNode { node: IOrganogramNode; x: number; y: number }
-interface FlatEdge { x1: number; y1: number; x2: number; y2: number }
+interface FlatNode {
+  node: IOrganogramNode;
+  x: number;
+  y: number;
+}
+interface FlatEdge {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
 
 function flatten(
   layout: ReturnType<typeof layoutTree>,
   offsetX = 0,
   nodes: FlatNode[] = [],
-  edges: FlatEdge[] = [],
+  edges: FlatEdge[] = []
 ): { nodes: FlatNode[]; edges: FlatEdge[] } {
   const absX = offsetX + layout.x;
   nodes.push({ node: layout.node, x: absX, y: layout.y });
@@ -126,13 +163,15 @@ function flatten(
 
 function EmployeeCard({
   node,
-  x, y,
+  x,
+  y,
   expanded,
   onToggle,
   scale,
 }: {
   node: IOrganogramNode;
-  x: number; y: number;
+  x: number;
+  y: number;
   expanded: boolean;
   onToggle: () => void;
   scale: number;
@@ -167,46 +206,61 @@ function EmployeeCard({
           boxSizing: 'border-box',
         }}
         onMouseEnter={(e) => {
-          (e.currentTarget as HTMLDivElement).style.boxShadow = '0 8px 32px rgba(0,0,0,0.13)';
+          (e.currentTarget as HTMLDivElement).style.boxShadow =
+            '0 8px 32px rgba(0,0,0,0.13)';
           (e.currentTarget as HTMLDivElement).style.borderColor = '#94a3b8';
         }}
         onMouseLeave={(e) => {
-          (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 24px rgba(0,0,0,0.07)';
+          (e.currentTarget as HTMLDivElement).style.boxShadow =
+            '0 4px 24px rgba(0,0,0,0.07)';
           (e.currentTarget as HTMLDivElement).style.borderColor = '#e2e8f0';
         }}
       >
         {/* top row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* avatar */}
-          <div style={{
-            width: 40,
-            height: 40,
-            borderRadius: 10,
-            flexShrink: 0,
-            background: `linear-gradient(135deg, ${from}, ${to})`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontWeight: 700,
-            fontSize: 13,
-          }}
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              flexShrink: 0,
+              background: `linear-gradient(135deg, ${from}, ${to})`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: 700,
+              fontSize: 13,
+            }}
           >
             {initials(node.employee_name)}
           </div>
           {/* name + code */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              fontWeight: 700, fontSize: 12, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            }}
+            <div
+              style={{
+                fontWeight: 700,
+                fontSize: 12,
+                color: '#1e293b',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
             >
               {node.employee_name}
             </div>
-            <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 1 }}>{node.employee_code}</div>
+            <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 1 }}>
+              {node.employee_code}
+            </div>
           </div>
           {hasChildren && (
             <div style={{ color: '#94a3b8', flexShrink: 0 }}>
-              {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              {expanded ? (
+                <ChevronDown size={14} />
+              ) : (
+                <ChevronRight size={14} />
+              )}
             </div>
           )}
         </div>
@@ -214,26 +268,33 @@ function EmployeeCard({
         {/* designation + dept */}
         <div>
           {node.designation && (
-            <div style={{
-              fontSize: 10, color: '#475569', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            }}
+            <div
+              style={{
+                fontSize: 10,
+                color: '#475569',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
             >
               {node.designation}
             </div>
           )}
           {node.department && (
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 3,
-              marginTop: 4,
-              padding: '2px 8px',
-              borderRadius: 99,
-              background: '#f1f5f9',
-              color: '#64748b',
-              fontSize: 9,
-              fontWeight: 600,
-            }}
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 3,
+                marginTop: 4,
+                padding: '2px 8px',
+                borderRadius: 99,
+                background: '#f1f5f9',
+                color: '#64748b',
+                fontSize: 9,
+                fontWeight: 600,
+              }}
             >
               <Building2 size={9} />
               {node.department}
@@ -243,38 +304,64 @@ function EmployeeCard({
 
         {/* stats */}
         <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
-          <div style={{
-            flex: 1, background: '#f8fafc', borderRadius: 8, padding: '5px 8px',
-          }}
-          >
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 3, color: '#94a3b8', marginBottom: 2,
+          <div
+            style={{
+              flex: 1,
+              background: '#f8fafc',
+              borderRadius: 8,
+              padding: '5px 8px',
             }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 3,
+                color: '#94a3b8',
+                marginBottom: 2,
+              }}
             >
               <Users size={9} />
               <span style={{ fontSize: 9, lineHeight: 1 }}>Reports</span>
             </div>
-            <div style={{
-              fontWeight: 700, fontSize: 13, color: '#0f172a', lineHeight: 1,
-            }}
+            <div
+              style={{
+                fontWeight: 700,
+                fontSize: 13,
+                color: '#0f172a',
+                lineHeight: 1,
+              }}
             >
               {node.direct_reports_count ?? 0}
             </div>
           </div>
-          <div style={{
-            flex: 1, background: '#f8fafc', borderRadius: 8, padding: '5px 8px',
-          }}
-          >
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 3, color: '#94a3b8', marginBottom: 2,
+          <div
+            style={{
+              flex: 1,
+              background: '#f8fafc',
+              borderRadius: 8,
+              padding: '5px 8px',
             }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 3,
+                color: '#94a3b8',
+                marginBottom: 2,
+              }}
             >
               <Briefcase size={9} />
               <span style={{ fontSize: 9, lineHeight: 1 }}>Team</span>
             </div>
-            <div style={{
-              fontWeight: 700, fontSize: 13, color: '#0f172a', lineHeight: 1,
-            }}
+            <div
+              style={{
+                fontWeight: 700,
+                fontSize: 13,
+                color: '#0f172a',
+                lineHeight: 1,
+              }}
             >
               {node.total_team_size ?? 0}
             </div>
@@ -327,11 +414,17 @@ export default function Organogram() {
 
   // ── build layout ──────────────────────────────────────────────────────────
   const {
-    nodes: flatNodes, edges: flatEdges, totalW, totalH,
+    nodes: flatNodes,
+    edges: flatEdges,
+    totalW,
+    totalH,
   } = (() => {
     if (tree.length === 0) {
       return {
-        nodes: [], edges: [], totalW: 0, totalH: 0,
+        nodes: [],
+        edges: [],
+        totalW: 0,
+        totalH: 0,
       };
     }
 
@@ -348,7 +441,10 @@ export default function Organogram() {
     const maxX = allNodes.reduce((m, n) => Math.max(m, n.x + CARD_W), 0);
     const maxY = allNodes.reduce((m, n) => Math.max(m, n.y + CARD_H), 0);
     return {
-      nodes: allNodes, edges: allEdges, totalW: maxX, totalH: maxY,
+      nodes: allNodes,
+      edges: allEdges,
+      totalW: maxX,
+      totalH: maxY,
     };
   })();
 
@@ -388,7 +484,9 @@ export default function Organogram() {
     });
   }, []);
 
-  const onMouseUp = useCallback(() => { isPanning.current = false; }, []);
+  const onMouseUp = useCallback(() => {
+    isPanning.current = false;
+  }, []);
 
   useEffect(() => {
     window.addEventListener('mousemove', onMouseMove);
@@ -413,7 +511,8 @@ export default function Organogram() {
     return () => el.removeEventListener('wheel', onWheel);
   }, [onWheel]);
 
-  const zoom = (factor: number) => setScale((s) => Math.min(3, Math.max(0.15, s * factor)));
+  const zoom = (factor: number) =>
+    setScale((s) => Math.min(3, Math.max(0.15, s * factor)));
 
   const toggleNode = (id: string) => {
     setExpanded((prev) => {
@@ -424,10 +523,15 @@ export default function Organogram() {
   };
 
   // ── counts for footer ────────────────────────────────────────────────────
-  const countAll = (node: IOrganogramNode): number => 1 + (node.children?.reduce((s, c) => s + countAll(c), 0) ?? 0);
-  const getDepth = (node: IOrganogramNode): number => 1 + (node.children?.length ? Math.max(...node.children.map(getDepth)) : 0);
+  const countAll = (node: IOrganogramNode): number =>
+    1 + (node.children?.reduce((s, c) => s + countAll(c), 0) ?? 0);
+  const getDepth = (node: IOrganogramNode): number =>
+    1 + (node.children?.length ? Math.max(...node.children.map(getDepth)) : 0);
   const depts = new Set<string>();
-  const collectDepts = (n: IOrganogramNode) => { if (n.department) depts.add(n.department); n.children?.forEach(collectDepts); };
+  const collectDepts = (n: IOrganogramNode) => {
+    if (n.department) depts.add(n.department);
+    n.children?.forEach(collectDepts);
+  };
   tree.forEach(collectDepts);
   const totalEmp = tree.reduce((s, n) => s + countAll(n), 0);
   const maxDepth = tree.length ? Math.max(...tree.map(getDepth)) : 0;
@@ -443,26 +547,28 @@ export default function Organogram() {
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
       {/* header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-white shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 shrink-0">
         <div>
-          <h1 className="text-lg font-bold text-slate-800">Organization Chart</h1>
-          <p className="text-xs text-slate-400">Scroll to zoom · Drag to pan · Click a card to expand</p>
+          <div className="flex items-center gap-2">
+            <Users size={24} className="text-[#2D7A4F]" />
+            <span className="text-lg font-bold text-slate-800">
+              Organization Chart
+            </span>
+          </div>
+          {/* <h1 className="text-lg font-bold text-slate-800">Organization Chart</h1> */}
+          <p className="text-xs text-slate-400">
+            Scroll to zoom · Drag to pan · Click a card to expand
+          </p>
         </div>
         <div className="flex items-center gap-3 text-xs text-slate-500">
           <span className="bg-slate-100 px-2.5 py-1 rounded-full font-medium">
-            {totalEmp}
-            {' '}
-            employees
+            {totalEmp} employees
           </span>
           <span className="bg-slate-100 px-2.5 py-1 rounded-full font-medium">
-            {depts.size}
-            {' '}
-            departments
+            {depts.size} departments
           </span>
           <span className="bg-slate-100 px-2.5 py-1 rounded-full font-medium">
-            {maxDepth}
-            {' '}
-            levels
+            {maxDepth} levels
           </span>
         </div>
       </div>
@@ -472,7 +578,8 @@ export default function Organogram() {
         ref={containerRef}
         className="flex-1 relative overflow-hidden"
         style={{
-          background: 'radial-gradient(circle at 1px 1px, #e2e8f0 1px, transparent 0) 0 0 / 28px 28px',
+          background:
+            'radial-gradient(circle at 1px 1px, #e2e8f0 1px, transparent 0) 0 0 / 28px 28px',
           backgroundColor: '#f8fafc',
           cursor: isPanning.current ? 'grabbing' : 'grab',
         }}
@@ -501,8 +608,7 @@ export default function Organogram() {
           {/* zoom level badge */}
           <div className="w-9 h-9 bg-white border border-slate-200 rounded-xl flex items-center justify-center shadow-sm">
             <span className="text-[9px] font-bold text-slate-500">
-              {Math.round(scale * 100)}
-              %
+              {Math.round(scale * 100)}%
             </span>
           </div>
         </div>
@@ -523,7 +629,13 @@ export default function Organogram() {
           {/* SVG edges */}
           <svg
             style={{
-              position: 'absolute', top: 0, left: 0, width: totalW + 80, height: totalH + 80, overflow: 'visible', pointerEvents: 'none',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: totalW + 80,
+              height: totalH + 80,
+              overflow: 'visible',
+              pointerEvents: 'none',
             }}
           >
             {flatEdges.map((e, i) => {
