@@ -7,21 +7,20 @@ import { UserService } from '@/lib/service';
 import { convertToPascalCase } from '@/lib/utils';
 import { redirect } from 'next/navigation';
 import { ReactNode } from 'react';
-import { FaRegUserCircle } from 'react-icons/fa';
-import { RiLockPasswordLine } from 'react-icons/ri';
-import { MdAddBusiness, MdOutlineBusinessCenter } from 'react-icons/md';
-import { HiOutlineUserAdd } from 'react-icons/hi';
+import {
+  User, KeyRound, Building2, UserPlus, Briefcase, Settings2,
+} from 'lucide-react';
 
 const accountMenu = [
   {
     text: 'Profile',
     subText: 'Personal details',
-    settingIcon: <FaRegUserCircle size={20} />,
+    settingIcon: <User size={18} />,
   },
   {
     text: 'Change Password',
     subText: 'Security',
-    settingIcon: <RiLockPasswordLine size={20} />,
+    settingIcon: <KeyRound size={18} />,
   },
 ];
 
@@ -29,19 +28,25 @@ const orgMenu = [
   {
     text: 'Organisation Setup',
     subText: 'Departments & units',
-    settingIcon: <MdAddBusiness size={20} />,
+    settingIcon: <Building2 size={18} />,
     roles: ['ADMIN', 'HR'],
   },
   {
-    text: 'Invite Users',
-    subText: 'Onboard employees',
-    settingIcon: <HiOutlineUserAdd size={20} />,
+    text: 'Masters Setup',
+    subText: 'Designations, shifts & more',
+    settingIcon: <Settings2 size={18} />,
     roles: ['ADMIN', 'HR'],
   },
+  // {
+  //   text: 'Invite Users',
+  //   subText: 'Onboard employees',
+  //   settingIcon: <UserPlus size={18} />,
+  //   roles: ['ADMIN', 'HR'],
+  // },
   {
     text: 'Company Profile',
     subText: 'Organisation details',
-    settingIcon: <MdOutlineBusinessCenter size={20} />,
+    settingIcon: <Briefcase size={18} />,
     roles: ['ADMIN'],
   },
 ];
@@ -78,11 +83,11 @@ export default async function layout({
   }));
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       {/* Page header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-4 lg:px-8">
-        <h1 className="text-xl font-semibold text-gray-900">Settings</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Manage your account and organisation</p>
+      <div className="bg-white border-b border-slate-100 px-4 py-4 lg:px-8">
+        <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Settings</h1>
+        <p className="text-xs sm:text-sm text-slate-500 mt-1">Manage your account and organisation</p>
       </div>
 
       <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-73px)]">
@@ -93,10 +98,10 @@ export default async function layout({
         </div>
 
         {/* ── DESKTOP: fixed left sidebar — avatar pinned, nav scrolls ── */}
-        <aside className="hidden lg:flex flex-col w-96 bg-white border-r border-gray-200 shrink-0 h-full">
+        <aside className="hidden lg:flex flex-col w-96 bg-white border-r border-slate-100 shrink-0 h-full">
 
           {/* Avatar — pinned, never scrolls */}
-          <div className="shrink-0 px-5 py-3 border-b border-gray-100">
+          <div className="shrink-0 px-5 py-4 border-b border-slate-100">
             <ChangeAvatar
               user={user}
               apiKey={apiKey}
@@ -105,13 +110,13 @@ export default async function layout({
           </div>
 
           {/* Nav items — scrollable independently */}
-          <div className="flex-1 overflow-y-auto px-3 py-4">
+          <div className="flex-1 overflow-y-auto px-3 py-5">
 
             {/* My account */}
-            <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+            <p className="px-2 mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
               My account
             </p>
-            <div className="flex flex-col gap-0.5 mb-2">
+            <div className="flex flex-col gap-1 mb-4">
               {accountMenu.map((item) => (
                 <SettingsNavBar
                   key={item.text}
@@ -128,10 +133,10 @@ export default async function layout({
             {/* Company — hidden for EMPLOYEE */}
             {visibleOrgMenu.length > 0 && (
               <>
-                <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+                <p className="px-2 mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
                   Company
                 </p>
-                <div className="flex flex-col gap-0.5">
+                <div className="flex flex-col gap-1">
                   {visibleOrgMenu.map((item) => (
                     <SettingsNavBar
                       key={item.text}

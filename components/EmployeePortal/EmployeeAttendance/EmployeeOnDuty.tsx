@@ -531,18 +531,19 @@ export default function EmployeeOnDuty() {
 
   const [requests, setRequests] = useState<IOnDuty[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<OnDutyStatus | 'ALL'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<OnDutyStatus | 'ALL'>(OnDutyStatus.PENDING);
   const [showApply, setShowApply] = useState(false);
   const [editingReq, setEditingReq] = useState<IOnDuty | null>(null);
   const [cancelReq, setCancelReq] = useState<IOnDuty | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
-  useEffect(() => { if (tenantId) fetchRequests(); }, [tenantId]);
+  useEffect(() => { if (tenantId) fetchRequests(OnDutyStatus.PENDING); }, [tenantId]);
 
-  const fetchRequests = async () => {
+  const fetchRequests = async (status: OnDutyStatus | 'ALL') => {
     setLoading(true);
     try {
-      const res = await getMyOnDutyApplications(tenantId);
+      const params = status !== 'ALL' ? { status } : undefined;
+      const res = await getMyOnDutyApplications(tenantId, params);
       const raw: IOnDuty[] = Array.isArray(res?.data) ? res.data : (res?.data?.data ?? []);
       setRequests(raw);
     } catch { /* silent */ } finally { setLoading(false); }
@@ -556,13 +557,10 @@ export default function EmployeeOnDuty() {
   const handleSuccess = (msg: string) => {
     setShowApply(false); setEditingReq(null); setCancelReq(null);
     showToast(msg, 'success');
-    fetchRequests();
+    fetchRequests(statusFilter);
   };
 
-  const filtered = useMemo(() => {
-    if (statusFilter === 'ALL') return requests;
-    return requests.filter((r) => r.status === statusFilter);
-  }, [requests, statusFilter]);
+  const filtered = requests;
 
   const stats = useMemo(() => ({
     total: requests.length,
@@ -628,7 +626,7 @@ export default function EmployeeOnDuty() {
 
         <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 w-fit">
           <button
-            onClick={() => setStatusFilter('ALL')}
+            onClick={() => { setStatusFilter('ALL'); fetchRequests('ALL'); }}
             className={`px-2.5 py-1 text-[9px] font-bold rounded-lg transition-colors ${statusFilter === 'ALL' ? 'bg-white text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
           >
             All
@@ -636,7 +634,7 @@ export default function EmployeeOnDuty() {
           {ALL_FILTER_STATUSES.map((s) => (
             <button
               key={s}
-              onClick={() => setStatusFilter(s)}
+              onClick={() => { setStatusFilter(s); fetchRequests(s); }}
               className={`px-2.5 py-1 text-[9px] font-bold rounded-lg transition-colors ${statusFilter === s ? 'bg-white text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               {STATUS_META[s].label}

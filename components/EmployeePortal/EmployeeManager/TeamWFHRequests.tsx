@@ -215,26 +215,25 @@ export default function TeamWFHRequests() {
   const [wfhs, setWFHs] = useState<IWFH[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<WFHStatus | 'ALL'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<WFHStatus | 'ALL'>(WFHStatus.PENDING);
   const [selectedWFH, setSelectedWFH] = useState<IWFH | null>(null);
 
-  useEffect(() => { if (subdomain) fetchWFHs(); }, [subdomain]);
+  useEffect(() => { if (subdomain) fetchWFHs(WFHStatus.PENDING); }, [subdomain]);
 
-  const fetchWFHs = async () => {
+  const fetchWFHs = async (status: WFHStatus | 'ALL') => {
     setLoading(true);
     try {
-      const res = await getTeamWFHRequests(subdomain);
+      const params = status !== 'ALL' ? { status } : undefined;
+      const res = await getTeamWFHRequests(subdomain, params);
       const raw = Array.isArray(res?.data) ? res.data : (res?.data?.data ?? []);
       setWFHs(raw);
     } catch { /* silent */ } finally { setLoading(false); }
   };
 
   const filtered = useMemo(() => {
-    let list = wfhs;
-    if (statusFilter !== 'ALL') list = list.filter((w) => w.status === statusFilter);
-    if (search.trim()) list = list.filter((w) => (w.employee?.name || '').toLowerCase().includes(search.toLowerCase()));
-    return list;
-  }, [wfhs, statusFilter, search]);
+    if (!search.trim()) return wfhs;
+    return wfhs.filter((w) => (w.employee?.name || '').toLowerCase().includes(search.toLowerCase()));
+  }, [wfhs, search]);
 
   const stats = useMemo(() => ({
     total: wfhs.length,
@@ -269,7 +268,7 @@ export default function TeamWFHRequests() {
             {(['ALL', WFHStatus.PENDING, WFHStatus.APPROVED, WFHStatus.REJECTED] as const).map((s) => (
               <button
                 key={s}
-                onClick={() => setStatusFilter(s)}
+                onClick={() => { setStatusFilter(s); fetchWFHs(s); }}
                 className={`px-2 py-1 text-[9px] font-bold rounded-lg transition-colors capitalize ${statusFilter === s ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 {s === 'ALL' ? 'All' : STATUS_META[s].label}
@@ -331,7 +330,7 @@ export default function TeamWFHRequests() {
         </div>
       )}
       {selectedWFH && (
-        <ApprovalDrawer wfh={selectedWFH} onClose={() => setSelectedWFH(null)} onDone={() => { setSelectedWFH(null); fetchWFHs(); }} />
+        <ApprovalDrawer wfh={selectedWFH} onClose={() => setSelectedWFH(null)} onDone={() => { setSelectedWFH(null); fetchWFHs(statusFilter); }} />
       )}
     </div>
   );

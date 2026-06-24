@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  LogIn, LogOut, CheckCircle2, Loader2, XCircle,
+  LogIn, LogOut, Loader2,
   MapPin, AlertTriangle, Clock, Trophy,
 } from 'lucide-react';
+import { toast as toastify } from 'react-hot-toast';
 import {
   checkIn, checkOut, getCheckInContext,
   ICheckInContext, ICheckOutContext,
@@ -120,7 +121,7 @@ export default function CheckInOutCard({
   const [locationData, setLocationData] = useState<LocationData | null>(null);
   const [isFetchingLoc, setIsFetchingLoc] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' | 'info' } | null>(null); // kept for backward compat
 
   const isCheckedIn = context?.state === 'checked_in';
   const isCompleted = context?.state === 'completed';
@@ -171,8 +172,9 @@ export default function CheckInOutCard({
 
   // ── Toast ──
   const showToast = (msg: string, type: 'success' | 'error' | 'info') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3500);
+    if (type === 'error') toastify.error(msg, { position: 'bottom-right' });
+    else if (type === 'success') toastify.success(msg, { position: 'bottom-right' });
+    else toastify(msg, { position: 'bottom-right' });
   };
 
   // UI — modal pre-fetch state
@@ -253,8 +255,8 @@ export default function CheckInOutCard({
         }, tenantId, token);
 
         const apiErr = extractApiError(res, 'Check-in failed.');
-        if (apiErr) { showToast(apiErr, 'error'); return; }
-
+        if (apiErr) { showToast(apiErr, 'error'); setIsLoading(false); setShowConfirmModal(false); setLocationData(null); return; }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
         const d = res?.data?.data;
         const ciCtx = d?.check_in_context ?? {};
         const status = d?.status ?? {};
@@ -450,21 +452,6 @@ export default function CheckInOutCard({
 
   return (
     <div className="flex flex-col bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-
-      {/* Toast */}
-      {toast && (
-        <div className="fixed top-3 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-semibold shadow-lg border ${
-            toast.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-              : toast.type === 'error' ? 'bg-red-50 border-red-200 text-red-600'
-                : 'bg-sky-50 border-sky-200 text-sky-700'
-          }`}
-          >
-            {toast.type === 'error' ? <XCircle size={13} /> : <CheckCircle2 size={13} />}
-            {toast.msg}
-          </div>
-        </div>
-      )}
 
       <div className="px-4 pt-5 pb-4">
         {loadingCtx ? (

@@ -76,6 +76,25 @@ export const getRegularizations = (
   { bearerToken: token, isFetchToken: !token },
 );
 
+export interface IMyRegularizationFilters {
+  status?: RegularizationStatus;
+  from_date?: string;
+  to_date?: string;
+  page?: number;
+  limit?: number;
+}
+
+export const getMyRegularizations = (
+  tenantId: string,
+  params?: IMyRegularizationFilters,
+  token?: string,
+) => get(
+  '/v1/attendance-regularizations/my-requests',
+  params as Params,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
 export const getRegularizationById = (
   id: string,
   tenantId: string,

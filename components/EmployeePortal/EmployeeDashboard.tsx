@@ -12,7 +12,7 @@ import { getMyTeam, ITeamMember } from '@/lib/service/employee';
 import { getMyApplications, LeaveStatus } from '@/lib/service/leaveApplication';
 import { getMyOnDutyApplications, OnDutyStatus } from '@/lib/service/onDuty';
 import { getMyWFHRequests, WFHStatus } from '@/lib/service/wfh';
-import { getRegularizations, RegularizationStatus } from '@/lib/service/regularization';
+import { getMyRegularizations, RegularizationStatus } from '@/lib/service/regularization';
 import { getEmployeeAttendanceDashboard, IEmployeeAttendanceDashboard } from '@/lib/service/attendance';
 import CheckInOutCard from './CheckInOutCard';
 
@@ -67,6 +67,20 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   wfh: {
     label: 'WFH', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe',
   },
+  upcoming: {
+    label: '–', color: '#94a3b8', bg: '#f8fafc', border: '#e2e8f0',
+  },
+  on_duty: {
+    label: 'OD', color: '#0891b2', bg: '#ecfeff', border: '#a5f3fc',
+  },
+};
+
+const TODAY_STATUS_META: Record<string, { label: string; emoji: string; color: string; bg: string; border: string }> = {
+  on_leave:    { label: 'On Leave',        emoji: '🏖️', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
+  week_off:    { label: 'Week Off',        emoji: '😴', color: '#64748b', bg: '#f8fafc', border: '#e2e8f0' },
+  holiday:     { label: 'Holiday',         emoji: '🎉', color: '#0891b2', bg: '#ecfeff', border: '#a5f3fc' },
+  absent:      { label: 'Absent',          emoji: '❌', color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+  half_day:    { label: 'Half Day',        emoji: '🌗', color: '#7c3aed', bg: '#f5f3ff', border: '#e9d5ff' },
 };
 
 const LEAVE_COLOR_RAMPS = [
@@ -128,25 +142,35 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
     try {
       setPendingLoading(true);
       const [leaveRes, onDutyRes, wfhRes, regularizationRes] = await Promise.all([
-        getMyApplications({ employee_id: employeeId, status: LeaveStatus.PENDING }, token),
-        getMyOnDutyApplications({ employee_id: employeeId, status: OnDutyStatus.PENDING }, token),
-        getMyWFHRequests({ status: WFHStatus.PENDING }, token),
-        getRegularizations({ employee_id: employeeId, status: RegularizationStatus.PENDING, limit: 20 }, token),
+        getMyApplications(apiKey, { status: LeaveStatus.PENDING, limit: 1 }, token),
+        getMyOnDutyApplications(apiKey, { status: OnDutyStatus.PENDING, limit: 1 }, token),
+        getMyWFHRequests(apiKey, { status: WFHStatus.PENDING, limit: 1 }, token),
+        getMyRegularizations(apiKey, { status: RegularizationStatus.PENDING, limit: 1 }, token),
       ]);
+
+      const extract = (res: any) => {
+        const raw = res?.data?.data ?? res?.data ?? [];
+        return Array.isArray(raw) ? raw.slice(0, 1) : [];
+      };
+
       const consolidated = [
-        ...(leaveRes?.data?.data || []).map((item: any) => ({
-          id: item.id, type: 'leave', title: item.leave_type_name || 'Leave Request', date: item.from_date, status: item.status, createdAt: item.created_at,
+        ...extract(leaveRes).map((item: any) => ({
+          id: item.id, type: 'leave', title: item.leave_type_name || item.leave_type?.name || 'Leave Request',
+          date: item.from_date || item.applied_on, status: item.status,
         })),
-        ...(onDutyRes?.data?.data || []).map((item: any) => ({
-          id: item.id, type: 'onduty', title: item.onduty_type || 'On Duty', date: item.onduty_date, status: item.status, createdAt: item.created_at,
+        ...extract(onDutyRes).map((item: any) => ({
+          id: item.id, type: 'onduty', title: 'On Duty',
+          date: item.date || item.applied_on, status: item.status,
         })),
-        ...(wfhRes?.data?.data || []).map((item: any) => ({
-          id: item.id, type: 'wfh', title: 'Work From Home', date: item.work_date, status: item.status, createdAt: item.created_at,
+        ...extract(wfhRes).map((item: any) => ({
+          id: item.id, type: 'wfh', title: 'Work From Home',
+          date: item.date || item.applied_on, status: item.status,
         })),
-        ...(regularizationRes?.data?.data || []).map((item: any) => ({
-          id: item.id, type: 'regularization', title: 'Attendance Regularization', date: item.attendance_date, status: item.status, createdAt: item.created_at,
+        ...extract(regularizationRes).map((item: any) => ({
+          id: item.id, type: 'regularization', title: 'Attendance Regularization',
+          date: item.attendance_date || item.created_at, status: item.status,
         })),
-      ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      ];
       setPendingItems(consolidated);
     } catch (error) { console.error(error); } finally { setPendingLoading(false); }
   };
@@ -273,6 +297,24 @@ export default function EmployeeDashboard({ employee, apiKey, token }: { employe
             <div className="relative pl-5">
               <div className="absolute left-2 top-0 bottom-0 w-px bg-gradient-to-b from-slate-200 via-slate-100 to-transparent" />
               <div className="space-y-3">
+                {/* Today status banner for non-working states */}
+                {(() => {
+                  const s = attendanceDashboard?.today?.status;
+                  const meta = s ? TODAY_STATUS_META[s] : null;
+                  if (!meta || attendanceDashboard?.today?.timeline?.length) return null;
+                  return (
+                    <div
+                      className="flex items-center gap-3 rounded-2xl border px-4 py-3 mb-3"
+                      style={{ background: meta.bg, borderColor: meta.border }}
+                    >
+                      <span className="text-xl">{meta.emoji}</span>
+                      <div>
+                        <p className="text-xs font-bold" style={{ color: meta.color }}>{meta.label}</p>
+                        <p className="text-[10px] text-slate-400">No attendance activity today</p>
+                      </div>
+                    </div>
+                  );
+                })()}
                 {attendanceDashboard?.today?.timeline?.length ? (
                   attendanceDashboard.today.timeline.map((log, i) => (
                     <div key={i} className="relative flex items-start gap-3">

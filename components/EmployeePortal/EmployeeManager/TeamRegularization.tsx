@@ -673,17 +673,18 @@ export default function TeamRegularization() {
   const [requests, setRequests] = useState<IRegularization[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<RegularizationStatus | 'ALL'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<RegularizationStatus | 'ALL'>(RegularizationStatus.PENDING);
   const [selectedRequest, setSelectedRequest] = useState<IRegularization | null>(null);
 
   useEffect(() => {
-    if (subdomain) fetchRequests();
+    if (subdomain) fetchRequests(RegularizationStatus.PENDING);
   }, [subdomain]);
 
-  const fetchRequests = async () => {
+  const fetchRequests = async (status: RegularizationStatus | 'ALL') => {
     setLoading(true);
     try {
-      const res = await getTeamRegularizations(subdomain, { limit: 100 });
+      const params = status !== 'ALL' ? { status, limit: 100 } : { limit: 100 };
+      const res = await getTeamRegularizations(subdomain, params);
       const raw = Array.isArray(res?.data) ? res.data : res?.data?.data ?? [];
       setRequests(raw);
     } catch {
@@ -694,20 +695,16 @@ export default function TeamRegularization() {
   };
 
   const filtered = useMemo(() => {
-    let list = requests;
-    if (statusFilter !== 'ALL') list = list.filter((r) => r.status === statusFilter);
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(
-        (r) => r.employee_name?.toLowerCase().includes(q)
-          || r.employee_code?.toLowerCase().includes(q)
-          || r.employee?.employee_code?.toLowerCase().includes(q)
-          || r.employee?.name?.toLowerCase().includes(q)
-          || r.remarks?.toLowerCase().includes(q),
-      );
-    }
-    return list;
-  }, [requests, statusFilter, search]);
+    if (!search.trim()) return requests;
+    const q = search.toLowerCase();
+    return requests.filter(
+      (r) => r.employee_name?.toLowerCase().includes(q)
+        || r.employee_code?.toLowerCase().includes(q)
+        || r.employee?.employee_code?.toLowerCase().includes(q)
+        || r.employee?.name?.toLowerCase().includes(q)
+        || r.remarks?.toLowerCase().includes(q),
+    );
+  }, [requests, search]);
 
   const stats = useMemo(
     () => ({
@@ -744,7 +741,7 @@ export default function TeamRegularization() {
             {(['ALL', RegularizationStatus.PENDING, RegularizationStatus.APPROVED, RegularizationStatus.REJECTED] as const).map((s) => (
               <button
                 key={s}
-                onClick={() => setStatusFilter(s)}
+                onClick={() => { setStatusFilter(s); fetchRequests(s); }}
                 className={`px-2 py-1 text-[9px] font-bold rounded-lg transition-colors capitalize ${
                   statusFilter === s ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'
                 }`}
@@ -822,7 +819,7 @@ export default function TeamRegularization() {
           onClose={() => setSelectedRequest(null)}
           onDone={() => {
             setSelectedRequest(null);
-            fetchRequests();
+            fetchRequests(statusFilter);
           }}
         />
       )}

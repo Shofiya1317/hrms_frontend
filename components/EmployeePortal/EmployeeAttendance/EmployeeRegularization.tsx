@@ -9,7 +9,7 @@ import {
   Calendar, Search, Plus, Trash2, FileText,
 } from 'lucide-react';
 import {
-  getRegularizations, createRegularization, deleteRegularization,
+  getMyRegularizations, createRegularization, deleteRegularization,
   IRegularization, RegularizationStatus, ICreateRegularizationPayload,
 } from '@/lib/service/regularization';
 import { getAttendances } from '@/lib/service/attendance';
@@ -597,19 +597,20 @@ export default function EmployeeRegularization({ employeeId }: { employeeId: str
   const [attendanceLogs, setAttendanceLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<RegularizationStatus | 'ALL'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<RegularizationStatus | 'ALL'>(RegularizationStatus.PENDING);
   const [showCreateDrawer, setShowCreateDrawer] = useState(false);
 
-  useEffect(() => { if (subdomain && employeeId) { fetchRequests(); fetchAttendanceLogs(); } }, [subdomain, employeeId]);
+  useEffect(() => { if (subdomain && employeeId) { fetchRequests(RegularizationStatus.PENDING); fetchAttendanceLogs(); } }, [subdomain, employeeId]);
 
-const fetchRequests = async () => {
-  setLoading(true);
-  try {
-    const res = await getRegularizations(subdomain, { limit: 100, employee_id: employeeId });
-    const raw = Array.isArray(res?.data) ? res.data : (res?.data?.data ?? []);
-    setRequests(raw);
-  } catch { /* silent */ } finally { setLoading(false); }
-};
+  const fetchRequests = async (status: RegularizationStatus | 'ALL') => {
+    setLoading(true);
+    try {
+      const params = status !== 'ALL' ? { status, limit: 100 } : { limit: 100 };
+      const res = await getMyRegularizations(subdomain, params);
+      const raw = Array.isArray(res?.data) ? res.data : (res?.data?.data ?? []);
+      setRequests(raw);
+    } catch { /* silent */ } finally { setLoading(false); }
+  };
 
   const fetchAttendanceLogs = async () => {
     try {
@@ -634,11 +635,9 @@ const fetchRequests = async () => {
   };
 
   const filtered = useMemo(() => {
-    let list = requests;
-    if (statusFilter !== 'ALL') list = list.filter((r) => r.status === statusFilter);
-    if (search.trim()) list = list.filter((r) => r.remarks?.toLowerCase().includes(search.toLowerCase()));
-    return list;
-  }, [requests, statusFilter, search]);
+    if (!search.trim()) return requests;
+    return requests.filter((r) => r.remarks?.toLowerCase().includes(search.toLowerCase()));
+  }, [requests, search]);
 
   const stats = useMemo(() => ({
     total: requests.length,
@@ -649,7 +648,7 @@ const fetchRequests = async () => {
 
   const handleCreateDone = () => {
     setShowCreateDrawer(false);
-    fetchRequests();
+    fetchRequests(statusFilter);
   };
 
   const handleDelete = (id: string) => {
@@ -696,7 +695,7 @@ const fetchRequests = async () => {
           {(['ALL', RegularizationStatus.PENDING, RegularizationStatus.APPROVED, RegularizationStatus.REJECTED] as const).map((s) => (
             <button
               key={s}
-              onClick={() => setStatusFilter(s)}
+              onClick={() => { setStatusFilter(s); fetchRequests(s); }}
               className={`px-2 py-1 text-[9px] font-bold rounded-lg transition-colors capitalize ${statusFilter === s ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               {s === 'ALL' ? 'All' : STATUS_META[s]?.label}

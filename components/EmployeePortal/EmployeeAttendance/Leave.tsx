@@ -11,9 +11,10 @@ import {
 } from 'lucide-react';
 import { 
   applyLeave, 
-  getLeaveApplications, 
+  getMyApplications,
   cancelLeave, 
   updateLeaveApplication,
+  LeaveStatus,
   HalfDaySession,
   ILeaveApplication,
   ILeaveApplicationPayload 
@@ -92,7 +93,7 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
   const [submitted, setSubmitted] = useState(false);
   const [applications, setApplications] = useState<ILeaveApplication[]>([]);
   const [showForm, setShowForm] = useState(true);
-  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'cancelled'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'cancelled'>('pending');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -109,6 +110,21 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
     setTimeout(() => setToast(null), type === 'error' ? 6000 : 4000);
   };
 
+  const fetchApplications = async (status: 'all' | 'pending' | 'approved' | 'rejected' | 'cancelled') => {
+    try {
+      const tenantId = apiKey || '';
+      const authToken = token || '';
+      const filters = status !== 'all' ? { status: status as LeaveStatus } : undefined;
+      const appsRes = await getMyApplications(tenantId, filters, authToken);
+      if (appsRes?.data) {
+        const data = Array.isArray(appsRes.data) ? appsRes.data : Array.isArray(appsRes.data?.data) ? appsRes.data.data : [];
+        setApplications(data);
+      }
+    } catch (error: any) {
+      showToast(error?.response?.data?.message || 'Failed to load applications', 'error');
+    }
+  };
+
   const fetchInitialData = async () => {
     try {
       setIsLoadingData(true);
@@ -119,7 +135,7 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
       
       const [balanceRes, appsRes] = await Promise.all([
         getEmployeeLeaveBalanceDetailed(employeeId, currentYear, tenantId, authToken),
-        getLeaveApplications(tenantId, { employee_id: employeeId }, authToken)
+        getMyApplications(tenantId, { status: LeaveStatus.PENDING }, authToken)
       ]);
 
       // Map leave types from employee leave balance API
@@ -159,12 +175,8 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
       }
 
       if (appsRes?.data) {
-        const employeeApps = Array.isArray(appsRes.data) 
-          ? appsRes.data
-          : Array.isArray(appsRes.data?.data)
-          ? appsRes.data.data
-          : [];
-        setApplications(employeeApps);
+        const data = Array.isArray(appsRes.data) ? appsRes.data : Array.isArray(appsRes.data?.data) ? appsRes.data.data : [];
+        setApplications(data);
       }
     } catch (error: any) {
       console.error('Error fetching data:', error);
@@ -255,7 +267,7 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
         showToast(response?.data?.message || 'Leave application cancelled successfully', 'success');
         setShowCancelModal(false);
         setSelectedLeaveId('');
-        fetchInitialData();
+        fetchApplications(filterStatus);
       }
     } catch (error: any) {
       console.error('Error cancelling leave:', error);
@@ -280,11 +292,7 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
     }
   };
 
-  const filteredApplications = applications.filter(app => {
-    // Filter by status
-    if (filterStatus !== 'all' && app.status !== filterStatus) return false;
-    return true;
-  });
+  const filteredApplications = applications;
 
   const stats = {
     totalLeaves: applications.length,
@@ -711,7 +719,7 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
                 {(['all', 'pending', 'approved', 'rejected', 'cancelled'] as const).map((status) => (
                   <button
                     key={status}
-                    onClick={() => setFilterStatus(status)}
+                    onClick={() => { setFilterStatus(status); fetchApplications(status); }}
                     className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold transition-all capitalize ${
                       filterStatus === status
                         ? 'bg-white text-slate-800 shadow-sm'

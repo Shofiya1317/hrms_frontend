@@ -57,6 +57,8 @@ export interface IMyWFHQueryParams extends Params {
   status?: WFHStatus | string;
   from_date?: string;
   to_date?: string;
+  page?: number;
+  limit?: number;
 }
 
 export interface ITeamWFHQueryParams extends Params {

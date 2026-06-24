@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import {
   getCompOffBalance,
-  getCompOffs,
+  getMyCompOffRequests,
   applyCompOff,
   getAvailableCompOffs,
   ICompOff,
@@ -31,6 +31,12 @@ const STATUS_META: Record<string, { label: string; color: string; bg: string; bo
   },
   [CompOffStatus.REJECTED]: {
     label: 'Rejected', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', icon: <XCircle size={10} />,
+  },
+  [CompOffStatus.CANCELLED]: {
+    label: 'Cancelled', color: '#6b7280', bg: '#f9fafb', border: '#e5e7eb', icon: <XCircle size={10} />,
+  },
+  [CompOffStatus.EXPIRED]: {
+    label: 'Expired', color: '#92400e', bg: '#fff7ed', border: '#fed7aa', icon: <AlertCircle size={10} />,
   },
 };
 
@@ -305,40 +311,45 @@ export default function CompOffPage({ apiKey, token, employeeId }: CompOffPagePr
   // UI state
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [filterStatus, setFilterStatus] = useState<'all' | CompOffStatus>('all');
 
   useEffect(() => {
     if (tenantId) fetchAll();
   }, [tenantId]);
 
+  const fetchCompOffs = async (status: 'all' | CompOffStatus) => {
+    try {
+      const params = status !== 'all' ? { status } : undefined;
+      const listRes = await getMyCompOffRequests(tenantId, params, token);
+      const raw = Array.isArray(listRes?.data?.data)
+        ? listRes.data.data
+        : Array.isArray(listRes?.data)
+          ? listRes.data
+          : [];
+      setCompOffs(raw);
+    } catch (e: any) {
+      setError(e?.response?.data?.message || 'Failed to load comp off data.');
+    }
+  };
+
   const fetchAll = async () => {
     setLoading(true); setError('');
     try {
-      const [balRes, listRes, availRes] = await Promise.all([
+      const [balRes, availRes] = await Promise.all([
         getCompOffBalance(tenantId, token),
-        getCompOffs(tenantId, { employee_id: employeeId }, token),
         getAvailableCompOffs(tenantId, token),
       ]);
 
-      // Balance
       if (balRes?.data) setBalance(balRes.data?.data ?? balRes.data);
 
-      // All comp offs
-      const raw = Array.isArray(balRes?.data?.data?.comp_offs)
-        ? balRes.data.data.comp_offs
-        : Array.isArray(listRes?.data?.data)
-          ? listRes.data.data
-          : Array.isArray(listRes?.data)
-            ? listRes.data
-            : [];
-      setCompOffs(raw);
-
-      // Available (unused approved ones)
       const avail = Array.isArray(availRes?.data?.data)
         ? availRes.data.data
         : Array.isArray(availRes?.data)
           ? availRes.data
           : [];
       setAvailable(avail);
+
+      await fetchCompOffs('all');
     } catch (e: any) {
       setError(e?.response?.data?.message || 'Failed to load comp off data.');
     } finally {
@@ -372,7 +383,7 @@ export default function CompOffPage({ apiKey, token, employeeId }: CompOffPagePr
 
   const pendingList = useMemo(() => compOffs.filter((c) => c.status === CompOffStatus.PENDING), [compOffs]);
   const approvedList = useMemo(() => compOffs.filter((c) => c.status === CompOffStatus.APPROVED && !c.is_availed), [compOffs]);
-  const historyList = useMemo(() => compOffs.filter((c) => c.status === CompOffStatus.REJECTED || c.is_availed), [compOffs]);
+  const historyList = useMemo(() => compOffs.filter((c) => [CompOffStatus.REJECTED, CompOffStatus.CANCELLED, CompOffStatus.EXPIRED].includes(c.status) || c.is_availed), [compOffs]);
 
   // ── Render ─────────────────────────────────
 
@@ -442,6 +453,21 @@ export default function CompOffPage({ apiKey, token, employeeId }: CompOffPagePr
           </button>
         </div>
       )}
+
+      {/* ── Status Filter Tabs ── */}
+      <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1 flex-wrap">
+        {(['all', CompOffStatus.PENDING, CompOffStatus.APPROVED, CompOffStatus.REJECTED, CompOffStatus.CANCELLED, CompOffStatus.EXPIRED] as const).map((s) => (
+          <button
+            key={s}
+            onClick={() => { setFilterStatus(s); fetchCompOffs(s); }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all capitalize ${
+              filterStatus === s ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
 
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

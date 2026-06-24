@@ -416,7 +416,7 @@ const EmployeeWfhRequests = () => {
 
   const [requests, setRequests] = useState<IWFH[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<WFHStatus | 'ALL'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<WFHStatus | 'ALL'>(WFHStatus.PENDING);
 
   // Modal state
   const [showApply, setShowApply] = useState(false);
@@ -426,12 +426,13 @@ const EmployeeWfhRequests = () => {
   // Toast
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
-  useEffect(() => { if (tenantId) fetchRequests(); }, [tenantId]);
+  useEffect(() => { if (tenantId) fetchRequests(WFHStatus.PENDING); }, [tenantId]);
 
-  const fetchRequests = async () => {
+  const fetchRequests = async (status: WFHStatus | 'ALL') => {
     setLoading(true);
     try {
-      const res = await getMyWFHRequests(tenantId);
+      const params = status !== 'ALL' ? { status } : undefined;
+      const res = await getMyWFHRequests(tenantId, params);
       const raw: IWFH[] = Array.isArray(res?.data) ? res.data : (res?.data?.data ?? []);
       setRequests(raw);
     } catch { /* silent */ } finally { setLoading(false); }
@@ -447,13 +448,10 @@ const EmployeeWfhRequests = () => {
     setEditingReq(null);
     setCancelReq(null);
     showToast(msg, 'success');
-    fetchRequests();
+    fetchRequests(statusFilter);
   };
 
-  const filtered = useMemo(() => {
-    if (statusFilter === 'ALL') return requests;
-    return requests.filter((r) => r.status === statusFilter);
-  }, [requests, statusFilter]);
+  const filtered = requests;
 
   const stats = useMemo(() => ({
     total: requests.length,
@@ -522,7 +520,7 @@ const EmployeeWfhRequests = () => {
         {/* Status filter */}
         <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 w-fit">
           <button
-            onClick={() => setStatusFilter('ALL')}
+            onClick={() => { setStatusFilter('ALL'); fetchRequests('ALL'); }}
             className={`px-2.5 py-1 text-[9px] font-bold rounded-lg transition-colors ${statusFilter === 'ALL' ? 'bg-white text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
           >
             All
@@ -530,7 +528,7 @@ const EmployeeWfhRequests = () => {
           {ALL_FILTER_STATUSES.map((s) => (
             <button
               key={s}
-              onClick={() => setStatusFilter(s)}
+              onClick={() => { setStatusFilter(s); fetchRequests(s); }}
               className={`px-2.5 py-1 text-[9px] font-bold rounded-lg transition-colors capitalize ${statusFilter === s ? 'bg-white text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               {STATUS_META[s].label}
