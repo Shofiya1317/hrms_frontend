@@ -212,7 +212,7 @@ export default function ChangePassword({ slug }: Readonly<{ slug: string }>) {
               <button
                 type="submit"
                 disabled={isSubmitting || !dirty}
-                className="flex items-center gap-2 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded-xl shadow-[0_4px_14px_rgba(16,185,129,0.35)] transition-all active:scale-95 disabled:opacity-60"
+                className="flex items-center gap-2 px-6 py-2.5 bg-[#0f766e] text-white text-sm font-bold rounded-xl shadow-[0_4px_14px_rgba(16,185,129,0.35)] transition-all active:scale-95 disabled:opacity-60"
               >
                 {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
                 Update Password

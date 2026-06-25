@@ -369,7 +369,7 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
                   setAttachmentUrl(''); 
                 }}
                 disabled={isLoading}
-                className="flex items-center justify-center gap-2 bg-emerald-600 text-white text-xs sm:text-sm font-semibold px-4 sm:px-5 py-2.5 rounded-xl hover:bg-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
+                className="flex items-center justify-center gap-2 bg-[#0f766e] text-white text-xs sm:text-sm font-semibold px-4 sm:px-5 py-2.5 rounded-xl  transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
               >
                 <Plus size={16} />
                 New Application
@@ -493,15 +493,17 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
           </div>
         )}
 
-        <div className="flex items-center justify-between mb-3 sm:mb-4">
+      
+
+        {/* Application Form */}
+        {showForm && (
+          <>
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div>
                 <h3 className="text-sm sm:text-base font-bold text-slate-800">Apply Leave here...</h3>
                 <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5">Available leave types for the year</p>
               </div>
             </div>
-
-        {/* Application Form */}
-        {showForm && (
           <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-5 mb-5 lg:mb-6 shadow-lg">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <div className="flex items-center gap-2">
@@ -700,6 +702,7 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
               </button>
             </form>
           </div>
+          </>
         )}
 
         {/* Past Applications */}

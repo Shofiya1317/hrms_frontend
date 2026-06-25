@@ -133,7 +133,7 @@ function AttendanceRow({ log, isOpen, onToggle }: { log: IAttendanceLog; isOpen:
         </div>
         <div className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full ${meta.bg} ${meta.text} border ${meta.bg.replace('bg-', 'border-')}`}>
           <Icon size={12} />
-          <span className="text-[10px] font-bold">{meta.label}</span>
+          <span className="text-[11px] font-bold">{meta.label}</span>
         </div>
         <div className="hidden md:flex items-center gap-3 text-xs">
           <div className="text-center">
@@ -432,7 +432,7 @@ export default function TeamAttendanceLogs({ teamIds }: { teamIds: string[] }) {
           <div key={s.label} className={`${s.bg} rounded-xl px-3 py-2 border border-gray-100`}>
             <div className="flex items-center gap-1.5 mb-1">
               <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-              <p className="text-[9px] font-bold text-gray-500 uppercase">{s.label}</p>
+              <p className="text-[12px] font-bold text-gray-500 uppercase">{s.label}</p>
             </div>
             <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
           </div>

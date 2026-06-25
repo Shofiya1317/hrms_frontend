@@ -400,7 +400,7 @@ function CreateRequestDrawer({ onClose, onDone, attendanceLogs }: {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex">
+    <div className="fixed inset-0 z-50 flex pt-5">
       <div className="flex-1 bg-black/30" onClick={onClose} />
       <div className="w-full max-w-md bg-white shadow-2xl flex flex-col h-full">
 
@@ -516,8 +516,8 @@ function RequestCard({ req, onDelete }: { req: IRegularization; onDelete: (id: s
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-sm transition-all">
-      <div className="flex items-start justify-between gap-3 mb-3">
+    <div className="bg-white rounded-xl border border-gray-100 px-4 p-4 hover:shadow-sm transition-all">
+      <div className="flex items-start justify-between gap-3 mb-0">
         <div className="flex items-start gap-3 flex-1">
           <div className={`w-10 h-10 rounded-xl ${meta.bg} flex items-center justify-center flex-shrink-0`}>
             <Icon size={16} className={meta.text} />
@@ -527,12 +527,12 @@ function RequestCard({ req, onDelete }: { req: IRegularization; onDelete: (id: s
               <p className="text-sm font-bold text-[#0f1f2e]">
                 {fmtDate(req.attendance_date)}
               </p>
-              <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full border ${meta.bg} ${meta.text} ${meta.border}`}>
+              <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${meta.bg} ${meta.text} ${meta.border}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
                 {meta.label}
               </span>
             </div>
-            <p className="text-[10px] text-gray-400 mt-1">
+            <p className="text-[11px] text-gray-400 mt-1">
               Original:
               {' '}
               {fmtTime(req.original_check_in)}
@@ -541,7 +541,7 @@ function RequestCard({ req, onDelete }: { req: IRegularization; onDelete: (id: s
               {' '}
               {fmtTime(req.original_check_out)}
             </p>
-            <p className="text-[10px] text-teal-600 font-medium">
+            <p className="text-[12px] text-teal-600 font-medium">
               Requested:
               {' '}
               {fmtTime(req.requested_check_in)}
@@ -559,7 +559,7 @@ function RequestCard({ req, onDelete }: { req: IRegularization; onDelete: (id: s
             disabled={deleting}
             className="p-2 rounded-lg hover:bg-red-50 text-red-500 transition-colors disabled:opacity-50"
           >
-            {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+            {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
           </button>
         )}
       </div>
@@ -696,7 +696,7 @@ export default function EmployeeRegularization({ employeeId }: { employeeId: str
             <button
               key={s}
               onClick={() => { setStatusFilter(s); fetchRequests(s); }}
-              className={`px-2 py-1 text-[9px] font-bold rounded-lg transition-colors capitalize ${statusFilter === s ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`px-2 py-1 text-[12px] font-bold rounded-lg transition-colors capitalize ${statusFilter === s ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               {s === 'ALL' ? 'All' : STATUS_META[s]?.label}
             </button>
@@ -722,7 +722,7 @@ export default function EmployeeRegularization({ employeeId }: { employeeId: str
           <div key={s.label} className={`${s.bg} rounded-xl px-3 py-2 border border-gray-100`}>
             <div className="flex items-center gap-1.5 mb-1">
               <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-              <p className="text-[9px] font-bold text-gray-500 uppercase">{s.label}</p>
+              <p className="text-[12px] font-bold text-gray-500 uppercase">{s.label}</p>
             </div>
             <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
           </div>

@@ -94,7 +94,7 @@ export default function MyTeamPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold transition-all whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'bg-[#0f766e] text-white shadow-sm'
                       : 'text-gray-500 hover:bg-gray-50'
