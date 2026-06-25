@@ -7,87 +7,55 @@ import { headers } from 'next/headers';
 export default async function page({
   searchParams,
 }: {
-  searchParams: {
-    token: string,
-    isAccount: string
-  }
+  searchParams: { token: string; isAccount?: string };
 }) {
   const headersList = headers();
   const host = headersList.get('host');
   const slug = host?.split('.')[0] ?? '';
 
-  // Debug logging
-  console.log('Accept Invitation Page - Debug Info:');
-  console.log('Token:', searchParams?.token);
-  console.log('Slug:', slug);
-  console.log('Host:', host);
-  console.log('isAccount:', searchParams?.isAccount);
-
-  // Validate required parameters
   if (!searchParams?.token) {
     return (
-      <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '50vh' }}>
-        <h4 className="text-danger mb-3">Invalid Invitation Link</h4>
-        <p className="text-muted">The invitation token is missing.</p>
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h4 className="text-red-500 text-lg font-semibold mb-2">Invalid Invitation Link</h4>
+        <p className="text-gray-500">The invitation token is missing.</p>
       </div>
     );
   }
 
   try {
-    const res = searchParams?.isAccount === 'true'
-      ? await AuthService.getVerifyAdminToken(searchParams?.token)
-      : await AuthService.verifyInvitation(
-        searchParams?.token,
-        slug,
+    const res = await AuthService.verifyInvitation(searchParams.token, slug);
+    const responseData = res?.data as any;
+
+    if (!responseData?.success || res?.status === 400 || res?.status === 404) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <h4 className="text-red-500 text-lg font-semibold mb-2">Invalid Invitation</h4>
+          <p className="text-gray-500">
+            {responseData?.error?.[0] || responseData?.message || 'This invitation link is invalid or has expired.'}
+          </p>
+        </div>
       );
+    }
 
-    console.log('API Response:', res);
-
-    const {
-      success,
-      error,
-      user,
-      account,
-    } = res?.data as {
-      success: boolean;
-      error: string[];
-      user: IUser;
-      account: IAccount;
-    };
-
-    console.log('Success:', success);
-    console.log('Error:', error);
-    console.log('User:', user);
+    const user = responseData?.user || responseData?.employee || responseData?.data?.user || responseData?.data || {};
+    const account = responseData?.account || responseData?.tenant || responseData?.data?.account || {};
 
     return (
-      <div>
-        {success
-          ? (
-            <AcceptInvitationForm
-              slug={slug}
-              token={searchParams?.token}
-              user={user}
-              account={account}
-              isAccount={searchParams?.isAccount === 'true'}
-            />
-          )
-          : (
-            <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '50vh' }}>
-              <h4 className="text-danger mb-3">Invitation Verification Failed</h4>
-              <p className="text-muted">{error?.[0] || 'Invalid or expired invitation token.'}</p>
-            </div>
-          )}
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <AcceptInvitationForm
+          slug={slug}
+          token={searchParams.token}
+          user={user as IUser}
+          account={account as IAccount}
+          isAccount={searchParams?.isAccount === 'true'}
+        />
       </div>
     );
   } catch (err) {
-    console.error('Accept Invitation Error:', err);
     return (
-      <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '50vh' }}>
-        <h4 className="text-danger mb-3">Error</h4>
-        <p className="text-muted">Failed to verify invitation. Please contact your administrator.</p>
-        <pre className="text-start mt-3" style={{ fontSize: '12px', maxWidth: '600px', overflow: 'auto' }}>
-          {err instanceof Error ? err.message : String(err)}
-        </pre>
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h4 className="text-red-500 text-lg font-semibold mb-2">Error</h4>
+        <p className="text-gray-500">Failed to verify invitation. Please contact your administrator.</p>
       </div>
     );
   }

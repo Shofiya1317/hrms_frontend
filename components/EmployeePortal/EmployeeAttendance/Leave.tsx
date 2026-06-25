@@ -374,7 +374,7 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
                 <Plus size={16} />
                 New Application
               </button>
-            )}}
+            )}
           </div>
         </div>
 

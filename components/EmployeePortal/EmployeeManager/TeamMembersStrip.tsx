@@ -75,23 +75,31 @@ function StoryBubble({ member, index }: { member: ITeamMember; index: number }) 
   const isActive = member.employment_status === 'ACTIVE' || member.user_status === 'ACTIVE';
 
   return (
-    <div className="group relative flex flex-col items-center gap-1.5 flex-shrink-0 w-[72px]">
+    <div className="group relative flex flex-col items-center gap-1 flex-shrink-0 w-[72px]">
       {/* Story ring + avatar */}
       <div className="relative">
         {/* Gradient ring */}
         <div
           className="w-16 h-16 rounded-full p-[2.5px] transition-transform duration-200 group-hover:scale-110"
-          style={{
-            background: 'conic-gradient(#0f766e 0%, #14b8a6 40%, #6ee7b7 70%, #0f766e 100%)',
-          }}
+          // style={{
+          //   background: 'conic-gradient(#0f766e 0%, #14b8a6 40%, #6ee7b7 70%, #0f766e 100%)',
+          // }}
         >
           <div className="w-full h-full rounded-full bg-white dark:bg-gray-950 flex items-center justify-center p-[2px]">
-            <div
-              className="w-full h-full rounded-full flex items-center justify-center text-white text-[13px] font-semibold tracking-wide select-none"
-              style={{ background: `linear-gradient(135deg, ${bg}, ${bg2})` }}
-            >
-              {initials(member.first_name, member.last_name, name)}
-            </div>
+            {member.avatar_url ? (
+              <img
+                src={member.avatar_url}
+                alt={name}
+                className="w-full h-full rounded-full object-cover"
+              />
+            ) : (
+              <div
+                className="w-full h-full rounded-full flex items-center justify-center text-white text-[13px] font-semibold tracking-wide select-none"
+                style={{ background: `linear-gradient(135deg, ${bg}, ${bg2})` }}
+              >
+                {initials(member.first_name, member.last_name, name)}
+              </div>
+            )}
           </div>
         </div>
 
@@ -117,12 +125,20 @@ function StoryBubble({ member, index }: { member: ITeamMember; index: number }) 
         <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-lg p-3">
           {/* Mini avatar row */}
           <div className="flex items-center gap-2 mb-2.5 pb-2.5 border-b border-gray-100 dark:border-gray-800">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[11px] font-semibold flex-shrink-0"
-              style={{ background: `linear-gradient(135deg, ${bg}, ${bg2})` }}
-            >
-              {initials(member.first_name, member.last_name, name)}
-            </div>
+            {member.avatar_url ? (
+              <img
+                src={member.avatar_url}
+                alt={name}
+                className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+              />
+            ) : (
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[11px] font-semibold flex-shrink-0"
+                style={{ background: `linear-gradient(135deg, ${bg}, ${bg2})` }}
+              >
+                {initials(member.first_name, member.last_name, name)}
+              </div>
+            )}
             <div className="min-w-0">
               <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{name}</p>
               <p className="text-[10px] text-gray-400">{member.employee_code}</p>

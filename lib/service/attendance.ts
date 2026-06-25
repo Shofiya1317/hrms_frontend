@@ -101,6 +101,13 @@ export interface IEmployeeAttendanceDashboard {
     working_days: number;
     total_hours: string;
   };
+
+  upcoming_holidays?: Array<{
+    date: string;
+    name: string;
+    type: string;
+    badge: string;
+  }>;
 }
 
 export const getEmployeeAttendanceDashboard = (
@@ -422,6 +429,45 @@ export const getMonthlySummary = (
   token?: string,
 ) => get(
   '/v1/attendance/dashboard/monthly-summary',
+  params as Params,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export interface IAttendanceLogFilters {
+  employee_id: string;
+  view?: 'week' | 'prev_week' | 'month' | 'prev_month';
+  start_date?: string;
+  end_date?: string;
+  limit?: number;
+}
+
+export interface IAttendanceLogEntry {
+  date: string;
+  display_date?: string;
+  day_full?: string;
+  is_working_day?: boolean;
+  type: 'attendance' | 'holiday' | 'week_off' | 'leave' | 'absent';
+  status?: string;
+  badge?: string;
+  badge_color?: string;
+  check_in?: string;
+  check_out?: string;
+  working_hours?: string;
+  is_late?: boolean;
+  late_by_minutes?: number;
+  attendance_id?: string;
+  holiday_name?: string;
+  holiday_type?: string;
+  leave_type?: string;
+}
+
+export const getAttendanceLogs = (
+  tenantId: string,
+  params: IAttendanceLogFilters,
+  token?: string,
+) => get(
+  '/v1/attendance/logs',
   params as Params,
   tenantId,
   { bearerToken: token, isFetchToken: !token },

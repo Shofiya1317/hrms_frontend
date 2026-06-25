@@ -367,14 +367,12 @@ export default function EmployeeDashboard({
     try {
       setTeamLoading(true);
       const response = await getMyTeam(apiKey, token);
-      const teamRoot = response?.data?.data || response?.data;
-      setTeamMembers(teamRoot?.children || []);
-      setTeamCount(teamRoot?.total_team_size || 0);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setTeamLoading(false);
-    }
+      const raw = response?.data?.data ?? response?.data;
+      // API returns either a flat array or { data: [...] }
+      const members = Array.isArray(raw) ? raw : (raw?.data ?? []);
+      setTeamMembers(members);
+      setTeamCount(raw?.total_team_size || members.length);
+    } catch (error) { console.error(error); } finally { setTeamLoading(false); }
   };
 
   const fetchLeaveBalances = async () => {
@@ -731,12 +729,7 @@ export default function EmployeeDashboard({
         <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-slate-800">Quick Actions</h3>
-            <Link
-              href="/employee/actions"
-              className="text-[12px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full hover:bg-indigo-100 transition-colors"
-            >
-              View all
-            </Link>
+            {/* <Link href="/employee/actions" className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full hover:bg-indigo-100 transition-colors">View all</Link> */}
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
             {QUICK_ACTIONS.map((a) => (
@@ -779,11 +772,10 @@ export default function EmployeeDashboard({
                 Annual ·{new Date().getFullYear()}
               </p>
             </div>
-            <Link
-              href="/employee/attendance/leave"
-              className="text-[12px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full flex items-center gap-1 hover:bg-indigo-100 transition-colors"
-            >
-              Apply <ArrowRight size={10} />
+            <Link href="/employee/attendance/apply-leave" className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full flex items-center gap-1 hover:bg-indigo-100 transition-colors">
+              Apply
+              {' '}
+              <ArrowRight size={10} />
             </Link>
           </div>
 
@@ -897,24 +889,21 @@ export default function EmployeeDashboard({
                     'from-amber-400 to-orange-500',
                   ];
                   return (
-                    <div
-                      key={member.id}
-                      className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50/80 transition-colors"
-                    >
-                      <div
-                        className={`w-9 h-9 rounded-2xl bg-gradient-to-br ${colors[i % colors.length]} flex items-center justify-center text-sm font-black text-white shadow-sm flex-shrink-0`}
-                      >
-                        {getInitials(member.employee_name)}
-                      </div>
+                    <div key={member.id} className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50/80 transition-colors">
+                      {member.avatar_url ? (
+                        <img
+                          src={member.avatar_url}
+                          alt={member.employee_name}
+                          className="w-9 h-9 rounded-2xl object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div className={`w-9 h-9 rounded-2xl bg-gradient-to-br ${colors[i % colors.length]} flex items-center justify-center text-xs font-black text-white shadow-sm flex-shrink-0`}>
+                          {getInitials(member.employee_name)}
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-slate-800 truncate">
-                          {member.employee_name}
-                        </p>
-                        <p className="text-[10px] text-slate-400 truncate">
-                          {member.designation?.name ||
-                            member.department?.name ||
-                            'Team member'}
-                        </p>
+                        <p className="text-xs font-bold text-slate-800 truncate">{member.employee_name}</p>
+                        <p className="text-[10px] text-slate-400 truncate">{member.designation || member.department || 'Team member'}</p>
                       </div>
                       <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)] flex-shrink-0" />
                     </div>
@@ -1010,6 +999,62 @@ export default function EmployeeDashboard({
             )}
           </div>
         </div>
+
+        {/* ── Upcoming Holidays ── */}
+        {(attendanceDashboard?.upcoming_holidays?.length ?? 0) > 0 && (
+          <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-[0_4px_12px_rgba(6,182,212,0.3)]">
+                <Calendar size={14} className="text-white" />
+              </div>
+              <h3 className="text-sm font-bold text-slate-800">Upcoming Holidays</h3>
+            </div>
+            <div className="space-y-2">
+              {attendanceDashboard!.upcoming_holidays!.map((h, i) => {
+                const isOptional = h.type === 'optional';
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 p-3 rounded-2xl border"
+                    style={{
+                      background: isOptional ? '#fefce8' : '#eff6ff',
+                      borderColor: isOptional ? '#fde68a' : '#bfdbfe',
+                    }}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-2xl flex flex-col items-center justify-center flex-shrink-0 text-white"
+                      style={{ background: isOptional ? 'linear-gradient(135deg,#fbbf24,#f59e0b)' : 'linear-gradient(135deg,#60a5fa,#3b82f6)' }}
+                    >
+                      <span className="text-[10px] font-bold leading-none">
+                        {new Date(h.date).toLocaleDateString('en-IN', { month: 'short' }).toUpperCase()}
+                      </span>
+                      <span className="text-sm font-black leading-none">
+                        {new Date(h.date).getDate()}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-slate-800 truncate capitalize">{h.name}</p>
+                      <p className="text-[10px] text-slate-400">
+                        {new Date(h.date).toLocaleDateString('en-IN', { weekday: 'long' })}
+                      </p>
+                    </div>
+                    <span
+                      className="text-[9px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0"
+                      style={{
+                        color: isOptional ? '#b45309' : '#1d4ed8',
+                        background: isOptional ? '#fef9c3' : '#dbeafe',
+                        borderColor: isOptional ? '#fde68a' : '#bfdbfe',
+                      }}
+                    >
+                      {h.badge}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
