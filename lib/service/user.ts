@@ -43,6 +43,7 @@ export const updateCurrentUser = (
   params,
   undefined,
   tenantId,
+  { isFetchToken: true },
 );
 
 export const updateUserById = (

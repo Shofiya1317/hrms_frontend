@@ -182,9 +182,9 @@ export function AuthLayout({
           {/* Right form panel */}
           <div className="relative h-screen overflow-y-auto p-0 right-panel-container">
             <div
-              className="relative flex min-h-full w-full justify-center right-panel"
+              className="relative flex min-h-full w-full items-center justify-center right-panel"
               style={{
-                alignItems: 'flex-start',
+                // alignItems: 'flex-start',
                 paddingTop: 'clamp(1.5rem, 5vh, 3rem)',
               }}
             >

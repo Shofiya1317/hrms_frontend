@@ -139,7 +139,7 @@ export default function AcceptInvitationForm({
       initialValues={{
         email: user?.email ?? '',
         name: user?.name ?? '',
-        company_name: account?.name ?? account?.company_name ?? account?.account_name ?? user?.account?.account_name ?? '',
+        company_name: account?. account_name ?? account?.company_name ?? account?.account_name ?? user?.account?.account_name ?? '',
         phone_number: user?.phone_number ?? '',
         password: '',
         confirm_password: '',

@@ -74,12 +74,12 @@ export const adminMenuItems: IMenuItem[] = [
     ],
   },
   {
-    label: 'People',
+    label: 'Organization',
     path: '',
     icon: <UsersRound size={16} />,
     menuItems: [
-      { label: 'Employee Registry', path: '/employees/registry' },
-      { label: 'Employee Heirarchy', path: '/employees/organogram' },
+      { label: 'People', path: '/employees/registry' },
+      { label: 'Organization Chart', path: '/employees/organogram' },
       // { label: 'ID Management', path: '/employees/id_management' },
       // { label: 'Employee Documents', path: '/employees/documents' },
     ],
@@ -99,7 +99,7 @@ export const employeeMenuItems: IMenuItem[] = [
     icon: <UserRoundCheck size={16} />,
   },
   {
-    label: 'Attendance',
+    label: 'Attendance Management',
     path: '',
     icon: <ClipboardCheck size={16} />,
     menuItems: [
@@ -109,17 +109,19 @@ export const employeeMenuItems: IMenuItem[] = [
       //   path: '/employee/attendance/check-in-out',
       // },
       { label: 'Monthly View', path: '/employee/attendance/monthly-view' },
-    ],
-  },
-  {
-    label: 'Leave Management',
-    path: '',
-    icon: <CalendarDays size={16} />,
-    menuItems: [
       { label: 'Apply Leave', path: '/employee/attendance/apply-leave' },
       { label: 'Comp Off', path: '/employee/attendance/comp-off' },
     ],
   },
+  // {
+  //   label: 'Leave Management',
+  //   path: '',
+  //   icon: <CalendarDays size={16} />,
+  //   menuItems: [
+  //     { label: 'Apply Leave', path: '/employee/attendance/apply-leave' },
+  //     { label: 'Comp Off', path: '/employee/attendance/comp-off' },
+  //   ],
+  // },
   {
     label: 'Requests',
     path: '',

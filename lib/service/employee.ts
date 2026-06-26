@@ -248,3 +248,52 @@ export const approveRejectTeamLeave = (
   tenantId,
   { bearerToken: token, isFetchToken: !token },
 );
+
+export interface IProbationMilestone {
+  day: number;
+  label: string;
+  completed: boolean;
+  status: 'completed' | 'pending' | 'upcoming';
+}
+
+export interface IProbationOutcome {
+  result: 'confirmed' | 'extended' | 'failed' | 'terminated';
+  label: string;
+  effective_date: string;
+  remarks?: string;
+}
+
+export interface IProbationStatus {
+  is_on_probation: boolean;
+  probation_status: 'active' | 'under_review' | 'extended' | 'confirmed' | 'failed' | 'terminated';
+  status_card: {
+    current_status: string;
+    start_date: string;
+    end_date: string;
+    days_remaining: number;
+    duration_months: number;
+  };
+  progress: {
+    percent: number;
+    elapsed_days: number;
+    total_days: number;
+    label: string;
+  };
+  reporting_manager?: {
+    id: string;
+    name: string;
+    designation: string;
+  };
+  milestones: IProbationMilestone[];
+  outcome?: IProbationOutcome | null;
+}
+
+export const getProbationStatus = (
+  tenantId: string,
+  token?: string,
+) => get<IProbationStatus>(
+  '/v1/employees/me/probation-status',
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);

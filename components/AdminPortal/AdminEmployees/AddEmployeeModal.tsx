@@ -610,11 +610,11 @@ export default function AddEmployeeModal({
                       label: `${d.name}${d.code ? ` (${d.code})` : ''}`,
                       isCustom: false,
                     })),
-                    {
-                      value: '__custom__',
-                      label: '+ Add custom designation',
-                      isCustom: true,
-                    },
+                    // {
+                    //   value: '__custom__',
+                    //   label: '+ Add custom designation',
+                    //   isCustom: true,
+                    // },
                   ]}
                   value={
                     designations

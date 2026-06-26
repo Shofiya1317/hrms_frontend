@@ -136,15 +136,15 @@ export const createWorkSchedule = (
   { bearerToken: token, isFetchToken: !token },
 );
 
-export const getWorkSchedules = (
-  tenantId: string,
-  token?: string,
-) => get(
-  '/v1/work-schedules',
-  undefined,
-  tenantId,
-  { bearerToken: token, isFetchToken: !token },
-);
+// export const getWorkSchedules = (
+//   tenantId: string,
+//   token?: string,
+// ) => get(
+//   '/v1/work-schedules',
+//   undefined,
+//   tenantId,
+//   { bearerToken: token, isFetchToken: !token },
+// );
 
 export const getWorkScheduleById = (
   id: string,

@@ -352,14 +352,16 @@ export const onboardingStep1 = (
   params: {
     company_name: string;
     industry: string;
+    company_size?: string;
     country: string;
     state: string;
     city: string;
     address: string;
     official_email_id: string;
-    website: string;
-    phone_number: string;
-    tax_id: string;
+    website?: string;
+    phone_number?: string;
+    tax_id?: string;
+    timezone: string;
   },
   slug: string,
 ) => put(
@@ -367,6 +369,15 @@ export const onboardingStep1 = (
   params,
   undefined,
   slug,
+);
+export const getOnboardingStep1 = (
+  slug: string,
+  token?: string,
+) => get(
+  '/v1/auth/onboarding/step1',
+  undefined,
+  slug,
+  { bearerToken: token, isFetchToken: !token },
 );
 
 export const onboardingStep2 = (

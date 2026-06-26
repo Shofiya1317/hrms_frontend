@@ -23,7 +23,9 @@ import {
 
 const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const DAYS_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-const HOLIDAY_TYPES: HolidayType[] = ['public', 'optional', 'restricted'];
+// const HOLIDAY_TYPES: HolidayType[] = ['public', 'optional', 'restricted'];
+const HOLIDAY_TYPES: HolidayType[] = ['public', 'optional', ];
+
 
 // Work location meta for display
 const LOCATION_META = {
@@ -1011,14 +1013,14 @@ export default function HolidaysTab({
           </div>
           {!viewOnly && (
           <>
-            <button
+            {/* <button
               onClick={() => { setImportIds(''); setImportError(null); setShowImport(true); }}
               className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#0f766e] bg-[#e8f5ee] hover:bg-[#d4eddf] rounded-xl transition-colors"
             >
               <Download size={13} />
               {' '}
               Import
-            </button>
+            </button> */}
             <button
               onClick={() => openCreate()}
               className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-[#0f766e] hover:bg-[#0d6460] rounded-xl transition-colors"

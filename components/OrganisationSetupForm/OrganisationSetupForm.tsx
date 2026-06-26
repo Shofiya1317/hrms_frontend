@@ -222,7 +222,7 @@ export default function OrganisationSetupForm({
         await Promise.all([
           fetchDepartments(),
           fetchShifts(),
-          fetchWorkSchedules(),
+          // fetchWorkSchedules(),
           (async () => {
             try {
               const res = await getOnboardingStep2(slug);

@@ -21,7 +21,7 @@ import {
   getEmployeeLeaveBalanceDetailed,
   EmployeeLeaveBalance,
 } from '@/lib/service/leave';
-import { getMyTeam, ITeamMember } from '@/lib/service/employee';
+import { getMyTeam, getProbationStatus, IProbationStatus } from '@/lib/service/employee';
 import { getMyApplications, LeaveStatus } from '@/lib/service/leaveApplication';
 import { getMyOnDutyApplications, OnDutyStatus } from '@/lib/service/onDuty';
 import { getMyWFHRequests, WFHStatus } from '@/lib/service/wfh';
@@ -232,15 +232,115 @@ const LEAVE_COLOR_RAMPS = [
   },
 ];
 
+// ─── Probation Card ────────────────────────────────────────────────────────────
+const PROBATION_STATUS_META: Record<string, { label: string; color: string; bg: string; border: string; icon: string }> = {
+  active: { label: 'Active', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', icon: '🔵' },
+  under_review: { label: 'Under Review', color: '#d97706', bg: '#fffbeb', border: '#fde68a', icon: '🔍' },
+  extended: { label: 'Extended', color: '#7c3aed', bg: '#f5f3ff', border: '#e9d5ff', icon: '⏳' },
+  confirmed: { label: 'Confirmed', color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', icon: '✅' },
+  failed: { label: 'Failed', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', icon: '❌' },
+  terminated: { label: 'Terminated', color: '#64748b', bg: '#f8fafc', border: '#e2e8f0', icon: '🚫' },
+};
+
+function ProbationCard({ probation }: { probation: IProbationStatus }) {
+  const meta = PROBATION_STATUS_META[probation.probation_status] ?? PROBATION_STATUS_META.active;
+  const { status_card, progress, milestones, reporting_manager, outcome } = probation;
+
+  return (
+    <div className="rounded-3xl bg-white/80 backdrop-blur-sm border shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-4"
+      style={{ borderColor: meta.border }}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-2xl flex items-center justify-center shadow-sm"
+            style={{ background: `linear-gradient(135deg, ${meta.color}cc, ${meta.color})` }}>
+            <span className="text-sm">🎓</span>
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-800">Probation Period</h3>
+            <p className="text-[10px] text-slate-400">{progress.label}</p>
+          </div>
+        </div>
+        <span className="text-[11px] font-bold px-3 py-1 rounded-full border"
+          style={{ color: meta.color, background: meta.bg, borderColor: meta.border }}>
+          {meta.icon} {meta.label}
+        </span>
+      </div>
+
+      {/* Progress bar */}
+      <div className="mb-4">
+        <div className="flex justify-between text-[11px] font-semibold text-slate-500 mb-1.5">
+          <span>{status_card.start_date}</span>
+          <span className="font-bold" style={{ color: meta.color }}>{progress.percent}%</span>
+          <span>{status_card.end_date}</span>
+        </div>
+        <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+          <div className="h-full rounded-full transition-all duration-700"
+            style={{
+              width: `${progress.percent}%`,
+              background: `linear-gradient(90deg, ${meta.color}99, ${meta.color})`,
+              boxShadow: `0 0 8px ${meta.color}66`,
+            }} />
+        </div>
+        <p className="text-[10px] text-slate-400 mt-1">
+          {progress.elapsed_days} of {progress.total_days} days elapsed
+          {!outcome && status_card.days_remaining > 0 && ` · ${status_card.days_remaining} days remaining`}
+        </p>
+      </div>
+
+      {/* Milestones */}
+      <div className="flex gap-2 mb-4">
+        {milestones.map((m) => (
+          <div key={m.day} className="flex-1 flex flex-col items-center gap-1 p-2 rounded-2xl border"
+            style={{
+              background: m.completed ? '#f0fdf4' : '#f8fafc',
+              borderColor: m.completed ? '#bbf7d0' : '#e2e8f0',
+            }}>
+            <span className="text-base">{m.completed ? '✅' : '⏳'}</span>
+            <span className="text-[10px] font-bold text-center leading-tight"
+              style={{ color: m.completed ? '#16a34a' : '#94a3b8' }}>{m.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Footer — manager + outcome */}
+      <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+        {reporting_manager ? (
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center text-[10px] font-black text-white">
+              {reporting_manager.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}
+            </div>
+            <div>
+              <p className="text-[11px] font-bold text-slate-700">{reporting_manager.name}</p>
+              <p className="text-[10px] text-slate-400">{reporting_manager.designation}</p>
+            </div>
+          </div>
+        ) : <div />}
+        {outcome && (
+          <span className="text-[11px] font-bold px-3 py-1 rounded-full"
+            style={{
+              color: outcome.result === 'confirmed' ? '#16a34a' : '#dc2626',
+              background: outcome.result === 'confirmed' ? '#f0fdf4' : '#fef2f2',
+            }}>
+            {outcome.label} · {outcome.effective_date}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Dashboard ─────────────────────────────────────────────────────────────
 export default function EmployeeDashboard({
   employee,
   apiKey,
   token,
+  reportingManager,
 }: {
   employee: any;
   apiKey: string;
   token: string;
+  reportingManager?: { id: string; name: string; role: string; status: string } | null;
 }) {
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -267,13 +367,24 @@ export default function EmployeeDashboard({
     useState<IEmployeeAttendanceDashboard | null>(null);
   const [attendanceDashboardLoading, setAttendanceDashboardLoading] =
     useState(false);
+  const [probation, setProbation] = useState<IProbationStatus | null>(null);
 
   useEffect(() => {
     fetchAttendanceDashboard();
     fetchMyTeam();
     fetchLeaveBalances();
     fetchPendingRequests();
+    fetchProbation();
   }, []);
+
+  const fetchProbation = async () => {
+    try {
+      const res = await getProbationStatus(apiKey, token);
+      const d = res?.data as any;
+      const data = d?.data ?? d;
+      if (data?.is_on_probation) setProbation(data);
+    } catch { /* not on probation or not available */ }
+  };
 
   const fetchAttendanceDashboard = async () => {
     try {
@@ -453,6 +564,7 @@ export default function EmployeeDashboard({
 
   return (
     <div className="min-h-screen">
+      
       <div className="px-2 py-4 sm:px-4 sm:py-5 lg:px-4 lg:py-6 space-y-5">
         {/* ── Check In/Out ── */}
         <CheckInOutCard
@@ -460,6 +572,7 @@ export default function EmployeeDashboard({
           token={token}
           defaultLocation={location}
           onAttendanceUpdate={fetchAttendanceDashboard}
+          reportingManager={reportingManager}
         />
 
         {/* ── Quick Stats ── */}
@@ -595,11 +708,10 @@ export default function EmployeeDashboard({
                     {attendanceDashboard.today.timeline.map((log, i) => (
                       <div key={i} className="flex items-start gap-3">
                         <div
-                          className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mt-3 ${
-                            log.type === 'check_in'
-                              ? 'bg-emerald-400'
-                              : 'bg-rose-400'
-                          }`}
+                          className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mt-3 ${log.type === 'check_in'
+                            ? 'bg-emerald-400'
+                            : 'bg-rose-400'
+                            }`}
                         >
                           {log.type === 'check_in' ? (
                             <LogIn size={10} className="text-white" />
@@ -999,6 +1111,32 @@ export default function EmployeeDashboard({
             )}
           </div>
         </div>
+
+        {/* ── Reporting To ── */}
+        {/* {reportingManager && (
+          <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-white/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-2xl bg-gradient-to-br from-slate-500 to-slate-700 flex items-center justify-center shadow-sm flex-shrink-0">
+                <Users size={14} className="text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Reporting To</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ background: reportingManager.status === 'ACTIVE' ? '#22c55e' : '#94a3b8' }}
+                  />
+                  <p className="text-sm font-bold text-slate-800 truncate">{reportingManager.name}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )} */}
+
+        {/* ── Probation Status ── */}
+        {probation && (
+          <ProbationCard probation={probation} />
+        )}
 
         {/* ── Upcoming Holidays ── */}
         {(attendanceDashboard?.upcoming_holidays?.length ?? 0) > 0 && (

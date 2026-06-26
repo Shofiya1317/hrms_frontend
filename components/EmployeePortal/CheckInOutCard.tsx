@@ -16,6 +16,7 @@ interface LocationData { lat: number; lng: number; address: string; accuracy?: n
 interface CheckInOutCardProps {
   apiKey: string; slug?: string; token: string;
   defaultLocation?: string; onAttendanceUpdate?: () => void;
+  reportingManager?: { id: string; name: string; role: string; status: string } | null;
   // kept for backward compat, unused
   fullName?: string; employeeId?: string; designation?: string;
 }
@@ -101,7 +102,7 @@ function fmtHM(secs: number) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function CheckInOutCard({
-  apiKey, slug, token, defaultLocation = 'Unknown', onAttendanceUpdate,
+  apiKey, slug, token, defaultLocation = 'Unknown', onAttendanceUpdate, reportingManager,
 }: CheckInOutCardProps) {
   const tenantId = apiKey || slug || '';
 
@@ -460,7 +461,7 @@ return (
           </div>
         ) : (
           <>
-            {/* ── Top row: greeting + live timer ── */}
+            {/* ── Top row: greeting + reporting to ── */}
             <div className="flex items-start justify-between mb-3">
               <div>
                 {context?.greeting && (
@@ -480,9 +481,22 @@ return (
                   </span>
                 </div>
               </div>
-              <p className={`font-mono text-2xl font-black tabular-nums tracking-tight ${isCheckedIn ? 'text-slate-900' : 'text-slate-200'}`}>
-                {timerStr}
-              </p>
+              {reportingManager ? (
+                <div className="flex-1 min-w-0 text-right">
+                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Reporting To</p>
+                  <div className="flex items-center justify-end gap-2 mt-0.5">
+                    <span
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ background: reportingManager.status === 'ACTIVE' ? '#22c55e' : '#94a3b8' }}
+                    />
+                    <p className="text-sm font-bold text-slate-800 truncate">{reportingManager.name}</p>
+                  </div>
+                </div>
+              ) : (
+                <p className={`font-mono text-2xl font-black tabular-nums tracking-tight ${isCheckedIn ? 'text-slate-900' : 'text-slate-200'}`}>
+                  {timerStr}
+                </p>
+              )}
             </div>
 
             {/* ── Not checked in: check_in_context info ── */}

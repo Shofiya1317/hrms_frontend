@@ -372,7 +372,7 @@ export default function SignUpForm() {
                     name="phone_number"
                     errors={errors}
                     validationSchema={validationSchema}
-                    label="Phone Number (Optional)"
+                    label="Phone Number"
                     type="tel"
                     placeholder="Enter your phone number"
                   />

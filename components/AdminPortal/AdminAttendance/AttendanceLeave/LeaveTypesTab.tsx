@@ -538,11 +538,11 @@ export default function LeaveTypesTab({ apiKey, token }: LeaveTypesTabProps) {
                 Encashable
               </span>
             )}
-            {leaveType.requires_document && (
+            {/* {leaveType.requires_document && (
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">
                 Doc required
               </span>
-            )}
+            )} */}
             {leaveType.applicable_gender && leaveType.applicable_gender !== 'all' && (
               <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${
                 genderBadge[leaveType.applicable_gender]
@@ -624,7 +624,7 @@ export default function LeaveTypesTab({ apiKey, token }: LeaveTypesTabProps) {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50">
-                  {['Leave type', 'Code', 'Paid', 'Encashable', 'Doc required', 'Gender', 'Max days', 'Notice days', ''].map((h) => (
+                  {['Leave type', 'Code', 'Paid', 'Encashable', 'Gender', 'Max days', 'Notice days', ''].map((h) => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">
                       {h}
                     </th>

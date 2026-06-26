@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
+ 
 import axios, {
   AxiosError,
   AxiosInstance,
@@ -7,12 +7,11 @@ import axios, {
   ResponseType,
 } from 'axios';
 import { getToken as getServerToken } from 'next-auth/jwt';
-import { getSession, signOut } from 'next-auth/react';
 import { AuthService } from './service';
 import { buildQueryParams, Params } from './utils';
-
+ 
 export const BASE_URL = process.env.NEXT_PUBLIC_BE;
-
+ 
 export interface AxiosOptions {
   baseUrl?: string;
   responseType?: ResponseType;
@@ -21,20 +20,29 @@ export interface AxiosOptions {
   bearerToken?: string;
   isFetchToken?: boolean;
 }
-
+ 
 interface ErrorResponse {
   data: {
     error?: string | string[] | any;
     success?: boolean;
   };
 }
-
+ 
 interface CustomResponse<T> {
   data: T | ErrorResponse | any;
   status?: number | string;
   statusMessage?: string;
 }
+ 
+/**
+ * Safely resolves the session token depending on the execution context:
+ * - Server Component / API Route: uses next-auth/jwt getServerToken (req required)
+ * - Client Component:            dynamically imports getSession from next-auth/react
+ *                                to avoid the "not a function" webpack error
+ * - isFetchToken = false:        skips session resolution entirely (caller provides token)
+ */
 const getToken = async (req?: any, isFetchToken: boolean = true) => {
+  // Server-side: req is available (API route / middleware / server component with headers)
   if (req) {
     const token = await getServerToken({
       req,
@@ -42,35 +50,72 @@ const getToken = async (req?: any, isFetchToken: boolean = true) => {
     });
     return token ?? null;
   }
-  if (isFetchToken) {
-    const session = await getSession();
-    return (session as unknown as { user: object })?.user;
+ 
+  // Caller is supplying a token directly — skip session fetch
+  if (!isFetchToken) {
+    return null;
   }
-  return null;
+ 
+  // Client-side only: dynamic import prevents the module from being evaluated
+  // during SSR / server-component rendering where the function doesn't exist
+  if (typeof window !== 'undefined') {
+    const { getSession } = await import('next-auth/react');
+    const session = await getSession();
+    return (session as unknown as { user: object })?.user ?? null;
+  }
+ 
+  // Server Component without req — use next-auth/jwt with next/headers
+  try {
+    const { cookies } = await import('next/headers');
+    const { getToken: getJwtToken } = await import('next-auth/jwt');
+    const cookieStore = await cookies();
+ 
+    // Build a minimal request-like object from the cookie store
+    const cookieHeader = cookieStore
+      .getAll()
+      .map((c: { name: string; value: string }) => `${c.name}=${c.value}`)
+      .join('; ');
+ 
+    const token = await getJwtToken({
+      req: {
+        headers: { cookie: cookieHeader },
+        cookies: Object.fromEntries(
+          cookieStore.getAll().map((c: { name: string; value: string }) => [c.name, c.value]),
+        ),
+      } as any,
+      secret: process.env.AUTH_SECRET ?? '',
+    });
+ 
+    return token ?? null;
+  } catch {
+    // Fallback: if headers() throws (e.g. in middleware), return null gracefully
+    return null;
+  }
 };
-
-const getUrl = (url: string, params?: Params | undefined | null) => (!buildQueryParams(params) ? `${url}` : `${url}?${buildQueryParams(params)}`);
-
+ 
+const getUrl = (url: string, params?: Params | undefined | null) =>
+  !buildQueryParams(params) ? `${url}` : `${url}?${buildQueryParams(params)}`;
+ 
 export const createAxiosInstance = async (
   options?: AxiosOptions,
   tenantId?: string,
   req?: any,
 ): Promise<AxiosInstance> => {
   const token = await getToken(req, options?.isFetchToken);
-  const accessToken = (token as unknown as { accessToken: string })
-    ?.accessToken;
-
-  const refreshToken = (token as unknown as { refreshToken: string })
-    ?.refreshToken;
+  const accessToken = (token as unknown as { accessToken: string })?.accessToken;
+  const refreshToken = (token as unknown as { refreshToken: string })?.refreshToken;
+ 
   const axiosInstance = axios.create({
     baseURL: options?.baseUrl ?? BASE_URL,
     headers: {
       'Content-Type': options?.contentType ?? 'application/json',
     },
   });
+ 
+  // ── Request interceptor ───────────────────────────────────────────────────
   axiosInstance.interceptors.request.use(async (config) => {
     const newConfig = { ...config };
-
+ 
     if (options?.bearerToken) {
       newConfig.headers.Authorization = `Bearer ${options.bearerToken}`;
     } else if (options?.basicToken) {
@@ -78,42 +123,53 @@ export const createAxiosInstance = async (
     } else if (accessToken) {
       newConfig.headers.Authorization = `Bearer ${accessToken}`;
     }
+ 
     if (tenantId) {
       newConfig.headers['X-Tenant-Id'] = tenantId;
     }
+ 
     return newConfig;
   });
-
+ 
+  // ── Response interceptor ──────────────────────────────────────────────────
   axiosInstance.interceptors.response.use(
     (response: AxiosResponse) => response,
     async (error: AxiosError) => {
-      let retryFlag = false;
       const originalRequest: any = error.config;
-      if (error?.response?.status === 401 && !retryFlag) {
-        retryFlag = true;
+ 
+      if (
+        error?.response?.status === 401 &&
+        !originalRequest._retry &&
+        refreshToken
+      ) {
+        originalRequest._retry = true; // use a flag on the request itself, not a closure var
         try {
-          if (refreshToken) {
-            await AuthService.refreshToken(
-              localStorage.getItem('slug') ?? '',
-              refreshToken,
-            );
-            // originalRequest.headers.Authorization =
-            // `Bearer ${(token as unknown as { refreshToken: string })?.refreshToken
-            // }`;
-            return axiosInstance(originalRequest);
-          }
+          const slug =
+            typeof window !== 'undefined'
+              ? localStorage.getItem('slug') ?? ''
+              : '';
+ 
+          await AuthService.refreshToken(slug, refreshToken);
+          return axiosInstance(originalRequest);
         } catch (err) {
-          signOut();
+          // Only call signOut on the client
+          if (typeof window !== 'undefined') {
+            const { signOut } = await import('next-auth/react');
+            signOut();
+          }
           return Promise.reject(err);
         }
       }
+ 
       return Promise.reject(error);
     },
   );
-
+ 
   return axiosInstance;
 };
-
+ 
+// ── HTTP helpers ──────────────────────────────────────────────────────────────
+ 
 export async function get<T>(
   url: string,
   params?: Params | undefined | null,
@@ -132,7 +188,7 @@ export async function get<T>(
       status: error.response?.status,
     }));
 }
-
+ 
 export async function post<T>(
   url: string,
   body: T,
@@ -152,7 +208,7 @@ export async function post<T>(
       status: error.response?.status,
     }));
 }
-
+ 
 export async function put<T>(
   url: string,
   body: T,
@@ -172,7 +228,7 @@ export async function put<T>(
       status: error.response?.status,
     }));
 }
-
+ 
 export async function patch<T>(
   url: string,
   body: T,
@@ -191,7 +247,7 @@ export async function patch<T>(
       status: error.response?.status,
     }));
 }
-
+ 
 export async function deleteRequest<T>(
   url: string,
   params?: Params | undefined | null,
@@ -211,7 +267,7 @@ export async function deleteRequest<T>(
       status: error.response?.status,
     }));
 }
-
+ 
 export async function downloadPost(
   url: string,
   body: any,
@@ -221,8 +277,8 @@ export async function downloadPost(
   req?: undefined,
 ) {
   const token = await getToken(req, options?.isFetchToken);
-  const accessToken = (token as unknown as { accessToken: string })
-    ?.accessToken;
+  const accessToken = (token as unknown as { accessToken: string })?.accessToken;
+ 
   return fetch(`${options?.baseUrl ?? BASE_URL}${getUrl(url, params)}`, {
     method: 'POST',
     mode: 'cors',
@@ -234,3 +290,4 @@ export async function downloadPost(
     body: JSON.stringify(body),
   });
 }
+ 

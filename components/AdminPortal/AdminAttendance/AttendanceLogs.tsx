@@ -25,6 +25,7 @@ interface IAttendanceLog {
   check_in_time: string | null;
   check_out_time: string | null;
   total_worked_minutes: number;
+  check_in_location_name:string | null;
   total_worked_hours: string;
   shift_name: string;
   shift_timings: string;
@@ -171,6 +172,10 @@ function AttendanceRow({ log, isOpen, onToggle }: { log: IAttendanceLog; isOpen:
           <div className="text-center">
             <p className="text-[9px] text-gray-400 uppercase">Out</p>
             <p className="font-mono font-bold text-gray-700">{fmtTime(log.check_out_time)}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-[9px] text-gray-400 uppercase">location</p>
+            <p className="font-mono font-bold text-gray-700">{log?.check_in_location_name}</p>
           </div>
         </div>
 
@@ -359,6 +364,10 @@ export default function AttendanceLogs() {
           attendance_date: selectedDate,
 
           attendance_status: 'on_leave',
+
+          
+          
+// check_in_location_name:
 
           check_in_time: null,
           check_out_time: null,

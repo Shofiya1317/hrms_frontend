@@ -36,19 +36,9 @@ export interface IProbationEmployee {
     date_of_joining: string;
     date_of_confirmation: string | null;
   };
-  department: {
-    id: string;
-    name: string;
-  };
-  designation: {
-    id: string;
-    name: string;
-  };
-  reporting_manager: {
-    id: string;
-    name: string;
-    employee_code: string;
-  } | null;
+  department: { id: string; name: string };
+  designation: { id: string; name: string };
+  reporting_manager: { id: string; name: string; employee_code: string } | null;
 }
 
 export interface IProbationFilters {
@@ -67,8 +57,8 @@ export interface IProbationReviewPayload {
   communication_rating: number;
   team_collaboration_rating: number;
   recommendation: 'confirm' | 'extend' | 'fail';
-  extension_months?: number;
-  extension_reason?: string;
+  extension_months?: number | null;
+  extension_reason?: string | null;
   remarks: string;
 }
 
@@ -87,99 +77,90 @@ export interface IFailProbationPayload {
   exit_date?: string;
 }
 
-export const getProbationDashboard = (
-  tenantId: string,
-  token?: string,
-) => get<IProbationDashboard>(
-  '/v1/employees/probation/dashboard',
-  undefined,
-  tenantId,
-  { bearerToken: token, isFetchToken: !token },
-);
+export const getProbationDashboard = (tenantId: string, token?: string) =>
+  get<IProbationDashboard>(
+    '/v1/employees/probation/dashboard',
+    undefined,
+    tenantId,
+    { bearerToken: token, isFetchToken: !token },
+  );
 
 export const getProbationEmployees = (
   tenantId: string,
   filters?: IProbationFilters,
   token?: string,
-) => get<{ data: IProbationEmployee[]; total: number }>(
-  '/v1/employees/probation/list',
-  filters as Params,
-  tenantId,
-  { bearerToken: token, isFetchToken: !token },
-);
+) =>
+  get<{ data: IProbationEmployee[]; total: number }>(
+    '/v1/employees/probation/list',
+    filters as Params,
+    tenantId,
+    { bearerToken: token, isFetchToken: !token },
+  );
 
 export const getProbationEmployeeDetails = (
-  employeeId: string,
-  tenantId: string,
-  token?: string,
-) => get<IProbationEmployee>(
-  `/v1/employees/probation/${employeeId}/details`,
-  undefined,
-  tenantId,
-  { bearerToken: token, isFetchToken: !token },
-);
-
-export const submitProbationReview = (
-  employeeId: string,
-  payload: IProbationReviewPayload,
-  tenantId: string,
-  token?: string,
-) => post(
-  `/v1/employees/probation/${employeeId}/review`,
-  payload,
-  undefined,
-  tenantId,
-  { bearerToken: token, isFetchToken: !token },
-);
-
-export const reviewProbation = (
   tenantId: string,
   employeeId: string,
-  payload: { remarks: string },
   token?: string,
-) => post(
-  `/v1/employees/probation/${employeeId}/review`,
-  payload,
-  undefined,
-  tenantId,
-  { bearerToken: token, isFetchToken: !token },
-);
+) =>
+  get<IProbationEmployee>(
+    `/v1/employees/probation/${employeeId}/details`,
+    undefined,
+    tenantId,
+    { bearerToken: token, isFetchToken: !token },
+  );
 
 export const confirmProbation = (
+  tenantId: string,
   employeeId: string,
   payload: IConfirmProbationPayload,
-  tenantId: string,
   token?: string,
-) => post(
-  `/v1/employees/probation/${employeeId}/confirm`,
-  payload,
-  undefined,
-  tenantId,
-  { bearerToken: token, isFetchToken: !token },
-);
+) =>
+  post(
+    `/v1/employees/probation/${employeeId}/confirm`,
+    payload,
+    undefined,
+    tenantId,
+    { bearerToken: token, isFetchToken: !token },
+  );
 
 export const extendProbation = (
+  tenantId: string,
   employeeId: string,
   payload: IExtendProbationPayload,
-  tenantId: string,
   token?: string,
-) => post(
-  `/v1/employees/probation/${employeeId}/extend`,
-  payload,
-  undefined,
-  tenantId,
-  { bearerToken: token, isFetchToken: !token },
-);
+) =>
+  post(
+    `/v1/employees/probation/${employeeId}/extend`,
+    payload,
+    undefined,
+    tenantId,
+    { bearerToken: token, isFetchToken: !token },
+  );
 
 export const failProbation = (
+  tenantId: string,
   employeeId: string,
   payload: IFailProbationPayload,
-  tenantId: string,
   token?: string,
-) => post(
-  `/v1/employees/probation/${employeeId}/fail`,
-  payload,
-  undefined,
-  tenantId,
-  { bearerToken: token, isFetchToken: !token },
-);
+) =>
+  post(
+    `/v1/employees/probation/${employeeId}/fail`,
+    payload,
+    undefined,
+    tenantId,
+    { bearerToken: token, isFetchToken: !token },
+  );
+
+export const submitProbationReview = (
+  tenantId: string,
+  employeeId: string,
+  payload: IProbationReviewPayload,
+  token?: string,
+) =>
+  post(
+    `/v1/employees/probation/${employeeId}/review`,
+    payload,
+    undefined,
+    tenantId,
+    { bearerToken: token, isFetchToken: !token },
+  );

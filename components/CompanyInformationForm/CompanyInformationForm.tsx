@@ -6,6 +6,7 @@
 import { useDeviceDetection } from '@/hooks/useDeviceDetection';
 import { IAccount } from '@/lib/interface/IAccount.interface';
 import { AuthService, MastersService } from '@/lib/service';
+import { getOnboardingStep1 } from '@/lib/service/auth';
 import { IIndustry, IMastersListResponse } from '@/lib/interface/IMasters.interface';
 import { Form, Formik, FormikHelpers } from 'formik';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
@@ -46,6 +47,23 @@ interface CompanyInformation {
   tax_id?: string;
   standards: string[];
   time_frame: string;
+}
+
+// Shape of the data returned by GET /v1/auth/onboarding/step1.
+// Note: the saved field is `website`, not `company_website_url`.
+interface SavedCompanyInfo {
+  company_name?: string;
+  industry?: string;
+  company_size?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  timezone?: string;
+  address?: string;
+  official_email_id?: string;
+  website?: string;
+  phone_number?: string;
+  tax_id?: string;
 }
 
 // ─── Static Options ───────────────────────────────────────────────────────────
@@ -104,32 +122,21 @@ const handleCompanyProfileSubmit = async (
       };
       res = await AuthService.onboardingStep1(onboardingPayload, slug);
     } else {
-      // Settings flow
-      const apiPayload: any = {
+      // Settings flow — reuse same onboardingStep1 API
+      res = await AuthService.onboardingStep1({
         company_name: values.company_name,
-        official_email_id: values.official_email_id,
-        company_website_url: values.company_website_url,
-        phone_number: values.phone_number,
-        tax_id: values.tax_id,
-        address: values.address,
-        industries: values.industry ? [values.industry] : [],
-        sectors: values.sectors,
-        standards: values.standards,
+        industry: values.industry,
         company_size: values.company_size,
         country: values.country,
         state: values.state,
         city: values.city,
+        address: values.address,
+        official_email_id: values.official_email_id,
+        website: values.company_website_url,
+        phone_number: values.phone_number,
+        tax_id: values.tax_id ?? '',
         timezone: values.timezone,
-      };
-
-      if (!apiPayload.phone_number) delete apiPayload.phone_number;
-      if (!apiPayload.tax_id) delete apiPayload.tax_id;
-      if (!apiPayload.official_email_id) delete apiPayload.official_email_id;
-      if (!apiPayload.company_website_url) delete apiPayload.company_website_url;
-
-      res = await AuthService.companyInformation(apiPayload, slug, {
-        onboarding: false,
-      });
+      }, slug);
     }
 
     const { success, message } = res?.data as {
@@ -179,19 +186,23 @@ export default function CompanyInformationForm({
     { value: 'retail', label: 'Retail' },
   ]);
 
+  // Previously-saved company info, fetched directly from
+  // GET /v1/auth/onboarding/step1 — this takes priority over the
+  // server-passed `account` prop, which can be stale or incomplete.
+  const [savedCompanyInfo, setSavedCompanyInfo] = useState<SavedCompanyInfo | null>(null);
+  const [loadingSavedInfo, setLoadingSavedInfo] = useState(isSettings);
+
   /**
-   * Populates stateOptions and cityOptions from account data.
-   * Only used in the Settings flow to pre-fill existing values.
+   * Populates stateOptions and cityOptions for a given country/state pair.
    * Matches country by EITHER full name ("India") OR ISO code ("IN").
    */
-  const populateStateCityFromAccount = (acct?: IAccount | null) => {
-    if (!acct?.country) return;
+  const populateStateCity = (country?: string, state?: string) => {
+    if (!country) return;
 
     const allCountries = Country.getAllCountries();
 
-    // Match by name first, then fall back to isoCode match
-    const matchedCountry = (allCountries as any[]).find((c) => c.name === acct.country)
-      ?? (allCountries as any[]).find((c) => c.isoCode === acct.country);
+    const matchedCountry = (allCountries as any[]).find((c) => c.name === country)
+      ?? (allCountries as any[]).find((c) => c.isoCode === country);
 
     if (!matchedCountry) return;
 
@@ -200,10 +211,9 @@ export default function CompanyInformationForm({
     );
     setStateOptions(states);
 
-    if (acct.state) {
-      // Match state by label (full name) OR by isoCode
-      const matchedState = states.find((s) => s.label === acct.state)
-        ?? states.find((s) => s.value === acct.state);
+    if (state) {
+      const matchedState = states.find((s) => s.label === state)
+        ?? states.find((s) => s.value === state);
 
       if (matchedState) {
         const cities = City.getCitiesOfState(
@@ -222,21 +232,41 @@ export default function CompanyInformationForm({
       label: country.name,
     }));
     setCountryOptions(countries);
-
-    // Only pre-populate state/city options in Settings flow
-    if (isSettings) {
-      populateStateCityFromAccount(account);
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Re-run state/city population whenever account prop changes — Settings only
+  // Fetch the previously saved step-1 data (Settings flow only) and use it
+  // to pre-fill the form + cascading country/state/city dropdowns.
   useEffect(() => {
-    if (isSettings && account?.country) {
-      populateStateCityFromAccount(account);
+    if (!isSettings) {
+      setLoadingSavedInfo(false);
+      return undefined;
     }
+
+    let isMounted = true;
+
+    (async () => {
+      try {
+        const res = await getOnboardingStep1(slug, token);
+        const data = res?.data?.data ?? res?.data;
+
+        if (isMounted && data) {
+          setSavedCompanyInfo(data);
+          populateStateCity(data.country, data.state);
+        } else if (isMounted) {
+          // No saved record yet — fall back to whatever the server passed in
+          populateStateCity(account?.country, account?.state);
+        }
+      } catch {
+        if (isMounted) populateStateCity(account?.country, account?.state);
+      } finally {
+        if (isMounted) setLoadingSavedInfo(false);
+      }
+    })();
+
+    return () => { isMounted = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [account?.country, account?.state]);
+  }, []);
 
   // ─── Validation Schema ──────────────────────────────────────────────────────
 
@@ -299,23 +329,28 @@ export default function CompanyInformationForm({
   };
 
   // ─── Initial Values ─────────────────────────────────────────────────────────
+  // Saved data from GET /v1/auth/onboarding/step1 takes priority over the
+  // `account` prop, which may be stale or missing some fields.
 
   const initialValues: CompanyInformation = {
-    company_name: account?.account_name ?? account?.company_name ?? '',
-    industry: account?.industry ?? account?.industries?.[0] ?? '',
-    company_size: account?.company_size ?? '',
+    company_name: savedCompanyInfo?.company_name
+      ?? account?.account_name ?? account?.company_name ?? '',
+    industry: savedCompanyInfo?.industry
+      ?? account?.industry ?? account?.industries?.[0] ?? '',
+    company_size: savedCompanyInfo?.company_size ?? account?.company_size ?? '',
     // In onboarding: always start blank so the user must select.
-    // In settings: pre-fill from existing account data.
-    country: isSettings ? (account?.country ?? '') : '',
-    state: isSettings ? (account?.state ?? '') : '',
-    city: isSettings ? (account?.city ?? '') : '',
-    timezone: account?.timezone ?? getDefaultTimezone(),
-    address: account?.address ?? '',
-    official_email_id: account?.official_email_id ?? '',
+    // In settings: pre-fill from the saved step-1 data (or account as fallback).
+    country: isSettings ? (savedCompanyInfo?.country ?? account?.country ?? '') : '',
+    state: isSettings ? (savedCompanyInfo?.state ?? account?.state ?? '') : '',
+    city: isSettings ? (savedCompanyInfo?.city ?? account?.city ?? '') : '',
+    timezone: savedCompanyInfo?.timezone ?? account?.timezone ?? getDefaultTimezone(),
+    address: savedCompanyInfo?.address ?? account?.address ?? '',
+    official_email_id: savedCompanyInfo?.official_email_id ?? account?.official_email_id ?? '',
     sectors: account?.sectors ?? [],
-    company_website_url: account?.website ?? account?.website_url ?? '',
-    phone_number: account?.phone_number ?? '',
-    tax_id: account?.tax_id ?? '',
+    company_website_url: savedCompanyInfo?.website
+      ?? account?.website ?? account?.website_url ?? '',
+    phone_number: savedCompanyInfo?.phone_number ?? account?.phone_number ?? '',
+    tax_id: savedCompanyInfo?.tax_id ?? account?.tax_id ?? '',
     standards: account?.standards ?? ['BRSR'],
     time_frame: 'quarter',
   };
@@ -323,7 +358,7 @@ export default function CompanyInformationForm({
   // ─── Helpers ────────────────────────────────────────────────────────────────
 
   const className = () => {
-    if (isMobileOnly) return { width: '290px' };
+    if (isMobileOnly) return { };
     if (isSettings) return { width: '100%' };
     return { width: '700px' };
   };
@@ -332,6 +367,14 @@ export default function CompanyInformationForm({
     || null;
 
   // ─── Render ─────────────────────────────────────────────────────────────────
+
+  if (isSettings && loadingSavedInfo) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '240px' }}>
+        <span className="text-muted">Loading saved company details…</span>
+      </div>
+    );
+  }
 
   return (
     <div style={className()}>

@@ -411,7 +411,7 @@ export default function EmployeeProfileEdit({ employee, token, slug }: EmployeeP
             <Field label="Personal Email" name="personal_email" type="email" value={form.personal_email ?? ''} onChange={handleChange} />
             <Field label="Personal Phone" name="personal_phone" value={form.personal_phone ?? ''} onChange={handleChange} placeholder="+91 9876543210" />
             <Field label="Blood Group" name="blood_group" value={form.blood_group ?? ''} onChange={handleChange} placeholder="e.g. O+" />
-            <Field label="Profile Photo URL" name="profile_photo_url" value={form.profile_photo_url ?? ''} onChange={handleChange} placeholder="https://..." />
+            {/* <Field label="Profile Photo URL" name="profile_photo_url" value={form.profile_photo_url ?? ''} onChange={handleChange} placeholder="https://..." /> */}
           </Section>
 
           {/* Address */}

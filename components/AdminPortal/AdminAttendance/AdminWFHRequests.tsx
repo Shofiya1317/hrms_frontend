@@ -3,12 +3,12 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import {
-  CheckCircle2, XCircle, Clock, Loader2, X, AlertCircle,
+  CheckCircle2, XCircle, Clock, Loader2, X,
   Search, Home, FileText,
 } from 'lucide-react';
 import {
-  getAllWFHRequests, approveRejectWFH,
-  IWFH, WFHStatus, IApproveRejectWFHPayload,
+  getAllWFHRequests,
+  IWFH, WFHStatus,
 } from '@/lib/service/wfh';
 
 // ─────────────────────────────────────────────
@@ -71,34 +71,11 @@ function avatarColor(name: string) {
 // Review Drawer
 // ─────────────────────────────────────────────
 
-function ReviewDrawer({ req, onClose, onDone }: {
-  req: IWFH; onClose: () => void; onDone: () => void;
+function ReviewDrawer({ req, onClose }: {
+  req: IWFH; onClose: () => void;
 }) {
-  const params = useParams();
-  const tenantId = params?.subdomain as string;
   const name = req.employee?.name ?? '—';
   const meta = STATUS_META[req.status];
-
-  const [action, setAction] = useState<WFHStatus.APPROVED | WFHStatus.REJECTED>(WFHStatus.APPROVED);
-  const [reason, setReason] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState('');
-
-  const handleSubmit = async () => {
-    if (action === WFHStatus.REJECTED && !reason.trim()) {
-      setErr('Rejection reason is required.'); return;
-    }
-    setSaving(true); setErr('');
-    try {
-      const payload: IApproveRejectWFHPayload = action === WFHStatus.REJECTED
-        ? { status: WFHStatus.REJECTED, rejection_reason: reason }
-        : { status: WFHStatus.APPROVED };
-      await approveRejectWFH(req.id, payload, tenantId);
-      onDone();
-    } catch (e: any) {
-      setErr(e?.response?.data?.message || 'Something went wrong.');
-    } finally { setSaving(false); }
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex">
@@ -167,87 +144,7 @@ function ReviewDrawer({ req, onClose, onDone }: {
           )}
         </div>
 
-        {/* Action (only for pending) */}
-        {req.status === WFHStatus.PENDING && (
-          <div className="px-5 py-4 space-y-4 flex-1">
-            <p className="text-xs font-semibold text-slate-500">Select action</p>
 
-            <div className="grid grid-cols-2 gap-2">
-              {([WFHStatus.APPROVED, WFHStatus.REJECTED] as const).map((a) => (
-                <button
-                  key={a}
-                  onClick={() => setAction(a)}
-                  className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold border-2 transition-all ${
-                    action === a
-                      ? a === WFHStatus.APPROVED
-                        ? 'bg-teal-50 text-teal-700 border-teal-400 shadow-sm'
-                        : 'bg-red-50 text-red-600 border-red-400 shadow-sm'
-                      : 'bg-slate-50 text-slate-400 border-slate-200 hover:border-slate-300'
-                  }`}
-                >
-                  {a === WFHStatus.APPROVED ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
-                  {a === WFHStatus.APPROVED ? 'Approve' : 'Reject'}
-                </button>
-              ))}
-            </div>
-
-            {action === WFHStatus.REJECTED && (
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Rejection Reason
-                  {' '}
-                  <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  rows={3}
-                  placeholder="Enter reason for rejection…"
-                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all resize-none"
-                />
-              </div>
-            )}
-
-            {err && (
-              <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-xl">
-                <AlertCircle size={13} className="text-red-500 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-red-600">{err}</p>
-              </div>
-            )}
-
-            <button
-              onClick={handleSubmit}
-              disabled={saving}
-              className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-60 shadow-sm ${
-                action === WFHStatus.APPROVED ? 'bg-[#0f766e] hover:bg-[#0d6460]' : 'bg-red-500 hover:bg-red-600'
-              }`}
-            >
-              {saving
-                ? (
-                  <>
-                    <Loader2 size={14} className="animate-spin" />
-                    {' '}
-                    Submitting…
-                  </>
-                )
-                : action === WFHStatus.APPROVED
-                  ? (
-                    <>
-                      <CheckCircle2 size={14} />
-                      {' '}
-                      Approve Request
-                    </>
-                  )
-                  : (
-                    <>
-                      <XCircle size={14} />
-                      {' '}
-                      Reject Request
-                    </>
-                  )}
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -465,7 +362,6 @@ export default function AdminWFHRequests() {
         <ReviewDrawer
           req={selected}
           onClose={() => setSelected(null)}
-          onDone={() => { setSelected(null); fetchRequests(); }}
         />
       )}
     </div>
