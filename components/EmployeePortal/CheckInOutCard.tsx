@@ -1,32 +1,93 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  LogIn, LogOut, Loader2,
-  MapPin, AlertTriangle, Clock, Trophy,
+  LogIn, LogOut, Loader2, MapPin, AlertTriangle, Clock,
+  Trophy, Coffee, Umbrella, Calendar, RefreshCw, CheckCircle2,
+  Timer, Zap, Moon, Sun, Sunset,
 } from 'lucide-react';
 import { toast as toastify } from 'react-hot-toast';
 import {
   checkIn, checkOut, getCheckInContext,
-  ICheckInContext, ICheckOutContext,
+  ICheckInContext, IWeeklyCardEntry,
 } from '@/lib/service/attendance';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface LocationData { lat: number; lng: number; address: string; accuracy?: number; }
-interface CheckInOutCardProps {
-  apiKey: string; slug?: string; token: string;
-  defaultLocation?: string; onAttendanceUpdate?: () => void;
-  reportingManager?: { id: string; name: string; role: string; status: string } | null;
-  // kept for backward compat, unused
-  fullName?: string; employeeId?: string; designation?: string;
+interface LocationData {
+  lat: number;
+  lng: number;
+  address: string;
+  accuracy?: number;
 }
+
+interface CheckInOutCardProps {
+  apiKey: string;
+  slug?: string;
+  token: string;
+  defaultLocation?: string;
+  onAttendanceUpdate?: () => void;
+  reportingManager?: { id: string; name: string; role: string; status: string } | null;
+  fullName?: string;
+  employeeId?: string;
+  designation?: string;
+}
+
+// ─── DashboardStatus enum (mirrors backend) ───────────────────────────────────
+type DashboardStatus =
+  | 'UPCOMING_SHIFT'
+  | 'READY_TO_CHECK_IN'
+  | 'WORKING'
+  | 'CHECK_OUT_PENDING'
+  | 'PRESENT'
+  | 'EARLY_EXIT'
+  | 'OVERTIME'
+  | 'AUTO_CHECKOUT'
+  | 'ABSENT'
+  | 'ON_LEAVE'
+  | 'HOLIDAY'
+  | 'WEEK_OFF'
+  | 'REGULARIZATION_PENDING'
+  | 'REGULARIZATION_APPROVED';
+
+// ─── Status config map ────────────────────────────────────────────────────────
+const STATUS_CONFIG: Record<
+  DashboardStatus,
+  {
+    accent: string;
+    bg: string;
+    border: string;
+    textColor: string;
+    icon: React.ElementType;
+    canCheckIn: boolean;
+    canCheckOut: boolean;
+  }
+> = {
+  UPCOMING_SHIFT:           { accent: '#64748b', bg: '#f8fafc', border: '#e2e8f0', textColor: '#475569', icon: Clock,        canCheckIn: false, canCheckOut: false },
+  READY_TO_CHECK_IN:        { accent: '#0f766e', bg: '#f0fdfa', border: '#99f6e4', textColor: '#0f766e', icon: LogIn,        canCheckIn: true,  canCheckOut: false },
+  WORKING:                  { accent: '#0f766e', bg: '#f0fdfa', border: '#99f6e4', textColor: '#0f766e', icon: Timer,        canCheckIn: false, canCheckOut: true  },
+  CHECK_OUT_PENDING:        { accent: '#d97706', bg: '#fffbeb', border: '#fde68a', textColor: '#b45309', icon: AlertTriangle, canCheckIn: false, canCheckOut: true  },
+  PRESENT:                  { accent: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', textColor: '#15803d', icon: CheckCircle2, canCheckIn: false, canCheckOut: false },
+  EARLY_EXIT:               { accent: '#d97706', bg: '#fffbeb', border: '#fde68a', textColor: '#b45309', icon: LogOut,       canCheckIn: false, canCheckOut: false },
+  OVERTIME:                 { accent: '#7c3aed', bg: '#faf5ff', border: '#e9d5ff', textColor: '#6d28d9', icon: Zap,          canCheckIn: false, canCheckOut: false },
+  AUTO_CHECKOUT:            { accent: '#64748b', bg: '#f8fafc', border: '#e2e8f0', textColor: '#475569', icon: RefreshCw,    canCheckIn: false, canCheckOut: false },
+  ABSENT:                   { accent: '#dc2626', bg: '#fef2f2', border: '#fecaca', textColor: '#b91c1c', icon: AlertTriangle, canCheckIn: false, canCheckOut: false },
+  ON_LEAVE:                 { accent: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', textColor: '#1d4ed8', icon: Umbrella,     canCheckIn: false, canCheckOut: false },
+  HOLIDAY:                  { accent: '#9333ea', bg: '#faf5ff', border: '#e9d5ff', textColor: '#7e22ce', icon: Calendar,     canCheckIn: false, canCheckOut: false },
+  WEEK_OFF:                 { accent: '#0891b2', bg: '#ecfeff', border: '#a5f3fc', textColor: '#0e7490', icon: Coffee,       canCheckIn: false, canCheckOut: false },
+  REGULARIZATION_PENDING:   { accent: '#d97706', bg: '#fffbeb', border: '#fde68a', textColor: '#b45309', icon: RefreshCw,    canCheckIn: false, canCheckOut: false },
+  REGULARIZATION_APPROVED:  { accent: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', textColor: '#15803d', icon: CheckCircle2, canCheckIn: false, canCheckOut: false },
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function pad(n: number) { return String(n).padStart(2, '0'); }
 function fmtTime(d: Date) { return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }); }
 function toDateString(d: Date) { return d.toISOString().split('T')[0]; }
+function fmtHM(secs: number) {
+  const h = Math.floor(Math.abs(secs) / 3600);
+  const m = Math.floor((Math.abs(secs) % 3600) / 60);
+  return h > 0 ? `${h}h ${pad(m)}m` : `${m}m`;
+}
 
-/** Parse "HH:MM" into today's Date */
 function parseTime24(t: string): Date {
   const [h, m] = t.split(':').map(Number);
   const d = new Date();
@@ -34,14 +95,8 @@ function parseTime24(t: string): Date {
   return d;
 }
 
-function getDeviceInfo() {
-  const ua = navigator.userAgent;
-  const b = ua.includes('Firefox') ? 'Firefox' : ua.includes('Edg') ? 'Edge' : ua.includes('Chrome') ? 'Chrome' : 'Safari';
-  const o = ua.includes('Windows') ? 'Windows' : ua.includes('Mac') ? 'macOS' : ua.includes('Android') ? 'Android' : ua.includes('iPhone') ? 'iOS' : 'Linux';
-  return `${o}, ${b}`;
-}
 
-async function reverseGeocode(lat: number, lng: number) {
+async function reverseGeocode(lat: number, lng: number): Promise<string> {
   try {
     const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
     const d = await r.json();
@@ -49,7 +104,6 @@ async function reverseGeocode(lat: number, lng: number) {
   } catch { return `${lat.toFixed(4)},${lng.toFixed(4)}`; }
 }
 
-/** Extract user-facing error message from API response */
 function extractApiError(res: any, fallback: string): string | null {
   if (res?.data?.success === false) {
     const err = res.data.error;
@@ -62,7 +116,8 @@ function extractApiError(res: any, fallback: string): string | null {
 
 async function fetchLocation(): Promise<LocationData | null> {
   if (!navigator?.geolocation) return null;
-  const gp = (o: PositionOptions) => new Promise<GeolocationPosition>((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, o));
+  const gp = (o: PositionOptions) =>
+    new Promise<GeolocationPosition>((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, o));
   try {
     const p = await gp({ enableHighAccuracy: true, maximumAge: 0, timeout: 12000 })
       .catch(() => gp({ enableHighAccuracy: false, maximumAge: 0, timeout: 8000 }));
@@ -71,77 +126,348 @@ async function fetchLocation(): Promise<LocationData | null> {
   } catch { return null; }
 }
 
-/** Compute badge + status dynamically based on current time vs shift end */
-function computeBadge(shiftEnd24hr: string, graceMins = 5): {
-  status: 'early_checkout' | 'shift_complete' | 'overtime';
-  label: string;
-  color: string;
-  bg: string;
-  border: string;
-} {
-  const now = new Date();
-  const shiftEnd = parseTime24(shiftEnd24hr);
-  const graceMs = graceMins * 60 * 1000;
-  const diff = now.getTime() - shiftEnd.getTime();
+// Weekly status → display config
+const weekDayStatusStyle: Record<string, { dot: string; text: string; bg: string }> = {
+  present:      { dot: '#16a34a', text: '#16a34a', bg: '#f0fdf4' },
+  working:      { dot: '#0f766e', text: '#0f766e', bg: '#f0fdfa' },
+  late:         { dot: '#d97706', text: '#d97706', bg: '#fffbeb' },
+  half_day:     { dot: '#7c3aed', text: '#7c3aed', bg: '#faf5ff' },
+  absent:       { dot: '#dc2626', text: '#dc2626', bg: '#fef2f2' },
+  on_leave:     { dot: '#2563eb', text: '#2563eb', bg: '#eff6ff' },
+  holiday:      { dot: '#9333ea', text: '#9333ea', bg: '#faf5ff' },
+  week_off:     { dot: '#0891b2', text: '#0891b2', bg: '#ecfeff' },
+  early_exit:   { dot: '#d97706', text: '#d97706', bg: '#fffbeb' },
+  overtime:     { dot: '#7c3aed', text: '#7c3aed', bg: '#faf5ff' },
+  auto_checkout:{ dot: '#64748b', text: '#64748b', bg: '#f8fafc' },
+  upcoming:     { dot: '#cbd5e1', text: '#94a3b8', bg: '#f8fafc' },
+};
 
-  if (diff >= 15 * 60 * 1000) {
-    return { status: 'overtime', label: '🟣 Overtime', color: '#7c3aed', bg: '#f5f3ff', border: '#e9d5ff' };
-  }
-  if (diff >= -graceMs) {
-    return { status: 'shift_complete', label: '🟢 Shift Completed', color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' };
-  }
-  return { status: 'early_checkout', label: '🟠 Early Checkout', color: '#d97706', bg: '#fffbeb', border: '#fde68a' };
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function LiveTimer({ elapsed }: { elapsed: number }) {
+  return (
+    <span className="font-mono text-2xl font-black tabular-nums tracking-tight text-slate-900">
+      {pad(Math.floor(elapsed / 3600))}:{pad(Math.floor((elapsed % 3600) / 60))}:{pad(elapsed % 60)}
+    </span>
+  );
 }
 
-/** Format seconds → "Xh Ym" */
-function fmtHM(secs: number) {
-  const h = Math.floor(secs / 3600);
-  const m = Math.floor((secs % 3600) / 60);
-  return h > 0 ? `${h}h ${pad(m)}m` : `${m}m`;
+function ShiftProgressBar({
+  pct,
+  status,
+}: {
+  pct: number;
+  status: DashboardStatus;
+}) {
+  const gradient =
+    status === 'OVERTIME' ? 'linear-gradient(90deg,#a78bfa,#8b5cf6)' :
+    status === 'CHECK_OUT_PENDING' ? 'linear-gradient(90deg,#fbbf24,#f59e0b)' :
+    status === 'WORKING' ? 'linear-gradient(90deg,#0f766e,#14b8a6)' :
+    '#e2e8f0';
+
+  const glow =
+    status === 'OVERTIME' ? '0 0 8px rgba(139,92,246,0.5)' :
+    status === 'CHECK_OUT_PENDING' ? '0 0 8px rgba(245,158,11,0.4)' :
+    status === 'WORKING' ? '0 0 6px rgba(15,118,110,0.4)' : 'none';
+
+  return (
+    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+      <div
+        className="h-full rounded-full transition-all duration-1000"
+        style={{ width: `${pct}%`, background: gradient, boxShadow: glow }}
+      />
+    </div>
+  );
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+function WeekStrip({ entries }: { entries: IWeeklyCardEntry[] }) {
+  return (
+    <div className="flex gap-1 mt-3">
+      {entries.map((day) => {
+        const style = weekDayStatusStyle[day.status] ?? weekDayStatusStyle.upcoming;
+        const isToday = day.is_today;
+        return (
+          <div
+            key={day.date}
+            className="flex-1 flex flex-col items-center gap-1"
+            title={day.badge}
+          >
+            <span className={`text-[9px] font-semibold uppercase ${isToday ? 'text-slate-700' : 'text-slate-400'}`}>
+              {day.day}
+            </span>
+            <div
+              className={`w-full h-1 rounded-full transition-all`}
+              style={{ background: style.dot, opacity: day.status === 'upcoming' ? 0.3 : 1 }}
+            />
+            {isToday && (
+              <span className="w-1 h-1 rounded-full bg-slate-900" />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function MonthlySummaryRow({ summary }: { summary: NonNullable<ICheckInContext['monthly_summary']> }) {
+  const items = [
+    { label: 'Present', value: summary.present, color: '#16a34a' },
+    { label: 'Late',    value: summary.late,    color: '#d97706' },
+    { label: 'Leave',   value: summary.on_leave,color: '#2563eb' },
+    { label: 'Absent',  value: summary.absent,  color: '#dc2626' },
+  ];
+  return (
+    <div className="grid grid-cols-4 gap-1 mt-3">
+      {items.map(({ label, value, color }) => (
+        <div key={label} className="flex flex-col items-center bg-slate-50 rounded-xl py-2 border border-slate-100">
+          <span className="text-sm font-black" style={{ color }}>{value}</span>
+          <span className="text-[9px] font-semibold text-slate-400 uppercase mt-0.5">{label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Special day screens (non-interactive) ────────────────────────────────────
+function SpecialDayScreen({ ctx, status }: { ctx: ICheckInContext; status: DashboardStatus }) {
+  const cfg = STATUS_CONFIG[status];
+  const Icon = cfg.icon;
+
+  const illustrations: Record<string, string> = {
+    HOLIDAY:  '🎉',
+    WEEK_OFF: '☕',
+    ON_LEAVE: '🏖',
+  };
+  const emoji = illustrations[status] ?? '';
+
+  return (
+    <div className="flex flex-col bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="h-1 w-full" style={{ background: cfg.accent }} />
+      <div className="px-4 pt-4 pb-4 flex flex-col gap-3">
+        <div className="flex items-center gap-3">
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+            style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}
+          >
+            {emoji || <Icon size={22} style={{ color: cfg.accent }} />}
+          </div>
+          <div>
+            <p className="text-base font-black text-slate-900">
+              {ctx.message?.title ?? ctx.status_label}
+            </p>
+            {ctx.message?.subtitle && (
+              <p className="text-xs text-slate-500 mt-0.5">{ctx.message.subtitle}</p>
+            )}
+          </div>
+        </div>
+
+        {ctx.shift && (
+          <div className="flex items-center gap-2 text-xs text-slate-400">
+            <Clock size={11} />
+            <span>Shift: <span className="font-semibold text-slate-600">{ctx.shift.start} – {ctx.shift.end}</span></span>
+          </div>
+        )}
+
+        {ctx.weekly_card && <WeekStrip entries={ctx.weekly_card} />}
+        {ctx.monthly_summary && <MonthlySummaryRow summary={ctx.monthly_summary} />}
+      </div>
+    </div>
+  );
+}
+
+// ─── Completion screen ─────────────────────────────────────────────────────────
+function CompletionScreen({ ctx, status }: { ctx: ICheckInContext; status: DashboardStatus }) {
+  const cfg = STATUS_CONFIG[status];
+  const Icon = cfg.icon;
+  const co = ctx.check_out;
+  const ws = ctx.work_summary;
+
+  const workedDisplay = ws?.worked_label ?? co?.worked_label ?? '—';
+  const otMins = co?.overtime_minutes ?? 0;
+  const earlyMins = co?.early_exit_minutes ?? 0;
+
+  const todayCard = ctx.weekly_card?.find((d) => d.is_today);
+
+  return (
+    <div className="flex flex-col bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="h-1 w-full" style={{ background: cfg.accent }} />
+      <div className="px-4 pt-3 pb-4 flex flex-col gap-3">
+
+        {ctx.greeting && (
+          <p className="text-[11px] font-semibold text-slate-400 tracking-wide uppercase">
+            {ctx.greeting}
+          </p>
+        )}
+
+        {/* Status icon + title */}
+        <div className="flex items-center gap-3">
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+            style={{
+              background: cfg.bg,
+              border: `1px solid ${cfg.border}`,
+              boxShadow: `0 0 0 6px ${cfg.bg}`,
+            }}
+          >
+            <Icon size={22} style={{ color: cfg.accent }} />
+          </div>
+          <div>
+            <p className="text-base font-black text-slate-900">
+              {ctx.message?.title ?? 'Attendance Completed'}
+            </p>
+            {ctx.message?.subtitle && (
+              <p className="text-xs text-slate-500 mt-0.5">{ctx.message.subtitle}</p>
+            )}
+          </div>
+        </div>
+
+        {/* In / Out times */}
+        {(ctx.check_in?.time || co?.time) && (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+              <p className="text-[10px] font-semibold text-slate-400 uppercase mb-1">Check In</p>
+              <p className="text-sm font-bold text-slate-800">{ctx.check_in?.time ?? '—'}</p>
+              {ctx.check_in?.is_late && (
+                <p className="text-[10px] text-amber-600 mt-0.5">Late by {ctx.check_in.late_by_label}</p>
+              )}
+            </div>
+            <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+              <p className="text-[10px] font-semibold text-slate-400 uppercase mb-1">Check Out</p>
+              <p className="text-sm font-bold text-slate-800">{co?.time ?? '—'}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Worked + badges */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 rounded-xl px-3 py-1.5">
+            <Clock size={12} className="text-slate-500" />
+            <span className="text-xs font-bold text-slate-700">{workedDisplay} worked</span>
+          </div>
+          {otMins > 0 && (
+            <span className="text-xs font-semibold text-violet-600 bg-violet-50 border border-violet-100 px-2.5 py-1 rounded-xl">
+              +{fmtHM(otMins * 60)} overtime
+            </span>
+          )}
+          {earlyMins > 0 && (
+            <span className="text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-xl">
+              −{fmtHM(earlyMins * 60)} early
+            </span>
+          )}
+          {todayCard && (() => {
+            const s = weekDayStatusStyle[todayCard.status] ?? weekDayStatusStyle.present;
+            return (
+              <span
+                className="text-xs font-bold px-2.5 py-1 rounded-xl border capitalize"
+                style={{ color: s.text, background: s.bg, borderColor: s.dot + '33' }}
+              >
+                {todayCard.status.replace(/_/g, ' ')}
+              </span>
+            );
+          })()}
+        </div>
+
+        {/* Notice */}
+        {ctx.message?.notice && (
+          <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+            <span className="text-sm flex-shrink-0">🔔</span>
+            <p className="text-[11px] text-amber-700">{ctx.message.notice}</p>
+          </div>
+        )}
+
+        {/* Can regularize hint */}
+        {ctx.can_regularize && status === 'ABSENT' && (
+          <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-xl px-3 py-2">
+            <AlertTriangle size={13} className="text-rose-400 mt-0.5 flex-shrink-0" />
+            <p className="text-[11px] text-rose-600">
+              Marked absent. Contact HR or request regularization if this is incorrect.
+            </p>
+          </div>
+        )}
+
+        {ctx.weekly_card && <WeekStrip entries={ctx.weekly_card} />}
+        {ctx.monthly_summary && <MonthlySummaryRow summary={ctx.monthly_summary} />}
+      </div>
+    </div>
+  );
+}
+
+// ─── Location widget ──────────────────────────────────────────────────────────
+function LocationWidget({ data, loading }: { data: LocationData | null; loading: boolean }) {
+  return (
+    <div className="flex items-start gap-2.5 bg-slate-50 rounded-2xl p-3.5">
+      <MapPin size={13} className="text-slate-400 mt-0.5 flex-shrink-0" />
+      <div className="min-w-0">
+        {loading
+          ? (
+            <div className="flex items-center gap-1.5 text-xs text-slate-400">
+              <Loader2 size={11} className="animate-spin" />
+              Detecting location…
+            </div>
+          )
+          : data
+            ? (
+              <>
+                <p className="text-xs font-semibold text-slate-800 leading-snug">{data.address}</p>
+                {data.accuracy && (
+                  <p className={`text-[10px] mt-0.5 font-medium ${
+                    data.accuracy <= 50 ? 'text-emerald-600' :
+                    data.accuracy <= 200 ? 'text-amber-600' : 'text-red-500'
+                  }`}>
+                    ±{data.accuracy}m accuracy
+                  </p>
+                )}
+              </>
+            )
+            : <p className="text-xs text-slate-400">Location unavailable — check-in may still work</p>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main component ────────────────────────────────────────────────────────────
 export default function CheckInOutCard({
-  apiKey, slug, token, defaultLocation = 'Unknown', onAttendanceUpdate, reportingManager,
+  apiKey, slug, token, defaultLocation = 'Unknown',
+  onAttendanceUpdate, reportingManager,
 }: CheckInOutCardProps) {
   const tenantId = apiKey || slug || '';
 
-  // API state
   const [context, setContext] = useState<ICheckInContext | null>(null);
-  const [completedCtx, setCompletedCtx] = useState<ICheckOutContext | null>(null);
   const [loadingCtx, setLoadingCtx] = useState(true);
-
-  // Local timer state (seconds since check-in)
   const [elapsed, setElapsed] = useState(0);
   const [now, setNow] = useState(new Date());
 
-  // UI
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showEarlyWarning, setShowEarlyWarning] = useState(false);
   const [pendingLoc, setPendingLoc] = useState<LocationData | null>(null);
   const [locationData, setLocationData] = useState<LocationData | null>(null);
   const [isFetchingLoc, setIsFetchingLoc] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' | 'info' } | null>(null); // kept for backward compat
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const isCheckedIn = context?.state === 'checked_in';
-  const isCompleted = context?.state === 'completed';
-  const showCompletion = completedCtx !== null || isCompleted;
+  // Derived status
+  const status = (context?.status as DashboardStatus) ?? 'UPCOMING_SHIFT';
+  const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.UPCOMING_SHIFT;
 
-  // ── Tick every second ──
+  const isCheckedIn = status === 'WORKING' || status === 'CHECK_OUT_PENDING';
+  const isCompleted = ['PRESENT', 'EARLY_EXIT', 'OVERTIME', 'AUTO_CHECKOUT', 'ABSENT'].includes(status);
+  const isSpecialDay = ['ON_LEAVE', 'HOLIDAY', 'WEEK_OFF'].includes(status);
+  const isRegularization = ['REGULARIZATION_PENDING', 'REGULARIZATION_APPROVED'].includes(status);
+
+  // ── Tick ──
   useEffect(() => {
     const t = setInterval(() => {
       const n = new Date();
       setNow(n);
-      if (isCheckedIn && context?.check_in_time_24hr) {
-        const checkInAt = parseTime24(context.check_in_time_24hr);
+      if (isCheckedIn && context?.check_in?.time_24hr) {
+        const checkInAt = parseTime24(context.check_in.time_24hr);
         setElapsed(Math.floor((n.getTime() - checkInAt.getTime()) / 1000));
       }
     }, 1000);
     return () => clearInterval(t);
-  }, [isCheckedIn, context?.check_in_time_24hr]);
+  }, [isCheckedIn, context?.check_in?.time_24hr]);
 
-  // ── Load context once on mount ──
+  // ── Load context ──
   const loadContext = useCallback(async () => {
     if (!token) return;
     setLoadingCtx(true);
@@ -149,17 +475,16 @@ export default function CheckInOutCard({
       const res = await getCheckInContext(tenantId, token);
       const ctx: ICheckInContext = res?.data?.data ?? {};
       setContext(ctx);
-      if (ctx.state === 'checked_in' && ctx.check_in_time_24hr) {
-        const checkInAt = parseTime24(ctx.check_in_time_24hr);
+      if (ctx.next_action === 'CHECK_OUT' && ctx.check_in?.time_24hr) {
+        const checkInAt = parseTime24(ctx.check_in.time_24hr);
         setElapsed(Math.floor((Date.now() - checkInAt.getTime()) / 1000));
       }
-    } catch { /* show default not-checked-in state */ }
+    } catch { /* keep existing or show empty */ }
     finally { setLoadingCtx(false); }
   }, [tenantId, token]);
 
   useEffect(() => { loadContext(); }, [loadContext]);
 
-  // ── Re-fetch context on tab switch / window focus ──
   useEffect(() => {
     const onVisible = () => { if (document.visibilityState === 'visible') loadContext(); };
     const onFocus = () => loadContext();
@@ -171,26 +496,20 @@ export default function CheckInOutCard({
     };
   }, [loadContext]);
 
-  // ── Toast ──
   const showToast = (msg: string, type: 'success' | 'error' | 'info') => {
     if (type === 'error') toastify.error(msg, { position: 'bottom-right' });
     else if (type === 'success') toastify.success(msg, { position: 'bottom-right' });
     else toastify(msg, { position: 'bottom-right' });
   };
 
-  // UI — modal pre-fetch state
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // ── Button click: refresh context first, then open modal ──
   const openModal = async () => {
     setIsRefreshing(true);
-    // Re-fetch context so modal shows latest state before confirming
     try {
       const res = await getCheckInContext(tenantId, token);
       const ctx: ICheckInContext = res?.data?.data ?? {};
       setContext(ctx);
-      if (ctx.state === 'checked_in' && ctx.check_in_time_24hr) {
-        const checkInAt = parseTime24(ctx.check_in_time_24hr);
+      if (ctx.next_action === 'CHECK_OUT' && ctx.check_in?.time_24hr) {
+        const checkInAt = parseTime24(ctx.check_in.time_24hr);
         setElapsed(Math.floor((Date.now() - checkInAt.getTime()) / 1000));
       }
     } catch { /* use existing context */ }
@@ -202,11 +521,9 @@ export default function CheckInOutCard({
     setIsFetchingLoc(false);
   };
 
-  // ── Perform actual check-out API call ──
   const performCheckOut = async (loc: LocationData | null) => {
     if (!context?.attendance_id) { showToast('No active attendance record.', 'error'); return; }
     setIsLoading(true);
-    const workedSecsAtCheckout = elapsed; // snapshot local timer before reset
     try {
       const n = new Date();
       const res = await checkOut(context.attendance_id, {
@@ -217,12 +534,10 @@ export default function CheckInOutCard({
         check_out_method: 'gps',
       }, tenantId, token);
 
-      const coApiErr = extractApiError(res, 'Check-out failed.');
-      if (coApiErr) { showToast(coApiErr, 'error'); return; }
+      const err = extractApiError(res, 'Check-out failed.');
+      if (err) { showToast(err, 'error'); return; }
 
-      const outCtx: ICheckOutContext = res?.data?.data?.check_out_context ?? {};
-      setCompletedCtx({ ...outCtx, _workedSecs: workedSecsAtCheckout });
-      setContext((prev) => prev ? { ...prev, state: 'checked_out' } : prev);
+      await loadContext();
       setElapsed(0);
       if (onAttendanceUpdate) onAttendanceUpdate();
     } catch {
@@ -236,12 +551,11 @@ export default function CheckInOutCard({
     }
   };
 
-  // ── Confirm button in main modal ──
   const handleConfirm = async () => {
     if (!token) { showToast('Auth token missing.', 'error'); setShowConfirmModal(false); return; }
 
     if (!isCheckedIn) {
-      // ── CHECK IN ──
+      // CHECK IN
       setIsLoading(true);
       try {
         const n = new Date();
@@ -251,39 +565,20 @@ export default function CheckInOutCard({
           check_in_lat: locationData?.lat ?? 0,
           check_in_lng: locationData?.lng ?? 0,
           check_in_location_name: locationData?.address ?? defaultLocation,
-          check_in_method: 'gps',
-          check_in_device_info: getDeviceInfo(),
         }, tenantId, token);
 
         const apiErr = extractApiError(res, 'Check-in failed.');
-        if (apiErr) { showToast(apiErr, 'error'); setIsLoading(false); setShowConfirmModal(false); setLocationData(null); return; }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
-        const d = res?.data?.data;
-        const ciCtx = d?.check_in_context ?? {};
-        const status = d?.status ?? {};
-        const shiftInfo = ciCtx?.shift_info ?? d?.shift_info ?? {};
+        if (apiErr) {
+          showToast(apiErr, 'error');
+          setIsLoading(false);
+          setShowConfirmModal(false);
+          setLocationData(null);
+          return;
+        }
 
-        // Build a unified ICheckInContext from the check-in response
-        setContext({
-          state: 'checked_in',
-          attendance_id: d?.id,
-          greeting: context?.greeting,                       // keep greeting from loaded context
-          check_in_time: ciCtx.checked_in_at,               // "12:53 PM"
-          check_in_time_24hr: ciCtx.checked_in_at_24hr,     // "12:53"
-          check_out_context: {
-            shift_end: shiftInfo.shift_end,                  // "07:00 PM"
-            shift_end_24hr: shiftInfo.shift_end_24hr,        // "19:00"
-          },
-          // status fields for comp-off banner
-          day_type: status.day_type,
-          is_comp_off_eligible: status.is_comp_off_eligible,
-          comp_off_credited: status.comp_off_credited,
-          status_message: status.message,
-        });
+        showToast(res?.data?.message ?? `Checked in at ${fmtTime(n)}`, 'success');
+        await loadContext();
         setElapsed(0);
-        setCompletedCtx(null);
-        // Use top-level message from API (e.g. comp-off holiday message)
-        showToast(res?.data?.message ?? `Checked in at ${ciCtx.checked_in_at ?? fmtTime(n)}`, 'success');
         if (onAttendanceUpdate) onAttendanceUpdate();
       } catch {
         showToast('Check-in failed. Please try again.', 'error');
@@ -293,15 +588,11 @@ export default function CheckInOutCard({
         setLocationData(null);
       }
     } else {
-      // ── CHECK OUT — use check_out_context.shift_end_24hr for early detection ──
-      const coCtx = context?.check_out_context;
-      const shiftEnd24 = coCtx?.shift_end_24hr;
-      const isEarly = shiftEnd24
-        ? new Date() < parseTime24(shiftEnd24)
-        : false;
+      // CHECK OUT — guard early exit
+      const shiftEnd24 = context?.shift?.end_24hr;
+      const isEarly = shiftEnd24 ? new Date() < parseTime24(shiftEnd24) : false;
 
       if (isEarly) {
-        // Show warning with the API-provided warning_message
         setPendingLoc(locationData);
         setShowConfirmModal(false);
         setShowEarlyWarning(true);
@@ -311,403 +602,293 @@ export default function CheckInOutCard({
     }
   };
 
-  // ── Derived values for working screen ──
-  const timerStr = `${pad(Math.floor(elapsed / 3600))}:${pad(Math.floor((elapsed % 3600) / 60))}:${pad(elapsed % 60)}`;
-  const workedStr = fmtHM(elapsed);
-
-  const shiftEnd24 = context?.check_out_context?.shift_end_24hr;
-  const shiftEndDisplay = context?.check_out_context?.shift_end; // "07:00 PM"
-
-  // Remaining time (live)
-  const remainingSecs = shiftEnd24
-    ? Math.max(0, Math.floor((parseTime24(shiftEnd24).getTime() - now.getTime()) / 1000))
-    : null;
-  const remainingStr = remainingSecs !== null ? fmtHM(remainingSecs) : null;
-
-  // Dynamic badge (recomputed every tick)
-  const dynamicBadge = isCheckedIn && shiftEnd24 ? computeBadge(shiftEnd24) : null;
-
-  // Progress bar: elapsed vs full shift duration
-  const shiftDurSecs = shiftEnd24 && context?.check_in_time_24hr
-    ? Math.floor((parseTime24(shiftEnd24).getTime() - parseTime24(context.check_in_time_24hr).getTime()) / 1000)
+  // Shift progress
+  const shiftEnd24 = context?.shift?.end_24hr;
+  const shiftEndDisplay = context?.shift?.end;
+  const checkIn24 = context?.check_in?.time_24hr;
+  const shiftDurSecs = shiftEnd24 && checkIn24
+    ? Math.floor((parseTime24(shiftEnd24).getTime() - parseTime24(checkIn24).getTime()) / 1000)
     : 8 * 3600;
   const pct = Math.min((elapsed / shiftDurSecs) * 100, 100);
 
-  // ── Completion screen ──
-  if (showCompletion) {
-    // Data comes from either post-checkout completedCtx or loaded context (state=completed)
-    const coCtx = completedCtx ?? context?.check_out_context;
-    const workedSecs = completedCtx?._workedSecs
-      ?? (context?.worked_minutes ? context.worked_minutes * 60 : 0);
-    const workedDisplay = completedCtx
-      ? fmtHM(workedSecs)
-      : (context?.worked_time ?? fmtHM(workedSecs));
-    const otMins = coCtx?.overtime_minutes ?? 0;
-    const status = coCtx?.check_out_status ?? 'normal';
-    const badge = coCtx?.badge;
-    const title = coCtx?.title ?? 'Attendance Completed';
-    const checkInDisplay = context?.check_in_time;
-    const checkOutDisplay = context?.check_out_time;
-    const attendanceStatus = context?.attendance_status;
-    const greetingMsg = context?.greeting;
-    const messageStr = context?.message;
+  const remainingSecs = shiftEnd24
+    ? Math.max(0, Math.floor((parseTime24(shiftEnd24).getTime() - now.getTime()) / 1000))
+    : null;
+  const remainingStr = remainingSecs !== null && remainingSecs > 0 ? fmtHM(remainingSecs) : null;
+  const workedStr = fmtHM(elapsed);
 
-    const statusStyle: Record<string, { ring: string; iconBg: string; iconColor: string; badgeBg: string }> = {
-      early_checkout: { ring: 'rgba(245,158,11,0.12)', iconBg: 'bg-amber-50', iconColor: 'text-amber-500', badgeBg: 'bg-amber-50 text-amber-700 border-amber-100' },
-      overtime:       { ring: 'rgba(124,58,237,0.12)', iconBg: 'bg-violet-50', iconColor: 'text-violet-500', badgeBg: 'bg-violet-50 text-violet-700 border-violet-100' },
-      normal:         { ring: 'rgba(16,185,129,0.08)', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-500', badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
-    };
-    const style = statusStyle[status] ?? statusStyle.normal;
-
-    const attendanceStatusStyle: Record<string, { color: string; bg: string; border: string }> = {
-      present:  { color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
-      absent:   { color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
-      late:     { color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
-      half_day: { color: '#7c3aed', bg: '#f5f3ff', border: '#e9d5ff' },
-    };
-    const aStyle = attendanceStatus ? (attendanceStatusStyle[attendanceStatus] ?? attendanceStatusStyle.present) : null;
-
-    return (
-      <div className="flex flex-col bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        <div className={`h-1 w-full ${
-          status === 'early_checkout' ? 'bg-amber-400'
-            : status === 'overtime' ? 'bg-violet-500'
-              : 'bg-emerald-500'
-        }`}
-        />
-        <div className="px-4 pt-3 pb-3 flex flex-col gap-4">
-
-          {/* Greeting */}
-          {greetingMsg && (
-            <p className="text-[11px] font-semibold text-slate-400 tracking-wide uppercase">
-              {greetingMsg}
-            </p>
-          )}
-
-          {/* Trophy + title */}
-          <div className="flex items-center gap-3">
-            <div
-              className={`w-12 h-12 rounded-2xl ${style.iconBg} flex items-center justify-center flex-shrink-0`}
-              style={{ boxShadow: `0 0 0 6px ${style.ring}` }}
-            >
-              <Trophy size={22} className={style.iconColor} />
-            </div>
-            <div>
-              <p className="text-base font-black text-slate-900">{title}</p>
-              {messageStr && <p className="text-xs text-slate-500 mt-0.5">{messageStr}</p>}
-            </div>
-          </div>
-
-          {/* In / Out times row */}
-          {(checkInDisplay || checkOutDisplay) && (
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-slate-100 rounded-xl p-3 border border-slate-100">
-                <p className="text-[10px] font-semibold text-slate-400 uppercase mb-1">Check In</p>
-                <p className="text-sm font-bold text-slate-800">{checkInDisplay ?? '—'}</p>
-              </div>
-              <div className="bg-slate-100 rounded-xl p-3 border border-slate-100">
-                <p className="text-[10px] font-semibold text-slate-400 uppercase mb-1">Check Out</p>
-                <p className="text-sm font-bold text-slate-800">{checkOutDisplay ?? '—'}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Worked time + overtime + attendance status */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 rounded-xl px-3 py-1.5">
-              <Clock size={12} className="text-slate-500" />
-              <span className="text-xs font-bold text-slate-700">{workedDisplay} worked</span>
-            </div>
-            {otMins > 0 && (
-              <span className="text-xs font-semibold text-violet-600 bg-violet-50 border border-violet-100 px-2.5 py-1 rounded-xl">
-                +{fmtHM(otMins * 60)} overtime
-              </span>
-            )}
-            {aStyle && attendanceStatus && (
-              <span
-                className="text-xs font-bold px-2.5 py-1 rounded-xl border capitalize"
-                style={{ color: aStyle.color, background: aStyle.bg, borderColor: aStyle.border }}
-              >
-                {attendanceStatus.replace('_', ' ')}
-              </span>
-            )}
-          </div>
-
-          {/* Checkout badge */}
-          {badge && (
-            <span className={`self-start text-xs font-bold px-3 py-1 rounded-full border ${style.badgeBg}`}>
-              {badge}
-            </span>
-          )}
-
-          {/* Contact HR hint if absent */}
-          {attendanceStatus === 'absent' && (
-            <p className="text-[11px] text-slate-400 bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
-              Marked absent due to insufficient hours. Contact HR for regularization.
-            </p>
-          )}
-        </div>
-      </div>
-    );
+  // ── Special day (no check-in action) ──
+  if (!loadingCtx && (isSpecialDay || isRegularization)) {
+    return <SpecialDayScreen ctx={context!} status={status} />;
   }
 
-return (
-    <div className="flex flex-col bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+  // ── Completed (has checkout OR absent) ──
+  if (!loadingCtx && isCompleted && context) {
+    return <CompletionScreen ctx={context} status={status} />;
+  }
 
-      <div className="px-4 pt-2 pb-4">
-        {loadingCtx ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 size={22} className="animate-spin text-slate-300" />
-          </div>
-        ) : (
-          <>
-            {/* ── Top row: greeting + reporting to ── */}
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                {context?.greeting && (
-                  <p className="text-[12px] font-semibold text-slate-400 tracking-wide uppercase">
-                    {context.greeting}
-                  </p>
-                )}
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="relative flex h-2 w-2">
-                    {isCheckedIn && <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-75" />}
-                    <span className={`relative h-2 w-2 rounded-full ${isCheckedIn ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-                  </span>
-                  <span className="text-sm font-bold text-slate-800">
-                    {isCheckedIn
-                      ? `Checked In: ${context?.check_in_time ?? ''}`
-                      : 'Not checked in'}
-                  </span>
-                </div>
-              </div>
-              {reportingManager ? (
-                <div className="flex-1 min-w-0 text-right">
-                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Reporting To</p>
-                  <div className="flex items-center justify-end gap-2 mt-0.5">
-                    <span
-                      className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ background: reportingManager.status === 'ACTIVE' ? '#22c55e' : '#94a3b8' }}
-                    />
-                    <p className="text-sm font-bold text-slate-800 truncate">{reportingManager.name}</p>
+  // ── Button visibility ──
+  const showButton =
+    status === 'READY_TO_CHECK_IN' ||
+    status === 'WORKING' ||
+    status === 'CHECK_OUT_PENDING';
+
+  // Button label
+  const buttonLabel = isCheckedIn ? 'Check Out' : 'Check In';
+  const buttonIcon = isCheckedIn ? <LogOut size={15} /> : <LogIn size={15} />;
+  const buttonBg = isCheckedIn
+    ? 'bg-rose-500 shadow-[0_4px_14px_rgba(239,68,68,0.4)] hover:bg-rose-600'
+    : 'bg-[#0f766e] shadow-[0_4px_14px_rgba(15,118,110,0.4)] hover:bg-[#0d6b64]';
+
+  // CHECK_OUT_PENDING extra warning
+  const isPendingCheckout = status === 'CHECK_OUT_PENDING';
+
+  return (
+    <>
+      <div className="flex flex-col bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        {/* Status accent bar */}
+        <div className="h-1 w-full" style={{ background: cfg.accent }} />
+
+        <div className="px-4 pt-3 pb-4">
+          {loadingCtx ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 size={22} className="animate-spin text-slate-300" />
+            </div>
+          ) : (
+            <>
+              {/* ── Top row: greeting + timer / reporting-to ── */}
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  {context?.greeting && (
+                    <p className="text-[11px] font-semibold text-slate-400 tracking-wide uppercase">
+                      {context.greeting}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="relative flex h-2 w-2">
+                      {isCheckedIn && (
+                        <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                      )}
+                      <span
+                        className="relative h-2 w-2 rounded-full"
+                        style={{ background: isCheckedIn ? '#10b981' : '#cbd5e1' }}
+                      />
+                    </span>
+                    <span className="text-sm font-bold text-slate-800">
+                      {isCheckedIn
+                        ? `Checked in · ${context?.check_in?.time ?? ''}`
+                        : context?.status_label ?? 'Not checked in'}
+                    </span>
                   </div>
                 </div>
-              ) : (
-                <p className={`font-mono text-2xl font-black tabular-nums tracking-tight ${isCheckedIn ? 'text-slate-900' : 'text-slate-200'}`}>
-                  {timerStr}
-                </p>
-              )}
-            </div>
 
-            {/* ── Not checked in: check_in_context info ── */}
-            {!isCheckedIn && context?.check_in_context && (() => {
-              const ci = context.check_in_context;
-              const badgeColorMap: Record<string, { color: string; bg: string; border: string }> = {
-                red:    { color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
-                orange: { color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
-                green:  { color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
-                blue:   { color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
-              };
-              const bs = badgeColorMap[ci.badge_color ?? 'blue'] ?? badgeColorMap.blue;
-              return (
-                <div className="mb-3 flex flex-col gap-2">
-                  <div className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-3 border border-slate-100">
-                    <div>
-                      <p className="text-xs font-bold text-slate-700">{ci.title}</p>
-                      {ci.subtitle && <p className="text-[11px] text-slate-500 mt-0.5">{ci.subtitle}</p>}
-                    </div>
-                    {ci.badge && (
+                {reportingManager ? (
+                  <div className="flex-1 min-w-0 text-right">
+                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Reporting To</p>
+                    <div className="flex items-center justify-end gap-2 mt-0.5">
                       <span
-                        className="text-[10px] font-bold px-2.5 py-1 rounded-full border flex-shrink-0 ml-2"
-                        style={{ color: bs.color, background: bs.bg, borderColor: bs.border }}
-                      >
-                        {ci.badge}
+                        className="w-2 h-2 rounded-full flex-shrink-0"
+                        style={{ background: reportingManager.status === 'ACTIVE' ? '#22c55e' : '#94a3b8' }}
+                      />
+                      <p className="text-sm font-bold text-slate-800 truncate">{reportingManager.name}</p>
+                    </div>
+                  </div>
+                ) : isCheckedIn ? (
+                  <LiveTimer elapsed={elapsed} />
+                ) : (
+                  <span className="font-mono text-2xl font-black tabular-nums tracking-tight text-slate-200">
+                    --:--:--
+                  </span>
+                )}
+              </div>
+
+              {/* ── CHECK_OUT_PENDING alert ── */}
+              {isPendingCheckout && (
+                <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 mb-3">
+                  <AlertTriangle size={13} className="text-amber-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-amber-700">Shift ended — please check out</p>
+                    {context?.message?.notice && (
+                      <p className="text-[11px] text-amber-600 mt-0.5">{context.message.notice}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Working info (checked-in and not pending) ── */}
+              {isCheckedIn && !isPendingCheckout && (
+                <div className="flex flex-col gap-1.5 mb-3">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="text-xs text-slate-500">
+                      Working: <span className="font-bold text-slate-800">{workedStr}</span>
+                    </span>
+                    {shiftEndDisplay && remainingStr && (
+                      <span className="text-xs text-slate-500">
+                        Ends <span className="font-bold text-slate-700">{shiftEndDisplay}</span>
+                        <span className="text-slate-400"> · {remainingStr} left</span>
                       </span>
                     )}
                   </div>
-                  {(ci.shift_start || ci.shift_end) && (
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-slate-50 rounded-xl px-3 py-3 border border-slate-100">
-                        <p className="text-[10px] font-semibold text-slate-400 uppercase">Shift Start</p>
-                        <p className="text-xs font-bold text-slate-800 mt-0.5">{ci.shift_start}</p>
-                      </div>
-                      <div className="bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
-                        <p className="text-[10px] font-semibold text-slate-400 uppercase">Shift End</p>
-                        <p className="text-xs font-bold text-slate-800 mt-0.5">{ci.shift_end}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-
-            {/* ── Working info row (checked-in only) ── */}
-            {isCheckedIn && (
-              <div className="flex flex-col gap-2 mt-2 mb-3">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="text-xs text-slate-500">
-                    Working Time: <span className="font-bold text-slate-800">{workedStr}</span>
-                  </span>
-                  {shiftEndDisplay && remainingSecs !== null && remainingSecs > 0 && (
-                    <span className="text-xs text-slate-500">
-                      Shift ends at <span className="font-bold text-slate-700">{shiftEndDisplay}</span>
-                      <span className="text-slate-400"> · {remainingStr} remaining</span>
-                    </span>
-                  )}
-                  {dynamicBadge && (
-                    <span
-                      className="text-[10px] font-bold px-2.5 py-0.5 rounded-full border"
-                      style={{ color: dynamicBadge.color, background: dynamicBadge.bg, borderColor: dynamicBadge.border }}
-                    >
-                      {dynamicBadge.label}
-                    </span>
-                  )}
-                </div>
-                {(() => {
-                  const ciCtx = context?.check_in_context;
-                  if (!ciCtx?.badge && !ciCtx?.subtitle) return null;
-                  const badgeColorMap: Record<string, { color: string; bg: string; border: string }> = {
-                    red:    { color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
-                    orange: { color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
-                    green:  { color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
-                    blue:   { color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
-                  };
-                  const bs = badgeColorMap[ciCtx.badge_color ?? 'blue'] ?? badgeColorMap.blue;
-                  return (
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {ciCtx.badge && (
+                  {/* Status badge + subtitle */}
+                  {(context?.status_badge || context?.message?.subtitle) && (
+                    <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                      {context?.status_badge && (
                         <span
                           className="text-[10px] font-bold px-2.5 py-0.5 rounded-full border"
-                          style={{ color: bs.color, background: bs.bg, borderColor: bs.border }}
+                          style={{ color: cfg.textColor, background: cfg.bg, borderColor: cfg.border }}
                         >
-                          {ciCtx.badge}
+                          {context.status_badge}
                         </span>
                       )}
-                      {ciCtx.subtitle && (
-                        <span className="text-[11px] text-slate-500">{ciCtx.subtitle}</span>
+                      {context?.message?.subtitle && (
+                        <span className="text-[11px] text-slate-500">{context.message.subtitle}</span>
                       )}
                     </div>
-                  );
-                })()}
-              </div>
-            )}
-
-            {/* ── Company holiday / comp-off banner ── */}
-            {isCheckedIn && context?.day_type === 'company_holiday' && (
-              <div className="flex items-start gap-2 bg-violet-50 border border-violet-100 rounded-xl px-3 py-2.5 mb-3">
-                <span className="text-sm">🏖️</span>
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-violet-700">Company Holiday</p>
-                  {context.comp_off_credited && context.comp_off_credited > 0 ? (
-                    <p className="text-[11px] text-violet-500 mt-0.5">
-                      {context.status_message ?? `${context.comp_off_credited} comp-off will be credited after completing minimum work hours.`}
-                    </p>
-                  ) : context.status_message ? (
-                    <p className="text-[11px] text-violet-500 mt-0.5">{context.status_message}</p>
-                  ) : null}
+                  )}
                 </div>
+              )}
+
+              {/* ── Pre-shift: message + shift cards ── */}
+              {!isCheckedIn && context?.message && (
+                <div className="flex flex-col gap-2 mb-3">
+                  <div className="flex items-center justify-between rounded-xl px-3 py-3 border"
+                    style={{ background: cfg.bg, borderColor: cfg.border }}
+                  >
+                    <div>
+                      <p className="text-xs font-bold text-slate-700">{context.message.title}</p>
+                      {context.message.subtitle && (
+                        <p className="text-[11px] text-slate-500 mt-0.5">{context.message.subtitle}</p>
+                      )}
+                    </div>
+                    {context.status_badge && (
+                      <span
+                        className="text-[10px] font-bold px-2.5 py-1 rounded-full border flex-shrink-0 ml-2"
+                        style={{ color: cfg.textColor, background: cfg.bg, borderColor: cfg.border }}
+                      >
+                        {context.status_badge}
+                      </span>
+                    )}
+                  </div>
+
+                  {(context.shift?.start || context.shift?.end) && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-100">
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase">Shift Start</p>
+                        <p className="text-xs font-bold text-slate-800 mt-0.5">{context.shift.start}</p>
+                        {context.shift.grace_minutes && (
+                          <p className="text-[10px] text-slate-400 mt-0.5">Grace: {context.shift.grace_minutes}m</p>
+                        )}
+                      </div>
+                      <div className="bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-100">
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase">Shift End</p>
+                        <p className="text-xs font-bold text-slate-800 mt-0.5">{context.shift.end}</p>
+                        {context.shift.min_hours && (
+                          <p className="text-[10px] text-slate-400 mt-0.5">Min: {context.shift.min_hours}h</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Regularization nudge */}
+                  {context.can_regularize && (
+                    <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+                      <RefreshCw size={11} className="text-amber-500 flex-shrink-0" />
+                      <p className="text-[11px] text-amber-700">Regularization available for previous absences</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── Notice (comp-off, WFH, etc.) ── */}
+              {isCheckedIn && context?.message?.notice && (
+                <div className="flex items-start gap-2 bg-violet-50 border border-violet-100 rounded-xl px-3 py-2.5 mb-3">
+                  <span className="text-sm flex-shrink-0">🔔</span>
+                  <p className="text-[11px] text-violet-600">{context.message.notice}</p>
+                </div>
+              )}
+
+              {/* ── Progress bar ── */}
+              <div className="mb-3">
+                <ShiftProgressBar pct={pct} status={status} />
               </div>
-            )}
 
-            {/* ── Shift progress bar ── */}
-            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mb-3">
-              <div
-                className="h-full rounded-full transition-all duration-1000"
-                style={{
-                  width: `${pct}%`,
-                  background: dynamicBadge?.status === 'overtime'
-                    ? 'linear-gradient(90deg,#a78bfa,#8b5cf6)'
-                    : dynamicBadge?.status === 'shift_complete'
-                      ? 'linear-gradient(90deg,#34d399,#10b981)'
-                      : isCheckedIn
-                        ? 'linear-gradient(90deg,#0f766e,#14b8a6)'
-                        : '#e2e8f0',
-                  boxShadow: isCheckedIn ? '0 0 6px rgba(15,118,110,0.4)' : 'none',
-                }}
-              />
-            </div>
+              {/* ── Action button ── */}
+              {showButton && (
+                <button
+                  onClick={openModal}
+                  disabled={isLoading || isRefreshing}
+                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all active:scale-[0.97] disabled:opacity-60 text-white ${buttonBg}`}
+                >
+                  {isRefreshing
+                    ? <><Loader2 size={15} className="animate-spin" /> Checking status…</>
+                    : <>{buttonIcon} {buttonLabel}</>}
+                </button>
+              )}
 
-            {/* ── Check In / Check Out button ── */}
-            <button
-              onClick={openModal}
-              disabled={isLoading || isRefreshing}
-              className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all active:scale-[0.97] disabled:opacity-60 ${
-                isCheckedIn
-                  ? 'bg-rose-500 text-white shadow-[0_4px_14px_rgba(239,68,68,0.4)] hover:bg-rose-600'
-                  : 'bg-[#0f766e] text-white shadow-[0_4px_14px_rgba(15,118,110,0.4)] hover:bg-[#0d6b64]'
-              }`}
-            >
-              {isRefreshing
-                ? <><Loader2 size={15} className="animate-spin" /> Checking status…</>
-                : isCheckedIn
-                  ? <><LogOut size={15} /> Check Out</>
-                  : <><LogIn size={15} /> Check In</>}
-            </button>
-          </>
-        )}
+              {/* ── Upcoming shift: no button, just info ── */}
+              {status === 'UPCOMING_SHIFT' && !showButton && (
+                <div className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-slate-400 bg-slate-50 border border-slate-100">
+                  <Clock size={14} />
+                  {context?.message?.title ?? 'Shift upcoming'}
+                </div>
+              )}
+
+              {/* ── Weekly strip ── */}
+              {context?.weekly_card && <WeekStrip entries={context.weekly_card} />}
+
+              {/* ── Monthly summary ── */}
+              {context?.monthly_summary && <MonthlySummaryRow summary={context.monthly_summary} />}
+            </>
+          )}
+        </div>
       </div>
 
-      {/* ── Confirm Modal (Check In / Check Out) ── */}
+      {/* ══════════════════════════════════════════════
+          CHECK IN / CHECK OUT CONFIRM MODAL
+      ══════════════════════════════════════════════ */}
       {showConfirmModal && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/20 backdrop-blur-sm animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/20 backdrop-blur-sm"
           onClick={() => !isLoading && setShowConfirmModal(false)}
         >
           <div
-            className="w-full max-w-sm rounded-t-3xl bg-white shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-200"
+            className="w-full max-w-sm rounded-t-3xl bg-white shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className={`h-1 w-full ${isCheckedIn ? 'bg-rose-500' : 'bg-[#0f766e]'}`} />
+            <div className="h-1 w-full" style={{ background: isCheckedIn ? '#ef4444' : '#0f766e' }} />
             <div className="p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${isCheckedIn ? 'bg-rose-50' : 'bg-teal-50'}`}>
-                  {isCheckedIn ? <LogOut size={18} className="text-rose-500" /> : <LogIn size={18} className="text-[#0f766e]" />}
+                <div
+                  className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                  style={{ background: isCheckedIn ? '#fef2f2' : '#f0fdfa' }}
+                >
+                  {isCheckedIn
+                    ? <LogOut size={18} className="text-rose-500" />
+                    : <LogIn size={18} style={{ color: '#0f766e' }} />}
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-900">{isCheckedIn ? 'Check out' : 'Check in'}</p>
-                  <p className="text-xs text-slate-400">
-                    {isCheckedIn ? `${workedStr} worked` : fmtTime(now)}
+                  <p className="text-sm font-bold text-slate-900">
+                    {isCheckedIn ? 'Confirm check out' : 'Confirm check in'}
                   </p>
-                  {(() => {
-                    const ci = context?.check_in_context;
-                    if (!ci?.badge) return null;
-                    const bm: Record<string, string> = {
-                      red: 'text-red-600 bg-red-50 border-red-100',
-                      orange: 'text-amber-600 bg-amber-50 border-amber-100',
-                      green: 'text-emerald-600 bg-emerald-50 border-emerald-100',
-                      blue: 'text-blue-600 bg-blue-50 border-blue-100',
-                    };
-                    return (
-                      <span className={`mt-1 inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border ${bm[ci.badge_color ?? 'blue'] ?? bm.blue}`}>
-                        {ci.badge}
-                      </span>
-                    );
-                  })()}
+                  <p className="text-xs text-slate-400">
+                    {isCheckedIn
+                      ? `You've worked ${workedStr} so far`
+                      : fmtTime(now)}
+                  </p>
+                  {context?.status_badge && (
+                    <span
+                      className="mt-1 inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border"
+                      style={{ color: cfg.textColor, background: cfg.bg, borderColor: cfg.border }}
+                    >
+                      {context.status_badge}
+                    </span>
+                  )}
                 </div>
               </div>
 
-              {/* Location */}
-              <div className="flex items-start gap-2.5 bg-slate-50 rounded-2xl p-3.5 mb-5">
-                <MapPin size={13} className="text-slate-400 mt-0.5 flex-shrink-0" />
-                <div className="min-w-0">
-                  {isFetchingLoc
-                    ? <div className="flex items-center gap-1.5 text-xs text-slate-400"><Loader2 size={11} className="animate-spin" />Detecting location…</div>
-                    : locationData
-                      ? (
-                        <>
-                          <p className="text-xs font-semibold text-slate-800 leading-snug">{locationData.address}</p>
-                          {locationData.accuracy && (
-                            <p className={`text-[10px] mt-0.5 font-medium ${locationData.accuracy <= 50 ? 'text-emerald-600' : locationData.accuracy <= 200 ? 'text-amber-600' : 'text-red-500'}`}>
-                              ±{locationData.accuracy}m accuracy
-                            </p>
-                          )}
-                        </>
-                      )
-                      : <p className="text-xs text-slate-400">Location unavailable</p>}
-                </div>
-              </div>
+              <LocationWidget data={locationData} loading={isFetchingLoc} />
 
-              <div className="flex gap-2.5">
+              <div className="flex gap-2.5 mt-5">
                 <button
                   onClick={() => setShowConfirmModal(false)}
                   disabled={isLoading}
@@ -724,7 +905,9 @@ return (
                       : 'bg-[#0f766e] shadow-[0_4px_14px_rgba(15,118,110,0.4)]'
                   }`}
                 >
-                  {isLoading ? <Loader2 size={14} className="animate-spin" /> : isCheckedIn ? 'Confirm Check Out' : 'Confirm Check In'}
+                  {isLoading
+                    ? <Loader2 size={14} className="animate-spin" />
+                    : isCheckedIn ? 'Check Out' : 'Check In'}
                 </button>
               </div>
             </div>
@@ -732,14 +915,16 @@ return (
         </div>
       )}
 
-      {/* ── Early Checkout Warning Modal ── */}
+      {/* ══════════════════════════════════════════════
+          EARLY CHECKOUT WARNING MODAL
+      ══════════════════════════════════════════════ */}
       {showEarlyWarning && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/20 backdrop-blur-sm animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/20 backdrop-blur-sm"
           onClick={() => !isLoading && setShowEarlyWarning(false)}
         >
           <div
-            className="w-full max-w-sm rounded-t-3xl bg-white shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-200"
+            className="w-full max-w-sm rounded-t-3xl bg-white shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="h-1 w-full bg-amber-400" />
@@ -749,15 +934,17 @@ return (
                   <AlertTriangle size={18} className="text-amber-500" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-900">Early Check-out</p>
-                  <p className="text-xs text-slate-400">You're leaving before shift end</p>
+                  <p className="text-sm font-bold text-slate-900">Early check-out</p>
+                  <p className="text-xs text-slate-400">You're leaving before your shift ends</p>
                 </div>
               </div>
               <div className="bg-amber-50 border border-amber-100 rounded-2xl p-3.5 mb-5">
                 <p className="text-xs text-amber-700 font-medium leading-relaxed">
-                  {context?.check_out_context?.warning_message
-                    ?? `Shift ends at ${shiftEndDisplay}. Checking out now will be marked as early checkout.`}
+                  {`Shift ends at ${shiftEndDisplay ?? '—'}. Checking out now will be recorded as an early exit.`}
                 </p>
+                {remainingStr && (
+                  <p className="text-[11px] text-amber-600 mt-1">{remainingStr} remaining in your shift.</p>
+                )}
               </div>
               <div className="flex gap-2.5">
                 <button
@@ -779,6 +966,6 @@ return (
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

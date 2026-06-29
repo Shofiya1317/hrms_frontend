@@ -160,58 +160,179 @@ export const deleteAttendance = (
   { bearerToken: token, isFetchToken: !token },
 );
 
-export interface ICheckOutContext {
-  check_out_status?: 'normal' | 'early_checkout' | 'overtime';
+// export interface ICheckOutContext {
+//   check_out_status?: 'normal' | 'early_checkout' | 'overtime';
+//   badge?: string;
+//   badge_color?: string;
+//   title?: string;
+//   subtitle?: string;
+//   warning_message?: string;
+//   worked_time?: string;
+//   worked_minutes?: number;
+//   shift_end?: string;
+//   shift_end_24hr?: string;
+//   overtime_minutes?: number;
+//   early_exit_minutes?: number;
+//   // internal — set by frontend to carry local timer snapshot through to completion screen
+//   _workedSecs?: number;
+// }
+
+// export interface ICheckInContext {
+//   state: 'not_checked_in' | 'checked_in' | 'checked_out' | 'completed';
+//   employee_name?: string;
+//   greeting?: string;
+//   message?: string;
+//   current_time?: string;
+//   current_time_24hr?: string;
+//   attendance_id?: string;
+//   check_in_time?: string;
+//   check_in_time_24hr?: string;
+//   check_out_time?: string;
+//   check_out_time_24hr?: string;
+//   worked_time?: string;
+//   worked_minutes?: number;
+//   attendance_status?: string;
+//   // status fields (from check-in response status object)
+//   day_type?: string;
+//   is_comp_off_eligible?: boolean;
+//   comp_off_credited?: number;
+//   status_message?: string;
+//   // nested context objects
+//   check_in_context?: {
+//     check_in_status?: string;
+//     badge?: string;
+//     badge_color?: string;
+//     title?: string;
+//     subtitle?: string;
+//     shift_start?: string;
+//     shift_end?: string;
+//     shift_start_24hr?: string;
+//     shift_end_24hr?: string;
+//     late_by_minutes?: number;
+//     minutes_to_shift?: number;
+//   };
+//   check_out_context?: ICheckOutContext;
+// }
+
+// export const getCheckInContext = (
+//   tenantId: string,
+//   token?: string,
+// ) => get(
+//   '/v1/attendance/check-in/context',
+//   undefined,
+//   tenantId,
+//   { bearerToken: token, isFetchToken: !token },
+// );
+
+// ─── Updated to match the new GET /v1/attendance/check-in/context response ───
+// Replaces the old ICheckInContext / ICheckOutContext definitions.
+// NOTE: `checkIn` and `checkOut` POST functions elsewhere in this file are
+// untouched — only the context types + GET function changed.
+
+export interface IShiftInfo {
+  name?: string;
+  start?: string;
+  end?: string;
+  start_24hr?: string;
+  end_24hr?: string;
+  grace_minutes?: number;
+  late_after?: string;
+  min_hours?: number;
+  auto_checkout?: string;
+}
+
+export interface ICheckInDetail {
+  time?: string;
+  time_24hr?: string;
+  is_early?: boolean;
+  is_on_time?: boolean;
+  is_within_grace?: boolean;
+  is_late?: boolean;
+  late_by_minutes?: number;
+  late_by_label?: string;
+}
+
+/**
+ * INFERRED SHAPE — the sample response had `check_out: null` (employee
+ * hadn't checked out yet), so this is a best-guess based on the old
+ * ICheckOutContext fields. Confirm against a real post-checkout response
+ * and adjust if any field names differ.
+ */
+export interface ICheckOutDetail {
+  time?: string;
+  time_24hr?: string;
+  status?: 'normal' | 'early_checkout' | 'overtime';
   badge?: string;
-  badge_color?: string;
   title?: string;
   subtitle?: string;
   warning_message?: string;
-  worked_time?: string;
   worked_minutes?: number;
-  shift_end?: string;
-  shift_end_24hr?: string;
+  worked_label?: string;
   overtime_minutes?: number;
   early_exit_minutes?: number;
-  // internal — set by frontend to carry local timer snapshot through to completion screen
-  _workedSecs?: number;
 }
 
+export interface IWorkSummary {
+  worked_minutes: number;
+  worked_label: string;
+  remaining_minutes: number;
+  remaining_label: string;
+  required_minutes: number;
+  required_label: string;
+  hours_met: boolean;
+}
+
+export interface IContextMessage {
+  title?: string;
+  subtitle?: string;
+  notice?: string | null;
+}
+
+export interface IWeeklyCardEntry {
+  date: string;
+  day: string;
+  date_label: string;
+  status: string;
+  badge: string;
+  badge_color: string;
+  hours: string;
+  check_in: string | null;
+  is_today: boolean;
+}
+
+export interface IMonthlySummary {
+  present: number;
+  late: number;
+  on_leave: number;
+  absent: number;
+  regularization_pending: number;
+  overtime_minutes: number;
+  overtime_label: string;
+  avg_hours_label: string;
+}
+
+export type NextAction = 'CHECK_IN' | 'CHECK_OUT' | 'NONE';
+
 export interface ICheckInContext {
-  state: 'not_checked_in' | 'checked_in' | 'checked_out' | 'completed';
   employee_name?: string;
   greeting?: string;
-  message?: string;
   current_time?: string;
   current_time_24hr?: string;
+  // Observed: 'WORKING'. Likely others: 'NOT_CHECKED_IN', 'COMPLETED', 'ON_LEAVE', 'HOLIDAY'
+  status?: string;
+  status_label?: string;
+  status_badge?: string;
+  status_badge_color?: string;
+  shift?: IShiftInfo;
+  check_in?: ICheckInDetail | null;
+  check_out?: ICheckOutDetail | null;
+  work_summary?: IWorkSummary;
+  next_action?: NextAction;
+  can_regularize?: boolean;
+  message?: IContextMessage;
   attendance_id?: string;
-  check_in_time?: string;
-  check_in_time_24hr?: string;
-  check_out_time?: string;
-  check_out_time_24hr?: string;
-  worked_time?: string;
-  worked_minutes?: number;
-  attendance_status?: string;
-  // status fields (from check-in response status object)
-  day_type?: string;
-  is_comp_off_eligible?: boolean;
-  comp_off_credited?: number;
-  status_message?: string;
-  // nested context objects
-  check_in_context?: {
-    check_in_status?: string;
-    badge?: string;
-    badge_color?: string;
-    title?: string;
-    subtitle?: string;
-    shift_start?: string;
-    shift_end?: string;
-    shift_start_24hr?: string;
-    shift_end_24hr?: string;
-    late_by_minutes?: number;
-    minutes_to_shift?: number;
-  };
-  check_out_context?: ICheckOutContext;
+  weekly_card?: IWeeklyCardEntry[];
+  monthly_summary?: IMonthlySummary;
 }
 
 export const getCheckInContext = (
