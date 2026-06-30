@@ -35,6 +35,7 @@ import { getDepartments } from '@/lib/service/masters';
 import { useParams } from 'next/navigation';
 
 import ProbationTracker from './ProbationTracker';
+import NoticePeriodTracker from './NoticePeriodTracker';
 
 enum EmploymentStatus {
   ACTIVE = 'ACTIVE',
@@ -415,7 +416,7 @@ export default function EmployeesRegistry() {
   const params = useParams();
   const subdomain = params?.subdomain as string;
 
-  const [activeTab, setActiveTab] = useState<'registry' | 'probation'>(
+  const [activeTab, setActiveTab] = useState<'registry' | 'probation' | 'notice-period'>(
     'registry'
   );
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -642,12 +643,27 @@ export default function EmployeesRegistry() {
                 Probation Tracker
               </div>
             </button>
+            <button
+              onClick={() => setActiveTab('notice-period')}
+              className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${
+                activeTab === 'notice-period'
+                  ? 'border-[#0f766e] text-[#0f766e]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Clock size={16} />
+                Notice Period
+              </div>
+            </button>
           </div>
         </div>
 
         {/* Tab Content */}
         {activeTab === 'probation' ? (
           <ProbationTracker />
+        ) : activeTab === 'notice-period' ? (
+          <NoticePeriodTracker />
         ) : (
           <>
             {/* Stats Cards */}
