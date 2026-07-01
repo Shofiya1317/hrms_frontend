@@ -130,6 +130,7 @@ export const employeeMenuItems: IMenuItem[] = [
       { label: 'Regularization', path: '/employee/attendance/regularization' },
       { label: 'Work From Home', path: '/employee/attendance/wfh-request' },
       { label: 'On Duty', path: '/employee/attendance/on-duty' },
+      { label: 'Resignation', path: '/employee/attendance/resignation' },
     ],
   },
   {

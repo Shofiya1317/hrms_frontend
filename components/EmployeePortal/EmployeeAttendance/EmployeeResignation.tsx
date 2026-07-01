@@ -11,8 +11,9 @@ import {
   FileText,
   Clock,
   Send,
+  ArrowDownLeft,
 } from 'lucide-react';
-import { submitResignation, getEmployeeResignationStatus } from '@/lib/service/noticePeriod';
+import { submitResignation, getEmployeeResignationStatus, withdrawResignation, INoticePeriodResponse } from '@/lib/service/noticePeriod';
 import toast from 'react-hot-toast';
 
 export default function EmployeeResignation() {
@@ -21,7 +22,9 @@ export default function EmployeeResignation() {
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [statusData, setStatusData] = useState<any>(null);
+  const [statusData, setStatusData] = useState<INoticePeriodResponse | null>(null);
+
+  const canSubmitNew = !statusData?.status || ['rejected', 'withdrawn'].includes(statusData.status.toLowerCase());
 
   const [form, setForm] = useState({
     reason: '',
@@ -66,6 +69,22 @@ export default function EmployeeResignation() {
     }
   };
 
+  const handleWithdraw = async () => {
+    if (!subdomain || !statusData?.id) return;
+    if (!window.confirm('Are you sure you want to withdraw your resignation?')) return;
+    
+    try {
+      setSubmitting(true);
+      await withdrawResignation(subdomain, statusData.id);
+      toast.success('Resignation withdrawn successfully');
+      loadStatus();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Failed to withdraw resignation');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -89,21 +108,31 @@ export default function EmployeeResignation() {
         </div>
       </div>
 
-      {statusData?.status ? (
+      {statusData?.status && (
         <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-gray-900">Current Status</h2>
-            {statusData.status === 'pending' && (
+            {statusData.status?.toLowerCase() === 'pending' && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-sm font-semibold">
                 <Clock size={16} /> Pending Approval
               </span>
             )}
-            {statusData.status === 'approved' && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-sm font-semibold">
-                <CheckCircle size={16} /> Approved
+            {(statusData.status?.toLowerCase() === 'approved' || statusData.status?.toLowerCase() === 'active') && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-sm font-semibold">
+                <CheckCircle size={16} /> Active (Serving Notice)
               </span>
             )}
-            {statusData.status === 'rejected' && (
+            {statusData.status?.toLowerCase() === 'completed' && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-sm font-semibold">
+                <CheckCircle size={16} /> Exit Completed
+              </span>
+            )}
+            {statusData.status?.toLowerCase() === 'withdrawn' && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-50 text-gray-700 border border-gray-200 text-sm font-semibold">
+                <ArrowDownLeft size={16} /> Withdrawn
+              </span>
+            )}
+            {statusData.status?.toLowerCase() === 'rejected' && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 text-red-600 border border-red-200 text-sm font-semibold">
                 <XCircle size={16} /> Rejected
               </span>
@@ -115,15 +144,24 @@ export default function EmployeeResignation() {
               <p className="text-sm text-gray-500 mb-1">Requested Last Working Day</p>
               <p className="font-semibold text-gray-900 flex items-center gap-2">
                 <Calendar size={16} className="text-gray-400" />
-                {new Date(statusData.requested_last_working_day || statusData.expected_last_day).toLocaleDateString()}
+                {new Date(statusData.expected_last_working_day || statusData.requested_last_working_day || '').toLocaleDateString()}
               </p>
             </div>
-            {statusData.status === 'approved' && statusData.expected_last_working_day && (
+            {(statusData.status?.toLowerCase() === 'approved' || statusData.status?.toLowerCase() === 'active' || statusData.status?.toLowerCase() === 'completed') && statusData.expected_last_working_day && (
               <div>
                 <p className="text-sm text-gray-500 mb-1">Confirmed Exit Date</p>
-                <p className="font-semibold text-emerald-600 flex items-center gap-2">
+                <p className="font-semibold text-blue-600 flex items-center gap-2">
                   <CheckCircle size={16} />
                   {new Date(statusData.expected_last_working_day).toLocaleDateString()}
+                </p>
+              </div>
+            )}
+            {statusData.status?.toLowerCase() === 'completed' && statusData.actual_last_working_day && (
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Actual Last Working Day</p>
+                <p className="font-semibold text-purple-600 flex items-center gap-2">
+                  <CheckCircle size={16} />
+                  {new Date(statusData.actual_last_working_day).toLocaleDateString()}
                 </p>
               </div>
             )}
@@ -131,19 +169,33 @@ export default function EmployeeResignation() {
               <p className="text-sm text-gray-500 mb-1">Reason</p>
               <p className="text-gray-900">{statusData.reason}</p>
             </div>
-            {(statusData.manager_remarks || statusData.admin_remarks || statusData.hr_remarks) && (
+            {(statusData.manager_remarks || statusData.hr_remarks) && (
               <div className="col-span-1 md:col-span-2 bg-gray-50 p-4 rounded-xl border border-gray-100">
                 <p className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
                   <AlertCircle size={16} className="text-[#0f766e]" />
                   Remarks
                 </p>
-                <p className="text-sm text-gray-600">{statusData.manager_remarks || statusData.admin_remarks || statusData.hr_remarks}</p>
+                <p className="text-sm text-gray-600">{statusData.manager_remarks || statusData.hr_remarks}</p>
+              </div>
+            )}
+            {(statusData.status?.toLowerCase() === 'pending' || statusData.status?.toLowerCase() === 'active' || statusData.status?.toLowerCase() === 'approved') && (
+              <div className="col-span-1 md:col-span-2 pt-4 border-t border-gray-100 flex justify-end">
+                <button
+                  onClick={handleWithdraw}
+                  disabled={submitting}
+                  className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-red-600 transition-colors shadow-sm disabled:opacity-60"
+                >
+                  {submitting ? <Loader2 size={16} className="animate-spin" /> : <ArrowDownLeft size={16} />}
+                  Withdraw Resignation
+                </button>
               </div>
             )}
           </div>
         </div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+      )}
+
+      {canSubmitNew && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mt-6">
           <h2 className="text-lg font-bold text-gray-900 mb-2">Submit Resignation</h2>
           <p className="text-sm text-gray-500 mb-6">Please provide the details for your resignation request. Once submitted, it will be sent to HR and your manager for review.</p>
           

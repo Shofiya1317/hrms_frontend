@@ -33,6 +33,7 @@ import {
   getEmployeeAttendanceDashboard,
   IEmployeeAttendanceDashboard,
 } from '@/lib/service/attendance';
+import { getEmployeeResignationStatus } from '@/lib/service/noticePeriod';
 import CheckInOutCard from './CheckInOutCard';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -330,6 +331,64 @@ function ProbationCard({ probation }: { probation: IProbationStatus }) {
   );
 }
 
+// ─── Notice Period Card ────────────────────────────────────────────────────────
+function NoticePeriodCard({ resignation }: { resignation: any }) {
+  const status = resignation.status?.toLowerCase() || 'pending';
+  const expectedLastDay = resignation.expected_last_working_day || resignation.requested_last_working_day;
+  
+  let daysLeft = 0;
+  if (expectedLastDay && (status === 'active' || status === 'approved')) {
+    const diff = new Date(expectedLastDay).getTime() - new Date().getTime();
+    daysLeft = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  }
+
+  const isCompleted = status === 'completed';
+  const isPending = status === 'pending';
+
+  return (
+    <div className="rounded-3xl bg-white/80 backdrop-blur-sm border border-orange-100 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-4">
+       <div className="flex items-center justify-between mb-4">
+         <div className="flex items-center gap-2">
+           <div className="w-8 h-8 rounded-2xl flex items-center justify-center shadow-sm bg-gradient-to-br from-orange-400 to-orange-600">
+             <span className="text-sm text-white">⏳</span>
+           </div>
+           <div>
+             <h3 className="text-sm font-bold text-slate-800">Notice Period</h3>
+             <p className="text-[10px] text-slate-400">Status: {status.charAt(0).toUpperCase() + status.slice(1)}</p>
+           </div>
+         </div>
+         {status === 'active' || status === 'approved' ? (
+           <span className="text-[11px] font-bold px-3 py-1 rounded-full border border-orange-200 bg-orange-50 text-orange-600">
+             {daysLeft} days left
+           </span>
+         ) : isPending ? (
+           <span className="text-[11px] font-bold px-3 py-1 rounded-full border border-amber-200 bg-amber-50 text-amber-600">
+             Pending
+           </span>
+         ) : isCompleted ? (
+           <span className="text-[11px] font-bold px-3 py-1 rounded-full border border-purple-200 bg-purple-50 text-purple-600">
+             Completed
+           </span>
+         ) : null}
+       </div>
+       
+       <div className="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+         <div>
+           <p className="text-[10px] font-bold text-slate-400 uppercase">Expected Exit</p>
+           <p className="text-sm font-bold text-slate-700">
+             {expectedLastDay ? new Date(expectedLastDay).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) : 'TBD'}
+           </p>
+         </div>
+         <div className="text-right">
+            <Link href="/employee/attendance/resignation" className="text-[10px] font-bold text-orange-600 hover:text-orange-700 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-100 transition-colors">
+              View Details &rarr;
+            </Link>
+         </div>
+       </div>
+    </div>
+  );
+}
+
 // ─── Main Dashboard ─────────────────────────────────────────────────────────────
 export default function EmployeeDashboard({
   employee,
@@ -368,6 +427,7 @@ export default function EmployeeDashboard({
   const [attendanceDashboardLoading, setAttendanceDashboardLoading] =
     useState(false);
   const [probation, setProbation] = useState<IProbationStatus | null>(null);
+  const [resignation, setResignation] = useState<any | null>(null);
 
   useEffect(() => {
     fetchAttendanceDashboard();
@@ -375,7 +435,18 @@ export default function EmployeeDashboard({
     fetchLeaveBalances();
     fetchPendingRequests();
     fetchProbation();
+    fetchResignation();
   }, []);
+
+  const fetchResignation = async () => {
+    try {
+      const res = await getEmployeeResignationStatus(apiKey, token);
+      const data = res?.data?.data ?? res?.data;
+      if (data && data.status && data.status.toLowerCase() !== 'withdrawn' && data.status.toLowerCase() !== 'rejected') {
+        setResignation(data);
+      }
+    } catch { /* ignore */ }
+  };
 
   const fetchProbation = async () => {
     try {
@@ -1133,9 +1204,12 @@ export default function EmployeeDashboard({
           </div>
         )} */}
 
-        {/* ── Probation Status ── */}
-        {probation && (
-          <ProbationCard probation={probation} />
+        {/* ── Probation & Notice Period Status ── */}
+        {(probation || resignation) && (
+          <div className={`grid grid-cols-1 ${probation && resignation ? 'lg:grid-cols-2' : ''} gap-3`}>
+            {probation && <ProbationCard probation={probation} />}
+            {resignation && <NoticePeriodCard resignation={resignation} />}
+          </div>
         )}
 
         {/* ── Upcoming Holidays ── */}
