@@ -188,7 +188,7 @@ export function AuthLayout({
                 paddingTop: 'clamp(1.5rem, 5vh, 3rem)',
               }}
             >
-              <div className="animated-element flex w-full items-center justify-center px-3 pb-5 sm:px-4 md:pb-0">
+              <div className="animated-element flex w-full items-center justify-center px-3 pb-3 sm:px-4 md:pb-0">
                 {children}
               </div>
             </div>

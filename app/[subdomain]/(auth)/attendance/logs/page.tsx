@@ -1,34 +1,36 @@
 'use client';
 
 import { useState } from 'react';
-import { ClipboardList, FileText, Home } from 'lucide-react';
+import { ClipboardList, FileText, Home, Activity } from 'lucide-react';
 import AttendanceLogs from '@/components/AdminPortal/AdminAttendance/AttendanceLogs';
+import AdminLiveAttendance from '@/components/AdminPortal/AdminAttendance/AdminLiveAttendance';
 import AdminRegularizationRequests from '@/components/AdminPortal/AdminAttendance/AdminRegularizationRequests';
 import AdminWFHRequests from '@/components/AdminPortal/AdminAttendance/AdminWFHRequests';
 import AdminOnDutyRequests from '@/components/AdminPortal/AdminAttendance/AdminOnDutyRequests';
 
-type Tab = 'logs' | 'regularization' | 'wfh' | 'onduty';
+type Tab = 'live' | 'logs' | 'regularization' | 'wfh' | 'onduty';
 
 const TABS: { id: Tab; label: string; icon: any }[] = [
-  { id: 'logs',           label: 'Attendance Logs',          icon: ClipboardList },
+  { id: 'live',           label: 'Live Attendance',          icon: Activity      },
+  { id: 'logs',           label: 'Attendance Records',       icon: ClipboardList },
   { id: 'regularization', label: 'Regularization Requests',  icon: FileText      },
   { id: 'wfh',            label: 'WFH Requests',             icon: Home          },
   { id: 'onduty',         label: 'On-Duty Requests',         icon: Home          },
 ];
 
 export default function AttendanceLogsPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('logs');
+  const [activeTab, setActiveTab] = useState<Tab>('live');
 
   return (
     <div className="">
-      <div className='py-3 px-2'>
+      <div className="py-3 px-2">
         <h1 className="text-lg font-bold text-[#0f1f2e]">Attendance Management</h1>
-        <p className="text-xs text-gray-400 mt-0.5">View logs, manage regularization and WFH requests</p>
+        <p className="text-xs text-gray-400 mt-0.5">View live status, historical records, and manage requests</p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-auto">
         <div className="pt-3 flex items-center gap-1 p-3 border-b border-gray-100 overflow-x-auto">
-          {TABS.map(tab => {
+          {TABS.map((tab) => {
             const Icon = tab.icon;
             return (
               <button
@@ -48,13 +50,12 @@ export default function AttendanceLogsPage() {
         </div>
 
         <div className="p-4">
-          {activeTab === 'logs'           && <AttendanceLogs />}
-          {activeTab === 'regularization' && <AdminRegularizationRequests />}
-          {activeTab === 'wfh'            && <AdminWFHRequests />}
-          {activeTab === 'onduty'         && <AdminOnDutyRequests />}
-
-
-          </div>
+          {activeTab === 'live'            && <AdminLiveAttendance />}
+          {activeTab === 'logs'            && <AttendanceLogs />}
+          {activeTab === 'regularization'  && <AdminRegularizationRequests />}
+          {activeTab === 'wfh'             && <AdminWFHRequests />}
+          {activeTab === 'onduty'          && <AdminOnDutyRequests />}
+        </div>
       </div>
     </div>
   );

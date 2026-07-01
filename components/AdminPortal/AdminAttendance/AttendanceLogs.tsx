@@ -4,67 +4,70 @@ import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import {
   ChevronDown, ChevronLeft, ChevronRight, Search, CheckCircle2,
-  XCircle, Clock, AlertTriangle, Loader2, Calendar, TrendingUp,
-  MapPin, Tag, User,
+  XCircle, Clock, AlertTriangle, Loader2, Calendar, User, X, ExternalLink,
+  LogIn, LogOut,
 } from 'lucide-react';
-import { getAttendances } from '@/lib/service/attendance';
+import {
+  getAdminAttendanceRecords,
+  getAttendanceLogs,
+} from '@/lib/service/attendance';
 import { getLeaveApplications, LeaveStatus } from '@/lib/service/leaveApplication';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-type AttendanceStatus = 'present' | 'absent' | 'on_leave' | 'weekend' | 'holiday' | 'checked_in' | 'checked_out';
-type DayType = 'working_day' | 'weekend' | 'public_holiday' | 'company_holiday';
-
-interface IAttendanceLog {
-  id: string;
+// ── Types (matched to actual /admin-attendance/records response) ──────────────
+interface IAttendanceRecord {
+  date: string;         // pre-formatted, e.g. "Jul 1, 2026"
+  date_raw: string;     // ISO, e.g. "2026-07-01"
   employee_id: string;
   employee_name: string;
-  employee_code: string;
-  attendance_date: string;
-  day_type: DayType;
-  attendance_status: AttendanceStatus;
-  check_in_time: string | null;
-  check_out_time: string | null;
-  total_worked_minutes: number;
-  check_in_location_name:string | null;
-  total_worked_hours: string;
-  shift_name: string;
-  shift_timings: string;
-  is_regularized: boolean;
-  remarks: string | null;
-  is_late: boolean;
-  late_by_minutes: number;
-  is_early_exit: boolean;
-  early_exit_minutes: number;
-  is_overtime: boolean;
-  overtime_minutes: number;
-  leave_info: any;
-  holiday_info: any;
+  department: string;
+  check_in: string;     // pre-formatted, e.g. "12:24 PM" or "--"
+  check_out: string;    // pre-formatted, e.g. "--"
+  worked: string;       // pre-formatted, e.g. "0h 0m"
+  status: string;       // free text: "Working", "Present", "Absent", "On Leave", etc.
+  remarks?: string | null;
 }
 
-// ── constants ─────────────────────────────────────────────────────────────────
-const STATUS_META: Record<AttendanceStatus, { label: string; bg: string; text: string; dot: string; icon: any }> = {
-  present: {
-    label: 'Present', bg: 'bg-teal-50', text: 'text-teal-700', dot: 'bg-teal-500', icon: CheckCircle2,
-  },
-  absent: {
-    label: 'Absent', bg: 'bg-red-50', text: 'text-red-600', dot: 'bg-red-400', icon: XCircle,
-  },
-  on_leave: {
-    label: 'On Leave', bg: 'bg-blue-50', text: 'text-blue-600', dot: 'bg-blue-500', icon: Calendar,
-  },
-  weekend: {
-    label: 'Weekend', bg: 'bg-purple-50', text: 'text-purple-600', dot: 'bg-purple-500', icon: Calendar,
-  },
-  holiday: {
-    label: 'Holiday', bg: 'bg-amber-50', text: 'text-amber-600', dot: 'bg-amber-400', icon: Calendar,
-  },
-  checked_in: {
-    label: 'Checked In', bg: 'bg-cyan-50', text: 'text-cyan-700', dot: 'bg-cyan-500', icon: Clock,
-  },
-  checked_out: {
-    label: 'Completed', bg: 'bg-teal-50', text: 'text-teal-700', dot: 'bg-teal-500', icon: CheckCircle2,
-  },
-};
+// This is what /v1/attendance/logs returns per entry — the sample response had
+// an empty `logs` array, so this is inferred to match the records shape above.
+// Update field names here once you see a populated response.
+interface IEmployeeLogEntry {
+  date: string;
+  date_raw: string;
+  check_in: string;
+  check_out: string;
+  worked: string;
+  status: string;
+  remarks?: string | null;
+}
+
+// ── status → color/icon mapping (status is free text, not an enum) ────────────
+function getStatusMeta(rawStatus: string) {
+  const status = (rawStatus ?? '').trim();
+  const lower = status.toLowerCase();
+
+  if (lower.includes('not checked in')) {
+    return { label: status || 'Not Checked In', bg: 'bg-gray-100', text: 'text-gray-500', icon: Clock };
+  }
+  if (lower.includes('working')) {
+    return { label: status, bg: 'bg-cyan-50', text: 'text-cyan-700', icon: Clock };
+  }
+  if (lower.includes('checked out') || lower.includes('completed') || lower === 'present') {
+    return { label: status, bg: 'bg-teal-50', text: 'text-teal-700', icon: CheckCircle2 };
+  }
+  if (lower.includes('absent')) {
+    return { label: status, bg: 'bg-red-50', text: 'text-red-600', icon: XCircle };
+  }
+  if (lower.includes('leave')) {
+    return { label: status, bg: 'bg-blue-50', text: 'text-blue-600', icon: Calendar };
+  }
+  if (lower.includes('late')) {
+    return { label: status, bg: 'bg-amber-50', text: 'text-amber-600', icon: AlertTriangle };
+  }
+  if (lower.includes('holiday')) {
+    return { label: status, bg: 'bg-purple-50', text: 'text-purple-600', icon: Calendar };
+  }
+  return { label: status || 'Unknown', bg: 'bg-gray-100', text: 'text-gray-500', icon: Clock };
+}
 
 const AVATAR_COLORS = [
   'bg-[#0f766e]', 'bg-blue-500', 'bg-violet-500', 'bg-rose-500',
@@ -80,156 +83,260 @@ function avatarColor(name = '') {
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % AVATAR_COLORS.length;
   return AVATAR_COLORS[h];
 }
-function fmtTime(iso: string | null) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-}
-function fmtDate(iso: string) {
-  const d = new Date(iso);
+function fmtDateFromRaw(dateRaw: string, fallback?: string) {
+  if (!dateRaw) return fallback ?? '—';
+  const d = new Date(dateRaw);
+  if (Number.isNaN(d.getTime())) return fallback ?? dateRaw;
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
-function fmtHours(mins: number) {
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return `${h}h ${m}m`;
-}
 
-// ── Tortoise SVG icon for late ────────────────────────────────────────────────
-function TortoiseIcon({ size = 16, className = '' }: { size?: number; className?: string }) {
+// ── Employee Detail Modal (month view via /v1/attendance/logs) ────────────────
+function EmployeeDetailModal({
+  employeeId, employeeName, subdomain, onClose,
+}: {
+  employeeId: string; employeeName: string; subdomain: string; onClose: () => void;
+}) {
+  const [view, setView] = useState<'week' | 'prev_week' | 'month' | 'prev_month'>('month');
+  const [logs, setLogs] = useState<IEmployeeLogEntry[]>([]);
+  const [totalDays, setTotalDays] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchDetail = async () => {
+      setLoading(true);
+      try {
+        const res = await getAttendanceLogs(subdomain, { employee_id: employeeId, view, limit: 100 });
+        const payload = res?.data?.data ?? res?.data ?? {};
+        const entries: IEmployeeLogEntry[] = Array.isArray(payload?.logs) ? payload.logs : [];
+        if (!cancelled) {
+          setLogs(entries);
+          setTotalDays(payload?.total_days ?? entries.length);
+        }
+      } catch (error) {
+        console.error('Error fetching employee attendance history:', error);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    fetchDetail();
+    return () => { cancelled = true; };
+  }, [subdomain, employeeId, view]);
+
+  const summary = useMemo(() => {
+    const counts = { present: 0, absent: 0, onLeave: 0, working: 0 };
+    logs.forEach((l) => {
+      const lower = (l.status ?? '').toLowerCase();
+      if (lower.includes('absent')) counts.absent += 1;
+      else if (lower.includes('leave')) counts.onLeave += 1;
+      else if (lower.includes('working')) counts.working += 1;
+      else if (lower.includes('present') || lower.includes('checked out') || lower.includes('completed')) counts.present += 1;
+    });
+    return counts;
+  }, [logs]);
+
+  const VIEW_OPTIONS: { id: typeof view; label: string }[] = [
+    { id: 'week', label: 'This Week' },
+    { id: 'prev_week', label: 'Last Week' },
+    { id: 'month', label: 'This Month' },
+    { id: 'prev_month', label: 'Last Month' },
+  ];
+
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-      <ellipse cx="12" cy="15" rx="8" ry="5" fill="currentColor" opacity="0.2" />
-      <ellipse cx="12" cy="10" rx="6" ry="4.5" fill="currentColor" />
-      <circle cx="10" cy="9" r="0.8" fill="white" />
-      <circle cx="14" cy="9" r="0.8" fill="white" />
-      <path d="M 8 14 Q 9 12, 10 14" stroke="currentColor" strokeWidth="0.8" fill="none" strokeLinecap="round" />
-      <path d="M 14 14 Q 15 12, 16 14" stroke="currentColor" strokeWidth="0.8" fill="none" strokeLinecap="round" />
-      <circle cx="6" cy="13" r="1.2" fill="currentColor" />
-      <circle cx="18" cy="13" r="1.2" fill="currentColor" />
-    </svg>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+        {/* header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl ${avatarColor(employeeName)} text-white text-[12px] font-bold flex items-center justify-center`}>
+              {initials(employeeName)}
+            </div>
+            <div>
+              <p className="text-sm font-bold text-[#0f1f2e]">{employeeName}</p>
+              <p className="text-[11px] text-gray-400">
+                Attendance History{totalDays ? ` · ${totalDays} days` : ''}
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* view switcher */}
+        <div className="flex items-center gap-1 px-5 py-3 border-b border-gray-100 overflow-x-auto">
+          {VIEW_OPTIONS.map((opt) => (
+            <button
+              key={opt.id}
+              onClick={() => setView(opt.id)}
+              className={`px-3 py-1.5 text-[11px] font-bold rounded-lg whitespace-nowrap transition-colors ${
+                view === opt.id ? 'bg-[#0f766e] text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
+        {/* summary strip */}
+        <div className="grid grid-cols-4 gap-2 px-5 py-3 border-b border-gray-100">
+          <div className="text-center">
+            <p className="text-sm font-bold text-teal-600">{summary.present}</p>
+            <p className="text-[9px] text-gray-400 uppercase font-semibold">Present</p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-bold text-red-500">{summary.absent}</p>
+            <p className="text-[9px] text-gray-400 uppercase font-semibold">Absent</p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-bold text-blue-600">{summary.onLeave}</p>
+            <p className="text-[9px] text-gray-400 uppercase font-semibold">On Leave</p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-bold text-cyan-600">{summary.working}</p>
+            <p className="text-[9px] text-gray-400 uppercase font-semibold">Working</p>
+          </div>
+        </div>
+
+        {/* body */}
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="flex justify-center py-16">
+              <Loader2 size={20} className="animate-spin text-[#0f766e]" />
+            </div>
+          ) : logs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <Calendar size={28} className="text-gray-200 mb-2" />
+              <p className="text-xs font-semibold text-gray-400">No records for this period</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {logs.map((log, idx) => {
+                const meta = getStatusMeta(log.status);
+                const Icon = meta.icon;
+                return (
+                  <div key={`${log.date_raw}-${idx}`} className="flex items-center gap-3 px-5 py-2.5">
+                    <div className="w-20 text-[11px] font-semibold text-gray-500">
+                      {fmtDateFromRaw(log.date_raw, log.date)}
+                    </div>
+                    <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${meta.bg} ${meta.text}`}>
+                      <Icon size={10} />
+                      <span className="text-[9px] font-bold">{meta.label}</span>
+                    </div>
+                    <div className="flex-1" />
+                    <div className="text-[10px] font-mono text-gray-500">
+                      {log.check_in || '--'} → {log.check_out || '--'}
+                    </div>
+                    <div className="w-16 text-right text-[10px] font-bold text-gray-600">
+                      {log.worked || '--'}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
-// ── Accordion Row ─────────────────────────────────────────────────────────────
-function AttendanceRow({ log, isOpen, onToggle }: { log: IAttendanceLog; isOpen: boolean; onToggle: () => void }) {
-  const meta = STATUS_META[log.attendance_status] ?? STATUS_META.present;
+// ── Row ─────────────────────────────────────────────────────────────────────
+function AttendanceRow({
+  log, isOpen, onToggle, onViewDetail,
+}: {
+  log: IAttendanceRecord; isOpen: boolean; onToggle: () => void; onViewDetail: () => void;
+}) {
+  const meta = getStatusMeta(log.status);
   const Icon = meta.icon;
 
   return (
     <div className="border-b border-gray-50 last:border-0">
       {/* collapsed row */}
-      <div
-        onClick={onToggle}
-        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer"
-      >
-        <button className={`p-1 rounded-lg transition-transform ${isOpen ? 'rotate-180' : ''}`}>
+      <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
+        <button onClick={onToggle} className={`p-1 rounded-lg transition-transform ${isOpen ? 'rotate-180' : ''}`}>
           <ChevronDown size={14} className="text-gray-400" />
         </button>
 
-        {/* avatar */}
-        <div className={`w-9 h-9 rounded-xl ${avatarColor(log.employee_name)} text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0`}>
+        {/* avatar — click to open employee detail */}
+        <button
+          onClick={onViewDetail}
+          title="View employee history"
+          className={`w-9 h-9 rounded-xl ${avatarColor(log.employee_name)} text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0 hover:opacity-80 transition-opacity`}
+        >
           {initials(log.employee_name)}
-        </div>
+        </button>
 
-        {/* name + code */}
-        <div className="flex-1 min-w-0">
+        {/* name + department */}
+        <div className="flex-1 min-w-0 cursor-pointer" onClick={onToggle}>
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-sm font-bold text-[#0f1f2e] truncate">{log.employee_name}</p>
-            <span className="text-[10px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{log.employee_code}</span>
-            {log.is_late && (
-              <div className="flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full border border-amber-200">
-                <TortoiseIcon size={12} className="text-amber-600" />
-                Late
-              </div>
-            )}
-            {log.is_regularized && (
-              <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-200">Regularized</span>
+            <button
+              onClick={(e) => { e.stopPropagation(); onViewDetail(); }}
+              className="text-sm font-bold text-[#0f1f2e] truncate hover:text-[#0f766e] hover:underline flex items-center gap-1"
+            >
+              {log.employee_name}
+              <ExternalLink size={10} className="text-gray-300" />
+            </button>
+            {log.department && (
+              <span className="text-[10px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{log.department}</span>
             )}
           </div>
           <p className="text-[11px] text-gray-400 mt-0.5">
-            {fmtDate(log.attendance_date)}
-            {' '}
-            ·
-            {' '}
-            {log.shift_name}
+            {fmtDateFromRaw(log.date_raw, log.date)}
           </p>
         </div>
 
         {/* status badge */}
-        <div className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full ${meta.bg} ${meta.text} border ${meta.bg.replace('bg-', 'border-')}`}>
+        <div className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full ${meta.bg} ${meta.text}`}>
           <Icon size={12} />
           <span className="text-[10px] font-bold">{meta.label}</span>
         </div>
 
         {/* times */}
-        <div className="hidden md:flex items-center gap-3 text-xs">
-          <div className="text-center">
+        <div className="hidden md:flex items-center gap-3 text-xs" onClick={onToggle}>
+          <div className="text-center w-16">
             <p className="text-[9px] text-gray-400 uppercase">In</p>
-            <p className="font-mono font-bold text-gray-700">{fmtTime(log.check_in_time)}</p>
+            <p className="font-mono font-bold text-gray-700">{log.check_in || '--'}</p>
           </div>
           <span className="text-gray-300">→</span>
-          <div className="text-center">
+          <div className="text-center w-16">
             <p className="text-[9px] text-gray-400 uppercase">Out</p>
-            <p className="font-mono font-bold text-gray-700">{fmtTime(log.check_out_time)}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-[9px] text-gray-400 uppercase">location</p>
-            <p className="font-mono font-bold text-gray-700">{log?.check_in_location_name}</p>
+            <p className="font-mono font-bold text-gray-700">{log.check_out || '--'}</p>
           </div>
         </div>
 
-        {/* hours */}
-        <div className="hidden lg:block text-right">
-          {/* <p className="text-xs font-bold text-[#0f766e]">{log.total_worked_hours}h</p> */}
-          <p className="text-xs font-bold text-[#0f766e]">{fmtHours(log.total_worked_minutes)}</p>
+        {/* worked */}
+        <div className="hidden lg:block text-right w-16" onClick={onToggle}>
+          <p className="text-[9px] text-gray-400 uppercase">Worked</p>
+          <p className="text-xs font-bold text-[#0f766e]">{log.worked || '--'}</p>
         </div>
       </div>
 
       {/* expanded details */}
       {isOpen && (
         <div className="bg-gradient-to-br from-gray-50/50 to-white px-4 py-4 border-t border-gray-100">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-            {/* check in */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="bg-white rounded-xl border border-gray-100 p-3">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-6 h-6 rounded-lg bg-teal-50 flex items-center justify-center">
-                  <TrendingUp size={12} className="text-teal-600" />
+                  <LogIn size={12} className="text-teal-600" />
                 </div>
                 <p className="text-[10px] font-bold text-gray-500 uppercase">Check In</p>
               </div>
-              <p className="text-lg font-bold text-[#0f1f2e] font-mono">{fmtTime(log.check_in_time)}</p>
-              {log.is_late && (
-                <div className="flex items-center gap-1 mt-2">
-                  <TortoiseIcon size={14} className="text-amber-600" />
-                  <p className="text-[10px] font-bold text-amber-600">
-                    Late by
-                    {' '}
-                    {fmtHours(log.late_by_minutes)}
-                  </p>
-                </div>
-              )}
+              <p className="text-lg font-bold text-[#0f1f2e] font-mono">{log.check_in || '--'}</p>
             </div>
 
-            {/* check out */}
             <div className="bg-white rounded-xl border border-gray-100 p-3">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-6 h-6 rounded-lg bg-rose-50 flex items-center justify-center">
-                  <TrendingUp size={12} className="text-rose-600 rotate-180" />
+                  <LogOut size={12} className="text-rose-600" />
                 </div>
                 <p className="text-[10px] font-bold text-gray-500 uppercase">Check Out</p>
               </div>
-              <p className="text-lg font-bold text-[#0f1f2e] font-mono">{fmtTime(log.check_out_time)}</p>
-              {log.is_early_exit && (
-                <p className="text-[10px] font-bold text-orange-600 mt-2">
-                  Early by
-                  {' '}
-                  {fmtHours(log.early_exit_minutes)}
-                </p>
-              )}
+              <p className="text-lg font-bold text-[#0f1f2e] font-mono">{log.check_out || '--'}</p>
             </div>
 
-            {/* worked */}
             <div className="bg-white rounded-xl border border-gray-100 p-3">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-6 h-6 rounded-lg bg-blue-50 flex items-center justify-center">
@@ -237,52 +344,22 @@ function AttendanceRow({ log, isOpen, onToggle }: { log: IAttendanceLog; isOpen:
                 </div>
                 <p className="text-[10px] font-bold text-gray-500 uppercase">Worked</p>
               </div>
-              <p className="text-lg font-bold text-[#0f1f2e]">{fmtHours(log.total_worked_minutes)}</p>
-              {/* <p className="text-[10px] text-gray-400 mt-1">{fmtHours(log.total_worked_minutes)}</p> */}
-            </div>
-
-            {/* overtime */}
-            <div className="bg-white rounded-xl border border-gray-100 p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <div className={`w-6 h-6 rounded-lg ${log.is_overtime ? 'bg-purple-50' : 'bg-gray-50'} flex items-center justify-center`}>
-                  <TrendingUp size={12} className={log.is_overtime ? 'text-purple-600' : 'text-gray-400'} />
-                </div>
-                <p className="text-[10px] font-bold text-gray-500 uppercase">Overtime</p>
-              </div>
-              <p className={`text-lg font-bold ${log.is_overtime ? 'text-purple-600' : 'text-gray-400'}`}>
-                {log.is_overtime ? fmtHours(log.overtime_minutes) : '—'}
-              </p>
+              <p className="text-lg font-bold text-[#0f1f2e]">{log.worked || '--'}</p>
             </div>
           </div>
 
-          {/* shift + status info */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-            <div className="bg-white rounded-xl border border-gray-100 p-3 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                <Clock size={14} className="text-indigo-600" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] text-gray-400 uppercase font-semibold">Shift</p>
-                <p className="text-sm font-bold text-[#0f1f2e] truncate">{log.shift_name}</p>
-                <p className="text-[10px] text-gray-500 font-mono">{log.shift_timings}</p>
-              </div>
+          <div className="mt-3 bg-white rounded-xl border border-gray-100 p-3 flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-xl ${meta.bg} flex items-center justify-center flex-shrink-0`}>
+              <Icon size={14} className={meta.text} />
             </div>
-
-            <div className="bg-white rounded-xl border border-gray-100 p-3 flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-xl ${meta.bg} flex items-center justify-center flex-shrink-0`}>
-                <Icon size={14} className={meta.text} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] text-gray-400 uppercase font-semibold">Status</p>
-                <p className={`text-sm font-bold ${meta.text}`}>{meta.label}</p>
-                <p className="text-[10px] text-gray-500 capitalize">{log.day_type.replace('_', ' ')}</p>
-              </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-gray-400 uppercase font-semibold">Status</p>
+              <p className={`text-sm font-bold ${meta.text}`}>{meta.label}</p>
             </div>
           </div>
 
-          {/* remarks */}
           {log.remarks && (
-            <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
+            <div className="mt-3 bg-amber-50 border border-amber-100 rounded-xl p-3">
               <div className="flex items-start gap-2">
                 <AlertTriangle size={14} className="text-amber-600 mt-0.5 flex-shrink-0" />
                 <div>
@@ -308,121 +385,90 @@ export default function AttendanceLogs() {
   const [calMonth, setCalMonth] = useState(today.getMonth());
   const [calYear, setCalYear] = useState(today.getFullYear());
   const [showCalendar, setShowCalendar] = useState(false);
-  const [logs, setLogs] = useState<IAttendanceLog[]>([]);
+  const [logs, setLogs] = useState<IAttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<AttendanceStatus | 'ALL'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'present' | 'absent' | 'on_leave'>('ALL');
+  const [detailEmployee, setDetailEmployee] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     if (subdomain) {
       fetchLogs();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subdomain, selectedDate, statusFilter]);
 
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const params: any = {
-        limit: 100,
-        ...(statusFilter !== 'ALL' ? { attendance_status: statusFilter } : {}),
-      };
-
-      if (selectedDate) {
-        params.from_date = selectedDate;
-        params.to_date = selectedDate;
-      }
-
-      // Add cache buster to prevent 304
-      params._t = Date.now();
-
-      const res = await getAttendances(subdomain, params);
-
-      const attendanceLogs = Array.isArray(res?.data)
-        ? res.data
-        : (res?.data?.data ?? []);
+      // on_leave is served from the leave-applications API, not records
       if (statusFilter === 'on_leave' && selectedDate) {
-        const leaveRes = await getLeaveApplications(
-          subdomain,
-          {
-            status: LeaveStatus.APPROVED,
-            from_date: selectedDate,
-            to_date: selectedDate,
-          },
-        );
+        const leaveRes = await getLeaveApplications(subdomain, {
+          status: LeaveStatus.APPROVED,
+          from_date: selectedDate,
+          to_date: selectedDate,
+        });
 
         const leaveApps = Array.isArray(leaveRes?.data)
           ? leaveRes.data
           : (leaveRes?.data?.data ?? []);
 
-        const leaveLogs = leaveApps.map((leave: any) => ({
-          id: `leave-${leave.id}`,
+        const leaveLogs: IAttendanceRecord[] = leaveApps.map((leave: any) => ({
+          date: fmtDateFromRaw(selectedDate),
+          date_raw: selectedDate,
           employee_id: leave.employee_id,
           employee_name: leave.employee_name,
-          employee_code: leave.employee_code,
-
-          attendance_date: selectedDate,
-
-          attendance_status: 'on_leave',
-
-          
-          
-// check_in_location_name:
-
-          check_in_time: null,
-          check_out_time: null,
-
-          total_worked_minutes: 0,
-          total_worked_hours: '0',
-
-          shift_name: '-',
-          shift_timings: '-',
-
-          is_regularized: false,
-
+          department: leave.department ?? '',
+          check_in: '--',
+          check_out: '--',
+          worked: '--',
+          status: 'On Leave',
           remarks: leave.reason,
-
-          is_late: false,
-          late_by_minutes: 0,
-
-          is_early_exit: false,
-          early_exit_minutes: 0,
-
-          is_overtime: false,
-          overtime_minutes: 0,
-
-          day_type: 'working_day',
-
-          leave_info: leave,
-          holiday_info: null,
         }));
 
         setLogs(leaveLogs);
+        setLoading(false);
         return;
       }
+
+      const recordParams: Record<string, any> = {
+        ...(statusFilter !== 'ALL' ? { status: statusFilter } : {}),
+        ...(selectedDate ? { date: selectedDate } : {}),
+      };
+
+      const res = await getAdminAttendanceRecords(subdomain, recordParams);
+      const attendanceLogs = Array.isArray(res?.data)
+        ? res.data
+        : (res?.data?.data ?? []);
+
       setLogs(attendanceLogs);
     } catch (error) {
-      console.error('Error fetching attendance logs:', error);
-    } finally { setLoading(false); }
+      console.error('Error fetching attendance records:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const filtered = useMemo(() => logs.filter((l) => l.employee_name?.toLowerCase().includes(search.toLowerCase())
-      || l.employee_code?.toLowerCase().includes(search.toLowerCase())), [logs, search]);
+  const filtered = useMemo(
+    () => logs.filter((l) => l.employee_name?.toLowerCase().includes(search.toLowerCase())
+      || l.department?.toLowerCase().includes(search.toLowerCase())),
+    [logs, search],
+  );
 
-  const stats = useMemo(() => ({
-    total: logs.length,
-    present: logs.filter((l) => l.attendance_status === 'present').length,
-    absent: logs.filter((l) => l.attendance_status === 'absent').length,
-    late: logs.filter((l) => l.is_late).length,
-    earlyExit: logs.filter((l) => l.is_early_exit).length,
-    overtime: logs.filter((l) => l.is_overtime).length,
-  }), [logs]);
-
-  const changeDate = (offset: number) => {
-    const d = selectedDate ? new Date(selectedDate) : new Date();
-    d.setDate(d.getDate() + offset);
-    setSelectedDate(d.toISOString().split('T')[0]);
-  };
+  const stats = useMemo(() => {
+    let present = 0; let absent = 0; let working = 0; let onLeave = 0;
+    logs.forEach((l) => {
+      const lower = (l.status ?? '').toLowerCase();
+      if (lower.includes('absent')) absent += 1;
+      else if (lower.includes('leave')) onLeave += 1;
+      else if (lower.includes('working')) working += 1;
+      else if (lower.includes('present') || lower.includes('checked out') || lower.includes('completed')) present += 1;
+    });
+    return {
+      total: logs.length, present, absent, working, onLeave,
+    };
+  }, [logs]);
 
   const handleDateClick = (date: string) => {
     setSelectedDate(date);
@@ -439,7 +485,6 @@ export default function AttendanceLogs() {
     setShowCalendar(false);
   };
 
-  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
@@ -458,21 +503,10 @@ export default function AttendanceLogs() {
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <p className="text-xs text-gray-400">
-          {selectedDate ? `Attendance for ${fmtDate(selectedDate)}` : 'All attendance records'}
-          {' '}
-          ·
-          {stats.total}
-          {' '}
-          employees ·
-          {stats.present}
-          {' '}
-          present ·
-          {stats.absent}
-          {' '}
-          absent
+          {selectedDate ? `Attendance for ${fmtDateFromRaw(selectedDate)}` : 'All attendance records'}
+          {' '}·{' '}{stats.total} employees ·{' '}{stats.present} present ·{' '}{stats.absent} absent
         </p>
         <div className="flex items-center gap-2 flex-wrap">
-          {/* today button */}
           <button
             onClick={handleToday}
             className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[#0f766e] bg-[#e8f5ee] rounded-xl hover:bg-teal-100 transition-colors"
@@ -480,7 +514,6 @@ export default function AttendanceLogs() {
             <Calendar size={12} />
             Today
           </button>
-          {/* show all button */}
           <button
             onClick={handleShowAll}
             className={`px-3 py-1.5 text-[12px] font-bold rounded-xl transition-colors ${
@@ -489,20 +522,19 @@ export default function AttendanceLogs() {
           >
             Show All
           </button>
-          {/* calendar picker */}
           <div className="relative">
             <button
               onClick={() => setShowCalendar(!showCalendar)}
               className="flex items-center gap-1.5 bg-gray-100 rounded-xl px-3 py-1.5 text-xs font-bold text-[#0f1f2e] hover:bg-gray-200 transition-colors"
             >
               <Calendar size={13} />
-              {selectedDate ? fmtDate(selectedDate) : 'Select Date'}
+              {selectedDate ? fmtDateFromRaw(selectedDate) : 'Select Date'}
             </button>
             {showCalendar && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowCalendar(false)} />
-                <div className="absolute right-0 top-full mt-2 z-50 bg-white rounded-2xl border border-gray-200 shadow-xl p-4 w-80">
-                  <div className="flex items-center justify-between mb-4">
+                <div className="absolute right-0 top-full mt-2 z-50 bg-white rounded-2xl border border-gray-200 shadow-xl p-2 w-80">
+                  <div className="flex items-center justify-between mb-2">
                     <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors">
                       <ChevronLeft size={16} />
                     </button>
@@ -542,7 +574,6 @@ export default function AttendanceLogs() {
               </>
             )}
           </div>
-          {/* search */}
           <div className="relative">
             <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -552,7 +583,6 @@ export default function AttendanceLogs() {
               className="pl-6 pr-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20 focus:border-[#0f766e] transition-all w-40"
             />
           </div>
-          {/* status filter */}
           <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
             {(['ALL', 'present', 'absent', 'on_leave'] as const).map((s) => (
               <button
@@ -560,7 +590,7 @@ export default function AttendanceLogs() {
                 onClick={() => setStatusFilter(s)}
                 className={`px-2 py-1 text-[12px] font-bold rounded-lg transition-colors capitalize ${statusFilter === s ? 'bg-white text-[#0f766e] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
               >
-                {s === 'ALL' ? 'All' : STATUS_META[s]?.label ?? s}
+                {s === 'ALL' ? 'All' : s.replace('_', ' ')}
               </button>
             ))}
           </div>
@@ -568,26 +598,13 @@ export default function AttendanceLogs() {
       </div>
 
       {/* ── Stats ── */}
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
         {[
-          {
-            label: 'Present', value: stats.present, color: 'text-teal-600', bg: 'bg-teal-50', dot: 'bg-teal-500',
-          },
-          {
-            label: 'Absent', value: stats.absent, color: 'text-red-500', bg: 'bg-red-50', dot: 'bg-red-400',
-          },
-          {
-            label: 'Late', value: stats.late, color: 'text-amber-600', bg: 'bg-amber-50', dot: 'bg-amber-400',
-          },
-          {
-            label: 'Early Exit', value: stats.earlyExit, color: 'text-orange-600', bg: 'bg-orange-50', dot: 'bg-orange-400',
-          },
-          {
-            label: 'Overtime', value: stats.overtime, color: 'text-purple-600', bg: 'bg-purple-50', dot: 'bg-purple-500',
-          },
-          {
-            label: 'Total', value: stats.total, color: 'text-[#0f766e]', bg: 'bg-[#e8f5ee]', dot: 'bg-[#0f766e]',
-          },
+          { label: 'Present', value: stats.present, color: 'text-teal-600', bg: 'bg-teal-50', dot: 'bg-teal-500' },
+          { label: 'Working', value: stats.working, color: 'text-cyan-600', bg: 'bg-cyan-50', dot: 'bg-cyan-500' },
+          { label: 'Absent', value: stats.absent, color: 'text-red-500', bg: 'bg-red-50', dot: 'bg-red-400' },
+          { label: 'On Leave', value: stats.onLeave, color: 'text-blue-600', bg: 'bg-blue-50', dot: 'bg-blue-500' },
+          { label: 'Total', value: stats.total, color: 'text-[#0f766e]', bg: 'bg-[#e8f5ee]', dot: 'bg-[#0f766e]' },
         ].map((s) => (
           <div key={s.label} className={`${s.bg} rounded-xl px-3 py-2 border border-gray-100`}>
             <div className="flex items-center gap-1.5 mb-1">
@@ -611,16 +628,30 @@ export default function AttendanceLogs() {
           {search && <p className="text-xs text-gray-400 mt-1">Try a different search</p>}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          {filtered.map((log) => (
-            <AttendanceRow
-              key={log.id}
-              log={log}
-              isOpen={expandedId === log.id}
-              onToggle={() => setExpandedId(expandedId === log.id ? null : log.id)}
-            />
-          ))}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-auto">
+          {filtered.map((log, idx) => {
+            const rowId = `${log.employee_id}-${log.date_raw}-${idx}`;
+            return (
+              <AttendanceRow
+                key={rowId}
+                log={log}
+                isOpen={expandedId === rowId}
+                onToggle={() => setExpandedId(expandedId === rowId ? null : rowId)}
+                onViewDetail={() => setDetailEmployee({ id: log.employee_id, name: log.employee_name })}
+              />
+            );
+          })}
         </div>
+      )}
+
+      {/* ── Employee Detail Modal ── */}
+      {detailEmployee && (
+        <EmployeeDetailModal
+          employeeId={detailEmployee.id}
+          employeeName={detailEmployee.name}
+          subdomain={subdomain}
+          onClose={() => setDetailEmployee(null)}
+        />
       )}
     </div>
   );
