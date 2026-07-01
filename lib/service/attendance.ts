@@ -555,13 +555,7 @@ export const getMonthlySummary = (
   { bearerToken: token, isFetchToken: !token },
 );
 
-export interface IAttendanceLogFilters {
-  employee_id: string;
-  view?: 'week' | 'prev_week' | 'month' | 'prev_month';
-  start_date?: string;
-  end_date?: string;
-  limit?: number;
-}
+
 
 export interface IAttendanceLogEntry {
   date: string;
@@ -583,12 +577,52 @@ export interface IAttendanceLogEntry {
   leave_type?: string;
 }
 
+export interface IAttendanceLogFilters {
+  employee_id: string;
+  view?: 'week' | 'prev_week' | 'month' | 'prev_month';
+  start_date?: string;
+  end_date?: string;
+  limit?: number;
+}
+
 export const getAttendanceLogs = (
   tenantId: string,
   params: IAttendanceLogFilters,
   token?: string,
 ) => get(
   '/v1/attendance/logs',
+  params as Params,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+// ─── Admin Attendance ───────────────────────────────────────────────────────
+
+export const getAdminLiveToday = (
+  tenantId: string,
+  token?: string,
+) => get(
+  '/v1/admin-attendance/live-today',
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export interface IAdminAttendanceRecordsFilters {
+  status?: string;
+  employee_id?: string;
+  department_id?: string;
+  start_date?: string;
+  end_date?: string;
+  date?: string;
+}
+
+export const getAdminAttendanceRecords = (
+  tenantId: string,
+  params?: IAdminAttendanceRecordsFilters,
+  token?: string,
+) => get(
+  '/v1/admin-attendance/records',
   params as Params,
   tenantId,
   { bearerToken: token, isFetchToken: !token },

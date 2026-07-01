@@ -95,13 +95,61 @@ function parseTime24(t: string): Date {
   return d;
 }
 
+// ─── Reverse geocoding ──────────────────────────────────────────────────────
+// Primary: OpenStreetMap Nominatim — returns street-level detail (house number,
+// road, neighbourhood, etc.), unlike locality-only services like BigDataCloud.
+// Falls back to BigDataCloud (city-level) only if Nominatim fails or times out,
+// so the UI never ends up with nothing at all.
+async function reverseGeocodeNominatim(lat: number, lng: number): Promise<string | null> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-async function reverseGeocode(lat: number, lng: number): Promise<string> {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+      { headers: { Accept: 'application/json' }, signal: controller.signal },
+    );
+    clearTimeout(timeoutId);
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    const a = data?.address;
+
+    if (a) {
+      const streetLine = [a.house_number, a.road || a.pedestrian || a.footway || a.cycleway]
+        .filter(Boolean)
+        .join(' ');
+      const parts = [
+        streetLine,
+        a.neighbourhood || a.suburb || a.city_district || a.quarter,
+        a.city || a.town || a.village || a.county,
+        a.state,
+        a.postcode,
+      ].filter(Boolean);
+      if (parts.length > 0) return parts.join(', ');
+    }
+
+    return data?.display_name ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function reverseGeocodeBigDataCloud(lat: number, lng: number): Promise<string> {
   try {
     const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
     const d = await r.json();
-    return [d?.locality || d?.city, d?.principalSubdivision, d?.countryName].filter(Boolean).join(', ') || `${lat.toFixed(4)},${lng.toFixed(4)}`;
-  } catch { return `${lat.toFixed(4)},${lng.toFixed(4)}`; }
+    return [d?.locality || d?.city, d?.principalSubdivision, d?.countryName].filter(Boolean).join(', ')
+      || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  } catch {
+    return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  }
+}
+
+async function reverseGeocode(lat: number, lng: number): Promise<string> {
+  const detailed = await reverseGeocodeNominatim(lat, lng);
+  if (detailed) return detailed;
+  return reverseGeocodeBigDataCloud(lat, lng);
 }
 
 function extractApiError(res: any, fallback: string): string | null {
@@ -119,7 +167,10 @@ async function fetchLocation(): Promise<LocationData | null> {
   const gp = (o: PositionOptions) =>
     new Promise<GeolocationPosition>((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, o));
   try {
-    const p = await gp({ enableHighAccuracy: true, maximumAge: 0, timeout: 12000 })
+    // Always try for the highest accuracy first — street-level address quality
+    // depends on precise GPS coords, not just the geocoding service.
+    const p = await gp({ enableHighAccuracy: true, maximumAge: 0, timeout: 15000 })
+      .catch(() => gp({ enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }))
       .catch(() => gp({ enableHighAccuracy: false, maximumAge: 0, timeout: 8000 }));
     const { latitude: lat, longitude: lng, accuracy } = p.coords;
     return { lat, lng, address: await reverseGeocode(lat, lng), accuracy: Math.round(accuracy) };

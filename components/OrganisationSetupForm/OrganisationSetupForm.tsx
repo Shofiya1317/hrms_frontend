@@ -707,7 +707,7 @@ export default function OrganisationSetupForm({
                           {SATURDAY_FIELDS.map(({ key, label }) => (
                             <label
                               key={key}
-                              className={`day-pill day-pill--sat${newSchedule[key] ? ' day-pill--active' : ''}`}
+                              className={`day-pill${newSchedule[key] ? ' day-pill--active' : ''}`}
                             >
                               <input
                                 type="checkbox"

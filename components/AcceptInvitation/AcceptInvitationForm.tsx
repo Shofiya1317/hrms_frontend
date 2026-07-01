@@ -134,12 +134,23 @@ export default function AcceptInvitationForm({
     );
   };
 
-  return (
+ return (
+  <div
+    className="complete-registration-wrapper"
+    style={{
+      width: '100%',
+      display: 'flex',
+      justifyContent: 'center',
+      paddingTop: '10px',
+      paddingBottom: '10px',
+      boxSizing: 'border-box',
+    }}
+  >
     <Formik
       initialValues={{
         email: user?.email ?? '',
         name: user?.name ?? '',
-        company_name: account?. account_name ?? account?.company_name ?? account?.account_name ?? user?.account?.account_name ?? '',
+        company_name: account?.account_name ?? account?.company_name ?? account?.account_name ?? user?.account?.account_name ?? '',
         phone_number: user?.phone_number ?? '',
         password: '',
         confirm_password: '',
@@ -157,19 +168,18 @@ export default function AcceptInvitationForm({
           onSubmit={handleSubmit}
           style={{
             width: isMobileOnly ? '330px' : '500px',
-            paddingTop: '80px',
-            height: '100vh',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'center',
-            overflow: 'hidden',
+            justifyContent: 'flex-start',
+            gap: '5px',
           }}
         >
           <div className="text-center mb-2 page-header-container">
             <h5 className="page-title">Complete Registration</h5>
             <span className="page-subtitle">Join and start exploring</span>
           </div>
-          <div className="mt-3 mb-2">
+
+          <div className="mb-0">
             <FormikField
               name="company_name"
               errors={errors}
@@ -181,8 +191,9 @@ export default function AcceptInvitationForm({
               disabled
             />
           </div>
+
           {!isAccount && (
-            <div className="">
+            <div className="mb-0">
               <FormikField
                 name="email"
                 errors={errors}
@@ -195,8 +206,9 @@ export default function AcceptInvitationForm({
               />
             </div>
           )}
+
           {!isAccount && (
-            <div className="">
+            <div className="mb-0">
               <FormikField
                 name="name"
                 errors={errors}
@@ -212,21 +224,9 @@ export default function AcceptInvitationForm({
               />
             </div>
           )}
-          {/* {!isAccount && (
-            <FormikField
-              name="department"
-              errors={errors}
-              validationSchema={validationSchema}
-              label="Department"
-              type="text"
-              placeholder="Enter your Department"
-              isCustomRequired
-              disabled
-            />
-          )} */}
 
           {!isAccount && (
-            <div className="">
+            <div className="mb-0">
               <FormikPhoneNumber
                 name="phone_number"
                 label="Phone Number"
@@ -236,7 +236,8 @@ export default function AcceptInvitationForm({
               />
             </div>
           )}
-          <div className="">
+
+          <div className="mb-0">
             <FormikField
               name="password"
               errors={errors}
@@ -249,7 +250,8 @@ export default function AcceptInvitationForm({
               placeholder="Enter your New password"
             />
           </div>
-          <div className="">
+
+          <div className="mt-0">
             <CustomCheckbox
               name="accept_terms_and_conditions"
               label={(
@@ -261,14 +263,14 @@ export default function AcceptInvitationForm({
               validationSchema={validationSchema}
               errors={errors}
             />
-            <div className="d-flex justify-content-center accept-invitation-btn-container">
+            <div className="d-flex justify-content-center accept-invitation-btn-container mt-3">
               <Button
                 text={isSubmitting ? 'Completing...' : 'Let me in'}
                 isLoading={isSubmitting}
                 isDisabled={isSubmitting}
                 type="submit"
                 isSolid
-                className="w-100 accept-invitation-btn mb-5"
+                className="w-100 accept-invitation-btn mb-2"
                 sufixIconChildren={(
                   <MdArrowForward
                     size={24}
@@ -278,15 +280,10 @@ export default function AcceptInvitationForm({
                 )}
               />
             </div>
-            {/* <p className="text-center fs-15 fw-600 signin-link">
-              Already have account?
-              {' '}
-
-              <Link href="/sign_in" className="textSecondary text-decoration-none">Login</Link>
-            </p> */}
           </div>
         </Form>
       )}
     </Formik>
-  );
+  </div>
+);
 }
