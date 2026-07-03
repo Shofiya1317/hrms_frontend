@@ -274,9 +274,11 @@ function EmployeeCard({
 function EmployeeProfileModal({
   employee,
   onClose,
+  onEdit,
 }: {
   employee: Employee;
   onClose: () => void;
+  onEdit: () => void;
 }) {
   const statusCfg = STATUS_CONFIG[employee.status] ?? DEFAULT_STATUS;
   const StatusIcon = statusCfg.icon;
@@ -405,6 +407,17 @@ function EmployeeProfileModal({
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* More Edit Link */}
+          <div className="mt-5 pt-4 border-t border-gray-100 flex justify-end">
+            <button
+              onClick={onEdit}
+              className="flex items-center gap-1.5 text-sm font-semibold text-[#0f766e] hover:text-[#0d6460] hover:underline transition-colors"
+            >
+              <Edit size={14} />
+              More Edit (Admin)
+            </button>
           </div>
         </div>
       </div>
@@ -537,6 +550,13 @@ export default function EmployeesRegistry() {
   useEffect(() => {
     loadEmployees();
   }, [loadEmployees]);
+
+  const handleEditFromView = (employee: Employee) => {
+    setShowViewModal(false);
+    setSelectedEmployee(null);
+    setEditingEmployee(employee);
+    setShowAddModal(true);
+  };
 
   const handleEmployeeAdded = () => loadEmployees();
 
@@ -1076,6 +1096,7 @@ export default function EmployeesRegistry() {
             setShowViewModal(false);
             setSelectedEmployee(null);
           }}
+          onEdit={() => handleEditFromView(selectedEmployee)}
         />
       )}
     </div>

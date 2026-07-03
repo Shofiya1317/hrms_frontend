@@ -32,12 +32,23 @@ export interface INoticePeriodResponse {
   employee?: INoticePeriodEmployee | null;
 }
 
+export interface INoticePeriodConfig {
+  notice_days?: number;
+  allow_leave_during_notice?: boolean;
+  allowed_leave_type_ids?: string[];
+  if_not_allowed_action?: 'reject' | 'lop';
+  extend_notice_by_leave_days?: boolean;
+  leave_encashment_on_exit?: boolean;
+  eligible_leave_types_for_encashment?: string[];
+}
+
 export interface INoticePeriodPolicyPayload {
-  full_time?: { notice_days: number };
-  probation?: { notice_days: number };
-  intern?: { notice_days: number };
-  part_time?: { notice_days: number };
-  contract?: { notice_days: number };
+  full_time?: INoticePeriodConfig;
+  probation?: INoticePeriodConfig;
+  intern?: INoticePeriodConfig;
+  part_time?: INoticePeriodConfig;
+  contract?: INoticePeriodConfig;
+  [key: string]: INoticePeriodConfig | undefined;
 }
 
 // Admin: Notice Period Policy
@@ -115,15 +126,17 @@ export const getNoticePeriodById = (
   { bearerToken: token, isFetchToken: !token },
 );
 
+export interface ApproveResignationDto {
+  manager_remarks?: string;
+  expected_last_working_day?: string;
+  buyout_days?: number;
+  buyout_amount?: number;
+}
+
 export const approveResignation = (
   tenantId: string,
   id: string,
-  body: { 
-    manager_remarks?: string;
-    expected_last_working_day?: string;
-    buyout_days?: number;
-    buyout_amount?: number;
-  },
+  body: ApproveResignationDto,
   token?: string,
 ) => patch<INoticePeriodResponse>(
   `/v1/notice-periods/${id}/approve`,
@@ -132,10 +145,14 @@ export const approveResignation = (
   { bearerToken: token, isFetchToken: !token },
 );
 
+export interface RejectResignationDto {
+  manager_remarks?: string;
+}
+
 export const rejectResignation = (
   tenantId: string,
   id: string,
-  body: { manager_remarks?: string },
+  body: RejectResignationDto,
   token?: string,
 ) => patch<INoticePeriodResponse>(
   `/v1/notice-periods/${id}/reject`,
@@ -144,17 +161,19 @@ export const rejectResignation = (
   { bearerToken: token, isFetchToken: !token },
 );
 
+export interface UpdateNoticePeriodDto {
+  expected_last_working_day?: string;
+  manager_remarks?: string;
+  hr_remarks?: string;
+  buyout_days?: number;
+  buyout_amount?: number;
+  status?: string;
+}
+
 export const updateNoticePeriod = (
   tenantId: string,
   id: string,
-  body: {
-    expected_last_working_day?: string;
-    manager_remarks?: string;
-    hr_remarks?: string;
-    buyout_days?: number;
-    buyout_amount?: number;
-    status?: string;
-  },
+  body: UpdateNoticePeriodDto,
   token?: string,
 ) => patch<INoticePeriodResponse>(
   `/v1/notice-periods/${id}/update`,
@@ -163,10 +182,15 @@ export const updateNoticePeriod = (
   { bearerToken: token, isFetchToken: !token },
 );
 
+export interface CompleteNoticePeriodDto {
+  actual_last_working_day: string;
+  hr_remarks?: string;
+}
+
 export const completeNoticePeriod = (
   tenantId: string,
   id: string,
-  body: { actual_last_working_day: string; hr_remarks?: string },
+  body: CompleteNoticePeriodDto,
   token?: string,
 ) => patch<INoticePeriodResponse>(
   `/v1/notice-periods/${id}/complete`,
@@ -187,9 +211,15 @@ export const withdrawResignation = (
 );
 
 // Employee: Resignation Submission
+export interface SubmitResignationDto {
+  reason: string;
+  requested_last_working_day?: string;
+  employee_remarks?: string;
+}
+
 export const submitResignation = (
   tenantId: string,
-  body: { reason: string; requested_last_working_day?: string; employee_remarks?: string },
+  body: SubmitResignationDto,
   token?: string,
 ) => post<INoticePeriodResponse>(
   '/v1/notice-periods/submit',

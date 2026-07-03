@@ -26,18 +26,50 @@ export interface UpdateEmployeeDto {
   employee_code?: string;
   first_name?: string;
   last_name?: string;
+  middle_name?: string;
   date_of_birth?: string;
   gender?: string;
+  personal_email?: string;
   personal_phone?: string;
+  blood_group?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
   department_id?: string;
   designation_id?: string;
-  employment_type?: string;
   reporting_manager_id?: string | '';
   shift_id?: string;
+  work_location_id?: string;
+  grade_id?: string;
+  employment_type?: string;
+  employment_status?: string;
+  work_email?: string;
+  work_phone?: string;
   date_of_joining?: string;
+  probation_end_date?: string;
   role?: 'EMPLOYEE' | 'HR_ADMIN';
   leave_policy_name?: string;
   attendance_policy_id?: string;
+  pan_number?: string;
+  aadhaar_number?: string;
+  uan_number?: string;
+  esic_number?: string;
+  pf_applicable?: boolean;
+  esic_applicable?: boolean;
+  bank_name?: string;
+  bank_account_number?: string;
+  bank_ifsc_code?: string;
+  bank_branch?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  emergency_contact_relationship?: string;
+  notes?: string;
+  date_of_exit?: string;
+  exit_reason?: string;
+  home_latitude?: number | null;
+  home_longitude?: number | null;
 }
 
 export const createEmployee = (
@@ -76,9 +108,10 @@ export const getInviteMasterData = (
 export const getEmployeeById = (
   id: string,
   tenantId: string,
+  includeMasterData: boolean = false,
   token?: string,
 ) => get(
-  `/v1/employees/${id}`,
+  `/v1/employees/${id}${includeMasterData ? '?include_master_data=true' : ''}`,
   undefined,
   tenantId,
   { bearerToken: token, isFetchToken: !token },
@@ -127,6 +160,9 @@ export interface IMyTeamResponse {
 }
 
 export interface UpdateEmployeeSelfDto {
+  first_name?: string;
+  last_name?: string;
+  middle_name?: string;
   personal_email?: string;
   personal_phone?: string;
   blood_group?: string;
@@ -137,12 +173,11 @@ export interface UpdateEmployeeSelfDto {
   pincode?: string;
   country?: string;
   profile_photo_url?: string;
-  bank_ifsc?: string;
-  bank_name?: string;
-  bank_account_number?: string;
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
   emergency_contact_relation?: string;
+  home_latitude?: number | null;
+  home_longitude?: number | null;
 }
 
 export const getEmployeeMe = (

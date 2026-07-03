@@ -1,4 +1,4 @@
-'use client';
+  'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
@@ -48,20 +48,58 @@ type EmployeeRole = 'EMPLOYEE';
 interface EmployeeFormState {
   firstName: string;
   lastName: string;
-  email: string;
+  middleName: string;
+  email: string; // work email
+  personalEmail: string;
   role: EmployeeRole;
   departmentId: string;
   designationId: string;
   employmentType: string;
+  employmentStatus: string;
   shiftId: string;
+  workLocationId: string;
+  gradeId: string;
   employeeCode: string;
-  phone: string;
+  phone: string; // personal phone
+  workPhone: string;
   managerId: string;
   joinDate: string;
+  probationEndDate: string;
   dateOfBirth: string;
   gender: string;
+  bloodGroup: string;
   leavePolicyId: string;
   attendancePolicyId: string;
+  
+  // God-mode fields
+  address: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+
+  panNumber: string;
+  aadhaarNumber: string;
+  uanNumber: string;
+  esicNumber: string;
+  pfApplicable: boolean;
+  esicApplicable: boolean;
+
+  bankName: string;
+  bankAccountNumber: string;
+  bankIfscCode: string;
+  bankBranch: string;
+
+  emergencyContactName: string;
+  emergencyContactPhone: string;
+  emergencyContactRelationship: string;
+
+  homeLatitude: string;
+  homeLongitude: string;
+
+  notes: string;
+  dateOfExit: string;
+  exitReason: string;
 }
 
 const ROLES: { value: EmployeeRole; label: string }[] = [
@@ -83,25 +121,63 @@ export default function AddEmployeeModal({
   const [form, setForm] = useState<EmployeeFormState>({
     firstName: '',
     lastName: '',
+    middleName: '',
     email: '',
+    personalEmail: '',
     role: 'EMPLOYEE' as const,
     employeeCode: '',
     departmentId: '',
     designationId: '',
     employmentType: '',
+    employmentStatus: '',
     shiftId: '',
+    workLocationId: '',
+    gradeId: '',
     phone: '',
+    workPhone: '',
     managerId: '',
     joinDate: new Date().toISOString().split('T')[0],
+    probationEndDate: '',
     dateOfBirth: '',
     gender: '',
+    bloodGroup: '',
     leavePolicyId: '',
     attendancePolicyId: '',
+    address: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: '',
+    panNumber: '',
+    aadhaarNumber: '',
+    uanNumber: '',
+    esicNumber: '',
+    pfApplicable: false,
+    esicApplicable: false,
+    bankName: '',
+    bankAccountNumber: '',
+    bankIfscCode: '',
+    bankBranch: '',
+    emergencyContactName: '',
+    emergencyContactPhone: '',
+    emergencyContactRelationship: '',
+    homeLatitude: '',
+    homeLongitude: '',
+    notes: '',
+    dateOfExit: '',
+    exitReason: '',
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  
+  const showToast = (msg: string, type: 'success' | 'error') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
   const [createdEmployee, setCreatedEmployee] = useState<any>(null);
   const [managers, setManagers] = useState<ManagerOption[]>([]);
   const [departments, setDepartments] = useState<MasterOption[]>([]);
@@ -109,6 +185,8 @@ export default function AddEmployeeModal({
   const [shifts, setShifts] = useState<MasterOption[]>([]);
   const [leavePolicies, setLeavePolicies] = useState<MasterOption[]>([]);
   const [attendancePolicies, setAttendancePolicies] = useState<MasterOption[]>([]);
+  const [employmentTypes, setEmploymentTypes] = useState<MasterOption[]>([]);
+  const [employmentStatuses, setEmploymentStatuses] = useState<MasterOption[]>([]);
 
   useEffect(() => {
     if (subdomain) {
@@ -124,26 +202,69 @@ export default function AddEmployeeModal({
 
   const loadEmployeeById = async (id: string) => {
     try {
-      const res = await getEmployeeById(id, subdomain);
-      const emp = res?.data?.data;
+      const res = await getEmployeeById(id, subdomain, true);
+      const data = res?.data;
+      const emp = data?.data;
       if (!emp) return;
+
+      const md = data?.master_data;
+      if (md) {
+        if (md.departments) setDepartments(md.departments.map((d: any) => ({ id: d.id, name: d.name })));
+        if (md.designations) setDesignations(md.designations.map((d: any) => ({ id: d.id, name: d.name })));
+        if (md.shifts) setShifts(md.shifts.map((d: any) => ({ id: d.id, name: d.name })));
+        if (md.leave_policies) setLeavePolicies(md.leave_policies.map((d: any) => ({ id: d.name, name: d.name })));
+        if (md.attendance_policies) setAttendancePolicies(md.attendance_policies.map((d: any) => ({ id: d.id, name: d.name })));
+        if (md.employment_types) setEmploymentTypes(md.employment_types.map((d: any) => ({ id: d.id, name: d.name })));
+        if (md.employment_statuses) setEmploymentStatuses(md.employment_statuses.map((d: any) => ({ id: d.id, name: d.name })));
+      }
       setForm({
         firstName: emp.first_name || '',
         lastName: emp.last_name || '',
+        middleName: emp.middle_name || '',
         email: emp.work_email || emp.user_email || '',
+        personalEmail: emp.personal_email || '',
         role: (emp.user_role === 'HR_ADMIN' ? 'HR_ADMIN' : 'EMPLOYEE') as EmployeeRole,
         employeeCode: emp.employee_code || '',
         departmentId: emp.department_id || '',
         designationId: emp.designation_id || '',
         employmentType: emp.employment_type || '',
+        employmentStatus: emp.employment_status || '',
         shiftId: emp.shift_id || '',
+        workLocationId: emp.work_location_id || '',
+        gradeId: emp.grade_id || '',
         phone: emp.personal_phone || '',
+        workPhone: emp.work_phone || '',
         managerId: emp.reporting_manager_id || '',
         joinDate: emp.date_of_joining?.split('T')[0] || new Date().toISOString().split('T')[0],
+        probationEndDate: emp.probation_end_date?.split('T')[0] || '',
         dateOfBirth: emp.date_of_birth?.split('T')[0] || '',
         gender: emp.gender || '',
+        bloodGroup: emp.blood_group || '',
         leavePolicyId: emp.leave_policy_name || '',
         attendancePolicyId: emp.attendance_policy_id || '',
+        address: emp.current_address || emp.address || '',
+        city: emp.city || '',
+        state: emp.state || '',
+        postalCode: emp.pincode || emp.postal_code || '',
+        country: emp.country || '',
+        panNumber: emp.pan_number || '',
+        aadhaarNumber: emp.aadhaar_number || emp.aadhar_last4 || '',
+        uanNumber: emp.uan_number || '',
+        esicNumber: emp.esic_number || '',
+        pfApplicable: emp.pf_applicable ?? false,
+        esicApplicable: emp.esic_applicable ?? false,
+        bankName: emp.bank_name || '',
+        bankAccountNumber: emp.bank_account_number || '',
+        bankIfscCode: emp.bank_ifsc || emp.bank_ifsc_code || '',
+        bankBranch: emp.bank_branch || '',
+        emergencyContactName: emp.emergency_contact_name || '',
+        emergencyContactPhone: emp.emergency_contact_phone || '',
+        emergencyContactRelationship: emp.emergency_contact_relation || emp.emergency_contact_relationship || '',
+        homeLatitude: emp.home_latitude?.toString() || '',
+        homeLongitude: emp.home_longitude?.toString() || '',
+        notes: emp.notes || '',
+        dateOfExit: emp.date_of_exit?.split('T')[0] || '',
+        exitReason: emp.exit_reason || '',
       });
     } catch (err) {
       console.error('Failed to load employee', err);
@@ -255,18 +376,50 @@ export default function AddEmployeeModal({
           employee_code: form.employeeCode.trim() || undefined,
           first_name: firstName,
           last_name: lastName,
+          middle_name: form.middleName.trim() || undefined,
           date_of_birth: form.dateOfBirth || undefined,
           gender: form.gender || undefined,
+          personal_email: form.personalEmail.trim() || undefined,
           personal_phone: form.phone.trim() || undefined,
+          blood_group: form.bloodGroup || undefined,
           department_id: departmentId,
           designation_id: form.designationId || undefined,
           employment_type: (form.employmentType || '').trim(),
+          employment_status: form.employmentStatus || undefined,
           reporting_manager_id: form.managerId || undefined,
           shift_id: form.shiftId || undefined,
+          work_location_id: form.workLocationId || undefined,
+          grade_id: form.gradeId || undefined,
           date_of_joining: joinDate,
+          probation_end_date: form.probationEndDate || undefined,
+          work_email: form.email.trim() || undefined,
+          work_phone: form.workPhone.trim() || undefined,
           role: form.role,
           leave_policy_name: form.leavePolicyId || undefined,
           attendance_policy_id: form.attendancePolicyId || undefined,
+          address: form.address || undefined,
+          city: form.city || undefined,
+          state: form.state || undefined,
+          postal_code: form.postalCode || undefined,
+          country: form.country || undefined,
+          pan_number: form.panNumber || undefined,
+          aadhaar_number: form.aadhaarNumber || undefined,
+          uan_number: form.uanNumber || undefined,
+          esic_number: form.esicNumber || undefined,
+          pf_applicable: form.pfApplicable,
+          esic_applicable: form.esicApplicable,
+          bank_name: form.bankName || undefined,
+          bank_account_number: form.bankAccountNumber || undefined,
+          bank_ifsc_code: form.bankIfscCode || undefined,
+          bank_branch: form.bankBranch || undefined,
+          emergency_contact_name: form.emergencyContactName || undefined,
+          emergency_contact_phone: form.emergencyContactPhone || undefined,
+          emergency_contact_relationship: form.emergencyContactRelationship || undefined,
+          home_latitude: form.homeLatitude ? Number(form.homeLatitude) : undefined,
+          home_longitude: form.homeLongitude ? Number(form.homeLongitude) : undefined,
+          notes: form.notes || undefined,
+          date_of_exit: form.dateOfExit || undefined,
+          exit_reason: form.exitReason || undefined,
         };
         response = await updateEmployee(editingEmployee.id, updatePayload, subdomain);
         const { success: ok, error: err } = response?.data as {
@@ -282,7 +435,12 @@ export default function AddEmployeeModal({
         }
         const updatedEmployee = response?.data?.data;
         setCreatedEmployee(updatedEmployee);
-        onSuccess(updatedEmployee);
+        showToast(response?.data?.message || 'Employee updated successfully', 'success');
+        
+        // Wait a brief moment to let user see toast before closing/refreshing
+        setTimeout(() => {
+          onSuccess(updatedEmployee);
+        }, 1500);
       } else {
         response = await createEmployee(payload, subdomain);
         const { success: ok, error: err } = response?.data as {
@@ -387,6 +545,15 @@ export default function AddEmployeeModal({
   // Main form
   return (
     <div className="fixed inset-0 bg-black/10 z-50 flex items-center justify-center pt-5 mt-4 px-4 overflow-hidden">
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-semibold shadow-lg border ${toast.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-red-50 border-red-200 text-red-600'}`}>
+            {toast.type === 'success' ? <CheckCircle size={13} /> : <AlertCircle size={13} />}
+            {toast.msg}
+          </div>
+        </div>
+      )}
       <div
         className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col"
         style={{ maxHeight: 'calc(100vh - 8rem)', height: 'auto' }}
@@ -422,109 +589,87 @@ export default function AddEmployeeModal({
             {/* Row 1: Full Name */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label
-                  htmlFor="firstName"
-                  className="block text-xs font-semibold text-gray-600 mb-1.5"
-                >
-                  First Name
-                  {' '}
-                  <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="firstName"
-                  type="text"
-                  value={form.firstName}
-                  onChange={(e) => handleChange('firstName', e.target.value)}
-                  placeholder="John"
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
-                  required
-                />
+                <label htmlFor="firstName" className="block text-xs font-semibold text-gray-600 mb-1.5">First Name <span className="text-red-500">*</span></label>
+                <input id="firstName" type="text" value={form.firstName} onChange={(e) => handleChange('firstName', e.target.value)} placeholder="John" className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" required />
               </div>
+              {isEditing && (
+                <div>
+                  <label htmlFor="middleName" className="block text-xs font-semibold text-gray-600 mb-1.5">Middle Name</label>
+                  <input id="middleName" type="text" value={form.middleName} onChange={(e) => handleChange('middleName', e.target.value)} placeholder="M" className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                </div>
+              )}
               <div>
-                <label
-                  htmlFor="lastName"
-                  className="block text-xs font-semibold text-gray-600 mb-1.5"
-                >
-                  Last Name
-                  {' '}
-                  <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="lastName"
-                  type="text"
-                  value={form.lastName}
-                  onChange={(e) => handleChange('lastName', e.target.value)}
-                  placeholder="Doe"
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
-                  required
-                />
+                <label htmlFor="lastName" className="block text-xs font-semibold text-gray-600 mb-1.5">Last Name <span className="text-red-500">*</span></label>
+                <input id="lastName" type="text" value={form.lastName} onChange={(e) => handleChange('lastName', e.target.value)} placeholder="Doe" className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" required />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              {/* Row 2: Email */}
               <div>
-                <label
-                  htmlFor="email"
-                  className="block text-xs font-semibold text-gray-600 mb-1.5"
-                >
-                  Work Email
-                  {' '}
-                  <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => handleChange('email', e.target.value)}
-                  placeholder="john.doe@company.com"
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
-                  required
-                />
+                <label htmlFor="email" className="block text-xs font-semibold text-gray-600 mb-1.5">Work Email <span className="text-red-500">*</span></label>
+                <input id="email" type="email" value={form.email} onChange={(e) => handleChange('email', e.target.value)} placeholder="john.doe@company.com" className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" required />
               </div>
-
-              {/* Row 3: Employee Code */}
-              <div>
-                <label
-                  htmlFor="employeeCode"
-                  className="block text-xs font-semibold text-gray-600 mb-1.5"
-                >
-                  Employee Code
-                </label>
-                <input
-                  id="employeeCode"
-                  type="text"
-                  value={form.employeeCode}
-                  onChange={(e) => handleChange('employeeCode', e.target.value)}
-                  placeholder="e.g. IM05"
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
-                />
-              </div>
+              {isEditing ? (
+                <div>
+                  <label htmlFor="personalEmail" className="block text-xs font-semibold text-gray-600 mb-1.5">Personal Email</label>
+                  <input id="personalEmail" type="email" value={form.personalEmail} onChange={(e) => handleChange('personalEmail', e.target.value)} placeholder="john@gmail.com" className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                </div>
+              ) : (
+                <div>
+                  <label htmlFor="employeeCode" className="block text-xs font-semibold text-gray-600 mb-1.5">Employee Code</label>
+                  <input id="employeeCode" type="text" value={form.employeeCode} onChange={(e) => handleChange('employeeCode', e.target.value)} placeholder="e.g. IM05" className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                </div>
+              )}
+              {isEditing && (
+                <>
+                  <div>
+                    <label htmlFor="phone" className="block text-xs font-semibold text-gray-600 mb-1.5">Personal Phone</label>
+                    <input id="phone" type="tel" value={form.phone} onChange={(e) => handleChange('phone', e.target.value)} placeholder="+91 98765 43210" className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                  </div>
+                  <div>
+                    <label htmlFor="workPhone" className="block text-xs font-semibold text-gray-600 mb-1.5">Work Phone</label>
+                    <input id="workPhone" type="tel" value={form.workPhone} onChange={(e) => handleChange('workPhone', e.target.value)} placeholder="+91 88888 88888" className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                  </div>
+                  <div>
+                    <label htmlFor="employeeCode" className="block text-xs font-semibold text-gray-600 mb-1.5">Employee Code</label>
+                    <input id="employeeCode" type="text" value={form.employeeCode} onChange={(e) => handleChange('employeeCode', e.target.value)} placeholder="e.g. IM05" className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* Row 4: Employment Type */}
-            <div>
-              <label
-                htmlFor="employmentTypeId"
-                className="block text-xs font-semibold text-gray-600 mb-1.5"
-              >
-                Employment Type
-                {' '}
-                <span className="text-red-500">*</span>
-              </label>
-              <Select
-                inputId="employmentTypeId"
-                options={[
-                  { value: 'full_time', label: 'Full Time' },
-                  // { value: 'part_time', label: 'Part Time' },
-                  // { value: 'contract', label: 'Contract' },
-                  { value: 'probation', label: 'Probation' },
-                ]}
-                value={form.employmentType ? { value: form.employmentType, label: form.employmentType.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) } : null}
-                onChange={(opt) => handleChange('employmentType', opt?.value ?? '')}
-                placeholder="Select employment type"
-                styles={customStyles()}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="employmentTypeId" className="block text-xs font-semibold text-gray-600 mb-1.5">Employment Type <span className="text-red-500">*</span></label>
+                <Select
+                  inputId="employmentTypeId"
+                  options={isEditing && employmentTypes.length > 0 ? employmentTypes.map((type) => ({ value: type.id, label: type.name })) : [
+                    { value: 'full_time', label: 'Full Time' },
+                    { value: 'probation', label: 'Probation' },
+                  ]}
+                  value={form.employmentType ? { value: form.employmentType, label: (isEditing ? employmentTypes.find((t) => t.id === form.employmentType)?.name : null) || form.employmentType.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) } : null}
+                  onChange={(opt) => handleChange('employmentType', opt?.value ?? '')}
+                  placeholder="Select employment type"
+                  styles={customStyles()}
+                />
+              </div>
+              {isEditing && (
+                <div>
+                  <label htmlFor="employmentStatus" className="block text-xs font-semibold text-gray-600 mb-1.5">Employment Status</label>
+                  <Select
+                    inputId="employmentStatus"
+                    options={employmentStatuses.length > 0 ? employmentStatuses.map((status) => ({ value: status.id, label: status.name })) : [
+                      { value: 'ACTIVE', label: 'Active' },
+                      { value: 'INACTIVE', label: 'Inactive' },
+                      { value: 'TERMINATED', label: 'Terminated' },
+                    ]}
+                    value={form.employmentStatus ? { value: form.employmentStatus, label: employmentStatuses.find((t) => t.id === form.employmentStatus)?.name || form.employmentStatus } : null}
+                    onChange={(opt) => handleChange('employmentStatus', opt?.value ?? '')}
+                    placeholder="Select status"
+                    styles={customStyles()}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Row 5: Department + Reporting Manager */}
@@ -738,85 +883,178 @@ export default function AddEmployeeModal({
             </div>
 
             {/* Row 7: Date of Birth + Gender */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className={`grid gap-4 ${isEditing ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <div>
-                <label
-                  htmlFor="dateOfBirth"
-                  className="block text-xs font-semibold text-gray-600 mb-1.5"
-                >
-                  Date of Birth
-                </label>
-                <input
-                  id="dateOfBirth"
-                  type="date"
-                  value={form.dateOfBirth}
-                  onChange={(e) => handleChange('dateOfBirth', e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
-                />
+                <label htmlFor="dateOfBirth" className="block text-xs font-semibold text-gray-600 mb-1.5">Date of Birth</label>
+                <input id="dateOfBirth" type="date" value={form.dateOfBirth} onChange={(e) => handleChange('dateOfBirth', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
               </div>
               <div>
-                <label
-                  htmlFor="gender"
-                  className="block text-xs font-semibold text-gray-600 mb-1.5"
-                >
-                  Gender
-                </label>
+                <label htmlFor="gender" className="block text-xs font-semibold text-gray-600 mb-1.5">Gender</label>
                 <Select
                   inputId="gender"
-                  options={[
-                    { value: 'male', label: 'Male' },
-                    { value: 'female', label: 'Female' },
-                    { value: 'other', label: 'Other' },
-                  ]}
-                  value={
-                    form.gender
-                      ? { value: form.gender, label: capitalize(form.gender) }
-                      : null
-                  }
+                  options={[{ value: 'male', label: 'Male' }, { value: 'female', label: 'Female' }, { value: 'other', label: 'Other' }]}
+                  value={form.gender ? { value: form.gender, label: capitalize(form.gender) } : null}
                   onChange={(opt) => handleChange('gender', opt?.value ?? '')}
                   placeholder="Select gender"
                   styles={customStyles()}
                 />
               </div>
+              {isEditing && (
+                <div>
+                  <label htmlFor="bloodGroup" className="block text-xs font-semibold text-gray-600 mb-1.5">Blood Group</label>
+                  <input id="bloodGroup" type="text" value={form.bloodGroup} onChange={(e) => handleChange('bloodGroup', e.target.value)} placeholder="O+" className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                </div>
+              )}
             </div>
 
-            {/* Row 8: Personal Phone + Date of Joining */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="phone"
-                  className="block text-xs font-semibold text-gray-600 mb-1.5"
-                >
-                  Personal Phone
-                </label>
-                <input
-                  id="phone"
-                  type="tel"
-                  value={form.phone}
-                  onChange={(e) => handleChange('phone', e.target.value)}
-                  placeholder="+91 98765 43210"
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
-                />
+            {!isEditing ? (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="phone" className="block text-xs font-semibold text-gray-600 mb-1.5">Personal Phone</label>
+                  <input id="phone" type="tel" value={form.phone} onChange={(e) => handleChange('phone', e.target.value)} placeholder="+91 98765 43210" className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                </div>
+                <div>
+                  <label htmlFor="joinDate" className="block text-xs font-semibold text-gray-600 mb-1.5">Date of Joining <span className="text-red-500">*</span></label>
+                  <input id="joinDate" type="date" value={form.joinDate} onChange={(e) => handleChange('joinDate', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" required />
+                </div>
               </div>
-              <div>
-                <label
-                  htmlFor="joinDate"
-                  className="block text-xs font-semibold text-gray-600 mb-1.5"
-                >
-                  Date of Joining
-                  {' '}
-                  <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="joinDate"
-                  type="date"
-                  value={form.joinDate}
-                  onChange={(e) => handleChange('joinDate', e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all"
-                  required
-                />
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="joinDate" className="block text-xs font-semibold text-gray-600 mb-1.5">Date of Joining <span className="text-red-500">*</span></label>
+                  <input id="joinDate" type="date" value={form.joinDate} onChange={(e) => handleChange('joinDate', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" required />
+                </div>
+                <div>
+                  <label htmlFor="probationEndDate" className="block text-xs font-semibold text-gray-600 mb-1.5">Probation End Date</label>
+                  <input id="probationEndDate" type="date" value={form.probationEndDate} onChange={(e) => handleChange('probationEndDate', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Additional Admin Edit Fields (only relevant if expanding all fields) */}
+            {isEditing && (
+              <>
+                <div className="pt-4 border-t border-gray-100">
+                  <h3 className="text-sm font-bold text-gray-800 mb-4">Address Details</h3>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="col-span-2">
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Address</label>
+                      <input type="text" value={form.address} onChange={(e) => handleChange('address', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">City</label>
+                      <input type="text" value={form.city} onChange={(e) => handleChange('city', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">State</label>
+                      <input type="text" value={form.state} onChange={(e) => handleChange('state', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Postal Code (Pincode)</label>
+                      <input type="text" value={form.postalCode} onChange={(e) => handleChange('postalCode', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Country</label>
+                      <input type="text" value={form.country} onChange={(e) => handleChange('country', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-gray-100">
+                  <h3 className="text-sm font-bold text-gray-800 mb-4">Statutory & Bank Details</h3>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">PAN Number</label>
+                      <input type="text" value={form.panNumber} onChange={(e) => handleChange('panNumber', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Aadhaar Number</label>
+                      <input type="text" value={form.aadhaarNumber} onChange={(e) => handleChange('aadhaarNumber', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">UAN Number</label>
+                      <input type="text" value={form.uanNumber} onChange={(e) => handleChange('uanNumber', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">ESIC Number</label>
+                      <input type="text" value={form.esicNumber} onChange={(e) => handleChange('esicNumber', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                    
+                    <div className="flex items-center gap-2 mt-2">
+                      <input type="checkbox" id="pfApplicable" checked={form.pfApplicable} onChange={(e) => handleChange('pfApplicable', e.target.checked as any)} className="w-4 h-4 text-[#2D7A4F] border-gray-300 rounded focus:ring-[#2D7A4F]" />
+                      <label htmlFor="pfApplicable" className="text-sm text-gray-700 font-medium">PF Applicable</label>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <input type="checkbox" id="esicApplicable" checked={form.esicApplicable} onChange={(e) => handleChange('esicApplicable', e.target.checked as any)} className="w-4 h-4 text-[#2D7A4F] border-gray-300 rounded focus:ring-[#2D7A4F]" />
+                      <label htmlFor="esicApplicable" className="text-sm text-gray-700 font-medium">ESIC Applicable</label>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Bank Name</label>
+                      <input type="text" value={form.bankName} onChange={(e) => handleChange('bankName', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Bank Account Number</label>
+                      <input type="text" value={form.bankAccountNumber} onChange={(e) => handleChange('bankAccountNumber', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Bank IFSC Code</label>
+                      <input type="text" value={form.bankIfscCode} onChange={(e) => handleChange('bankIfscCode', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Bank Branch</label>
+                      <input type="text" value={form.bankBranch} onChange={(e) => handleChange('bankBranch', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-gray-100">
+                  <h3 className="text-sm font-bold text-gray-800 mb-4">Other Admin Details</h3>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Work Location ID</label>
+                      <input type="text" value={form.workLocationId} onChange={(e) => handleChange('workLocationId', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Grade ID</label>
+                      <input type="text" value={form.gradeId} onChange={(e) => handleChange('gradeId', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Emergency Contact Name</label>
+                      <input type="text" value={form.emergencyContactName} onChange={(e) => handleChange('emergencyContactName', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Emergency Contact Phone</label>
+                      <input type="text" value={form.emergencyContactPhone} onChange={(e) => handleChange('emergencyContactPhone', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Emergency Contact Relationship</label>
+                      <input type="text" value={form.emergencyContactRelationship} onChange={(e) => handleChange('emergencyContactRelationship', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Home Latitude</label>
+                      <input type="number" step="any" value={form.homeLatitude} onChange={(e) => handleChange('homeLatitude', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Home Longitude</label>
+                      <input type="number" step="any" value={form.homeLongitude} onChange={(e) => handleChange('homeLongitude', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Date of Exit</label>
+                      <input type="date" value={form.dateOfExit} onChange={(e) => handleChange('dateOfExit', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Exit Reason</label>
+                      <input type="text" value={form.exitReason} onChange={(e) => handleChange('exitReason', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Notes</label>
+                      <textarea value={form.notes} onChange={(e) => handleChange('notes', e.target.value)} className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all min-h-[80px]" />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Error Message */}
             {error && (

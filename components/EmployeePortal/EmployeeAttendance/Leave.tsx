@@ -20,6 +20,7 @@ import {
   ILeaveApplicationPayload 
 } from '@/lib/service/leaveApplication';
 import { getEmployeeLeaveBalanceDetailed, EmployeeLeaveBalance } from '@/lib/service/leave';
+import { getEmployeeResignationStatus } from '@/lib/service/noticePeriod';
 import ConfirmModal from '@/components/common/ConfirmModal';
 
 interface LeaveTypeData {
@@ -99,6 +100,8 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedLeaveId, setSelectedLeaveId] = useState<string>('');
+  const [isNoticePeriodError, setIsNoticePeriodError] = useState(false);
+  const [isNoticePeriodAbsence, setIsNoticePeriodAbsence] = useState(false);
 
   // Fetch leave types and applications on mount
   useEffect(() => {
@@ -133,10 +136,15 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
       const authToken = token || '';
       const currentYear = new Date().getFullYear();
       
-      const [balanceRes, appsRes] = await Promise.all([
+      const [balanceRes, appsRes, noticePeriodRes] = await Promise.all([
         getEmployeeLeaveBalanceDetailed(employeeId, currentYear, tenantId, authToken),
-        getMyApplications(tenantId, { status: LeaveStatus.PENDING }, authToken)
+        getMyApplications(tenantId, { status: LeaveStatus.PENDING }, authToken),
+        getEmployeeResignationStatus(tenantId, authToken).catch(() => null)
       ]);
+      
+      if (noticePeriodRes?.data && (noticePeriodRes.data.status === 'pending' || noticePeriodRes.data.status === 'approved')) {
+        setIsNoticePeriodError(true);
+      }
 
       // Map leave types from employee leave balance API
       if (balanceRes?.data) {
@@ -202,6 +210,7 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
         half_day_session: halfDay ? halfDaySession : undefined,
         reason: reason.trim(),
         attachment_url: attachmentUrl.trim() || undefined,
+        is_notice_period_absence: isNoticePeriodAbsence,
       };
 
       const response = await applyLeave(payload, apiKey, token);
@@ -217,6 +226,8 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
         setReason('');
         setHalfDay(false);
         setAttachmentUrl('');
+        setIsNoticePeriodError(false);
+        setIsNoticePeriodAbsence(false);
         fetchInitialData();
         setTimeout(() => setSubmitted(false), 5000);
       } else if (response?.data?.success === false) {
@@ -238,11 +249,23 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
           errorMsg = error.response.data.error.join(', ');
         } else if (typeof error.response.data.error === 'string') {
           errorMsg = error.response.data.error;
+        } else {
+          errorMsg = JSON.stringify(error.response.data.error);
         }
       } else if (error?.response?.data?.message) {
-        errorMsg = error.response.data.message;
+        errorMsg = typeof error.response.data.message === 'string' 
+          ? error.response.data.message 
+          : JSON.stringify(error.response.data.message);
       } else if (error?.message) {
         errorMsg = error.message;
+      }
+      
+      const fullErrorDump = JSON.stringify(error) + String(error) + errorMsg + JSON.stringify(error?.response?.data || {});
+      const lowerError = fullErrorDump.toLowerCase();
+      
+      if (lowerError.includes('paid leave is not permitted') || lowerError.includes('notice period')) {
+        setIsNoticePeriodError(true);
+        setIsNoticePeriodAbsence(false);
       }
       
       showToast(errorMsg, 'error');
@@ -367,6 +390,8 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
                   setReason(''); 
                   setHalfDay(false); 
                   setAttachmentUrl(''); 
+                  setIsNoticePeriodError(false);
+                  setIsNoticePeriodAbsence(false);
                 }}
                 disabled={isLoading}
                 className="flex items-center justify-center gap-2 bg-[#0f766e] text-white text-xs sm:text-sm font-semibold px-4 sm:px-5 py-2.5 rounded-xl  transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
@@ -521,6 +546,48 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+              
+              {/* Notice Period Absence Option */}
+              {isNoticePeriodError && (
+                <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 mb-4">
+                  <div className="flex items-start gap-3 mb-3">
+                    <AlertCircle size={18} className="text-rose-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold text-rose-900 mb-1">Notice Period Restriction</p>
+                      <p className="text-xs text-rose-700">
+                        Paid leave is not permitted during your notice period. You may submit an absence request instead, which will be reviewed and may be treated as Loss of Pay (LOP) according to company policy.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-3 pt-3 border-t border-rose-100">
+                    <label className="block text-xs sm:text-sm font-semibold text-rose-900 mb-2">Request Type</label>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <label className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer ${!isNoticePeriodAbsence ? 'border-rose-500 bg-white shadow-sm' : 'border-slate-200 bg-white hover:border-rose-300'}`}>
+                        <input
+                          type="radio"
+                          name="requestType"
+                          checked={!isNoticePeriodAbsence}
+                          onChange={() => setIsNoticePeriodAbsence(false)}
+                          className="w-4 h-4 text-rose-600 focus:ring-rose-500"
+                        />
+                        <span className="text-sm font-medium text-slate-800">Paid Leave</span>
+                      </label>
+                      <label className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer ${isNoticePeriodAbsence ? 'border-rose-500 bg-white shadow-sm' : 'border-slate-200 bg-white hover:border-rose-300'}`}>
+                        <input
+                          type="radio"
+                          name="requestType"
+                          checked={isNoticePeriodAbsence}
+                          onChange={() => setIsNoticePeriodAbsence(true)}
+                          className="w-4 h-4 text-rose-600 focus:ring-rose-500"
+                        />
+                        <span className="text-sm font-medium text-slate-800">Absence During Notice Period</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Leave Type Selection */}
               <div>
                 <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2">Select Leave Type</label>

@@ -619,6 +619,15 @@ export default function CheckInOutCard({
         }, tenantId, token);
 
         const apiErr = extractApiError(res, 'Check-in failed.');
+        
+        if (res?.data?.success === false && res?.data?.message === "You are out of range") {
+          toastify.error("You are out of range. Please check in from the office or your registered home location.", { position: 'bottom-right', duration: 5000 });
+          setIsLoading(false);
+          setShowConfirmModal(false);
+          setLocationData(null);
+          return;
+        }
+
         if (apiErr) {
           showToast(apiErr, 'error');
           setIsLoading(false);

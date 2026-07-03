@@ -47,6 +47,7 @@ interface CompanyInformation {
   tax_id?: string;
   standards: string[];
   time_frame: string;
+  office_coordinates: { name: string; latitude: number; longitude: number; radius: number }[];
 }
 
 // Shape of the data returned by GET /v1/auth/onboarding/step1.
@@ -64,6 +65,7 @@ interface SavedCompanyInfo {
   website?: string;
   phone_number?: string;
   tax_id?: string;
+  office_coordinates?: { name: string; latitude: number; longitude: number; radius: number }[];
 }
 
 // ─── Static Options ───────────────────────────────────────────────────────────
@@ -119,6 +121,7 @@ const handleCompanyProfileSubmit = async (
         website: values.company_website_url,
         phone_number: values.phone_number,
         tax_id: values.tax_id,
+        office_coordinates: values.office_coordinates,
       };
       res = await AuthService.onboardingStep1(onboardingPayload, slug);
     } else {
@@ -136,6 +139,7 @@ const handleCompanyProfileSubmit = async (
         phone_number: values.phone_number,
         tax_id: values.tax_id ?? '',
         timezone: values.timezone,
+        office_coordinates: values.office_coordinates,
       }, slug);
     }
 
@@ -344,13 +348,13 @@ export default function CompanyInformationForm({
     state: isSettings ? (savedCompanyInfo?.state ?? account?.state ?? '') : '',
     city: isSettings ? (savedCompanyInfo?.city ?? account?.city ?? '') : '',
     timezone: savedCompanyInfo?.timezone ?? account?.timezone ?? getDefaultTimezone(),
-    address: savedCompanyInfo?.address ?? account?.address ?? '',
-    official_email_id: savedCompanyInfo?.official_email_id ?? account?.official_email_id ?? '',
+    address: savedCompanyInfo?.address || account?.address || '',
+    official_email_id: savedCompanyInfo?.official_email_id || account?.official_email_id || '',
+    company_website_url: savedCompanyInfo?.website || account?.company_website_url || '',
+    phone_number: savedCompanyInfo?.phone_number || account?.phone_number || '',
+    tax_id: savedCompanyInfo?.tax_id || '',
+    office_coordinates: savedCompanyInfo?.office_coordinates || [],
     sectors: account?.sectors ?? [],
-    company_website_url: savedCompanyInfo?.website
-      ?? account?.website ?? account?.website_url ?? '',
-    phone_number: savedCompanyInfo?.phone_number ?? account?.phone_number ?? '',
-    tax_id: savedCompanyInfo?.tax_id ?? account?.tax_id ?? '',
     standards: account?.standards ?? ['BRSR'],
     time_frame: 'quarter',
   };
@@ -690,6 +694,75 @@ export default function CompanyInformationForm({
                     icon={isSettings ? <MdOutlineEdit /> : ''}
                     rightIcon={!!isSettings}
                   />
+                </div>
+              </div>
+
+              {/* Row 7: Geofencing Office Locations */}
+              <div className={`row ${isSettings ? 'mt-0' : 'mt-2'}`}>
+                <div className="col-12">
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mt-3">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-800">Office Coordinates (Geofencing)</h4>
+                        <p className="text-xs text-slate-500 mt-1">Capture GPS locations for check-in validation.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!navigator.geolocation) {
+                            toast.error('Geolocation is not supported by your browser');
+                            return;
+                          }
+                          toast.success('Capturing office location...');
+                          navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                              const newLocation = {
+                                name: `Office ${values.office_coordinates.length + 1}`,
+                                latitude: position.coords.latitude,
+                                longitude: position.coords.longitude,
+                                radius: 100 // Default 100 meters
+                              };
+                              setFieldValue('office_coordinates', [...values.office_coordinates, newLocation]);
+                              toast.success('Office location captured!');
+                            },
+                            (error) => {
+                              console.error('Error getting location', error);
+                              toast.error('Failed to get location. Please allow location access.');
+                            },
+                            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                          );
+                        }}
+                        className="px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition-colors"
+                      >
+                        + Capture Location
+                      </button>
+                    </div>
+                    {values.office_coordinates && values.office_coordinates.length > 0 ? (
+                      <div className="space-y-2 mt-3">
+                        {values.office_coordinates.map((coord, idx) => (
+                          <div key={idx} className="flex items-center justify-between bg-white p-3 border border-slate-100 rounded-lg">
+                            <div>
+                              <p className="text-xs font-bold text-slate-700">{coord.name}</p>
+                              <p className="text-[10px] text-slate-500 mt-0.5">Lat: {coord.latitude.toFixed(6)} • Lng: {coord.longitude.toFixed(6)} • Radius: {coord.radius}m</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newCoords = [...values.office_coordinates];
+                                newCoords.splice(idx, 1);
+                                setFieldValue('office_coordinates', newCoords);
+                              }}
+                              className="text-[10px] text-red-500 hover:text-red-600 font-bold px-2 py-1 bg-red-50 rounded"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 mt-2 italic">No locations configured.</p>
+                    )}
+                  </div>
                 </div>
               </div>
 

@@ -23,6 +23,7 @@ export interface ILeaveApplicationPayload {
   half_day_session?: HalfDaySession;
   reason: string;
   attachment_url?: string;
+  is_notice_period_absence?: boolean;
 }
 
 export interface ILeaveApplicationUpdatePayload {
@@ -85,6 +86,7 @@ export interface ILeaveApplication {
   attachment_url?: string;
   createdAt?: string;
   updatedAt?: string;
+  is_notice_period_absence?: boolean;
 }
 
 export const applyLeave = (

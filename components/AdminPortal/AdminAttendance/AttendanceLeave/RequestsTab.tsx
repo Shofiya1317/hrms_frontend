@@ -52,6 +52,9 @@ function getEmployeeName(app: ILeaveApplication) {
 }
 
 function getLeaveTypeName(app: ILeaveApplication) {
+  if (app.is_notice_period_absence) {
+    return 'Notice Period Absence';
+  }
   return app.leave_type?.name ?? app.leave_type_name ?? '—';
 }
 

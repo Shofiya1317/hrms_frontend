@@ -293,7 +293,7 @@ function WorkScheduleCard({ ws }: { ws: IWorkSchedule }) {
 function DayCell({
   day, iso, holidays, calendarDay, isToday,
   onDayClick, onEdit, onConfirmDelete, deletingId, colIndex, workSchedule, workLocationSchedule,
-  viewOnly, attendance,
+  viewOnly, attendance, isOpen, onCellEnter, onCellLeave, onCloseNow,
 }: {
   day: number; iso: string; holidays: IHoliday[]; calendarDay?: ICalendarDay; isToday: boolean;
   onDayClick: (iso: string) => void;
@@ -305,11 +305,14 @@ function DayCell({
   workLocationSchedule?: IWorkLocationSchedule | null;
   viewOnly?: boolean;
   attendance?: IAttendanceLog;
+  isOpen: boolean;
+  onCellEnter: () => void;
+  onCellLeave: () => void;
+  onCloseNow: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const dateObj = new Date(`${iso}T00:00:00`); // local midnight, avoid UTC shift
+  // Parse date parts directly to avoid any timezone shift on getDay()
+  const [isoY, isoM, isoD] = iso.split('-').map(Number);
+  const dateObj = new Date(isoY, isoM - 1, isoD); // local date, guaranteed correct getDay()
   const h = holidays[0];
   const entryMeta = h ? getEntryMeta(h) : null;
 
@@ -320,24 +323,28 @@ function DayCell({
   const isOverride = calendarDay?.is_override ?? false;
   const flipLeft = colIndex >= 5;
 
-  const keep = () => { if (closeTimer.current) clearTimeout(closeTimer.current); };
-  const leave = () => { closeTimer.current = setTimeout(() => setOpen(false), 150); };
-
   // Nth saturday info for tooltip
   const satNth = dateObj.getDay() === 6 ? getNthSaturdayOfMonth(dateObj) : 0;
 
   // Get work location for this day
   const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const dayFullNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const dayName = dayNames[dateObj.getDay()];
+  const dayFullName = dayFullNames[dateObj.getDay()];
   const workLocation = workLocationSchedule ? getWorkLocation(dayName, workLocationSchedule) : null;
   const locationMeta = workLocation ? LOCATION_META[workLocation] : null;
 
+  // Dynamic tooltip label — always show the actual day name
+  const tooltipLabel = (dayKind === 'weekend' || dayKind === 'non_working_saturday')
+    ? `Weekend: ${dayFullName}`
+    : `${kindMeta.label} · ${dayFullName}`;
+
   return (
-    <div className="relative" onMouseEnter={() => { keep(); setOpen(true); }} onMouseLeave={leave}>
+    <div className="relative" onMouseEnter={onCellEnter} onMouseLeave={onCellLeave}>
       {/* Day box */}
       <div className={`w-full aspect-square flex flex-col items-center justify-center rounded-lg text-[10px] font-semibold border cursor-default select-none transition-all relative
         ${kindMeta.bg} ${kindMeta.text} ${kindMeta.border}
-        ${open ? (entryMeta ? `ring-2 ${entryMeta.ringColor}` : 'ring-2 ring-teal-300') : ''}
+        ${isOpen ? (entryMeta ? `ring-2 ${entryMeta.ringColor}` : 'ring-2 ring-teal-300') : ''}
         ${isToday ? 'ring-2 ring-[#0f766e] ring-offset-1 font-bold' : ''}`}
       >
         <span>{day}</span>
@@ -364,10 +371,10 @@ function DayCell({
       </div>
 
       {/* Hover card */}
-      {open && (
+      {isOpen && (
         <div
-          onMouseEnter={keep}
-          onMouseLeave={leave}
+          onMouseEnter={onCellEnter}
+          onMouseLeave={onCellLeave}
           className={`absolute top-full z-50 w-56 mt-1 ${flipLeft ? 'right-0' : 'left-0'}`}
         >
           <div className={`bg-white rounded-2xl shadow-2xl border ${entryMeta ? entryMeta.border : 'border-slate-200'} p-3 space-y-2.5`}>
@@ -376,17 +383,17 @@ function DayCell({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <span className={`w-2 h-2 rounded-full ${kindMeta.dot}`} />
-                <span className="text-[11px] font-bold text-slate-700">{kindMeta.label}</span>
+                <span className="text-[11px] font-bold text-slate-700">{tooltipLabel}</span>
               </div>
               <div className="flex items-center gap-1">
-                {satNth > 0 && (
+                {/* {satNth > 0 && (
                   <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${dayKind === 'working_saturday' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                     {satNth}
                     {satNth === 1 ? 'st' : satNth === 2 ? 'nd' : satNth === 3 ? 'rd' : 'th'}
                     {' '}
                     Sat
                   </span>
-                )}
+                )} */}
                 {workLocation && locationMeta && (
                   <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${locationMeta.bg} ${locationMeta.color} flex items-center gap-1`}>
                     <locationMeta.icon size={8} />
@@ -400,12 +407,12 @@ function DayCell({
             </div>
 
             {/* Calendar day extra info */}
-            {calendarDay?.reason && (
+            {/* {calendarDay?.reason && (
               <p className="text-[10px] text-slate-400 border-t border-slate-50 pt-2">{calendarDay.reason}</p>
             )}
             {(calendarDay?.holiday_name || calendarDay?.override_name) && (
               <p className="text-[10px] font-semibold text-slate-600">{calendarDay.holiday_name || calendarDay.override_name}</p>
-            )}
+            )} */}
 
             {/* Entry rows (holidays + working-day overrides) */}
             {holidays.map((hh, idx) => {
@@ -424,7 +431,7 @@ function DayCell({
                   {!viewOnly && (
                     <div className="flex gap-1.5">
                       <button
-                        onClick={() => { setOpen(false); onEdit(hh); }}
+                        onClick={() => { onCloseNow(); onEdit(hh); }}
                         className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors"
                       >
                         <Pencil size={9} />
@@ -432,7 +439,7 @@ function DayCell({
                         Edit
                       </button>
                       <button
-                        onClick={() => { setOpen(false); onConfirmDelete(hh.id, hh.name); }}
+                        onClick={() => { onCloseNow(); onConfirmDelete(hh.id, hh.name); }}
                         disabled={deletingId === hh.id}
                         className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-colors disabled:opacity-50"
                       >
@@ -488,7 +495,7 @@ function DayCell({
             })()}
             {!viewOnly && !h && (
               <button
-                onClick={() => { setOpen(false); onDayClick(iso); }}
+                onClick={() => { onCloseNow(); onDayClick(iso); }}
                 className="w-full flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors border-t border-slate-100 pt-2.5 mt-0.5"
               >
                 <Plus size={9} />
@@ -530,6 +537,19 @@ function MiniMonth({
   for (let d = 1; d <= totalDays; d++) cells.push(d);
   while (cells.length % 7 !== 0) cells.push(null);
 
+  const [hoveredIso, setHoveredIso] = useState<string | null>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleCellEnter = (iso: string) => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setHoveredIso(iso);
+  };
+  const handleCellLeave = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setHoveredIso(null), 150);
+  };
+  const handleCloseNow = () => setHoveredIso(null);
+
   const calendarByDate = useMemo(() => {
     if (!calendarData) return {} as Record<string, ICalendarDay>;
     return Object.fromEntries(calendarData.days.map((d) => [d.date, d]));
@@ -543,7 +563,8 @@ function MiniMonth({
       const iso = `${year}-${String(monthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const hs = byDate[iso] ?? [];
       const calDay = calendarByDate[iso];
-      const dateObj = new Date(`${iso}T00:00:00`);
+      const [py, pm, pd] = iso.split('-').map(Number);
+      const dateObj = new Date(py, pm - 1, pd);
 
       // Holiday-type filter, but always keep working-day overrides regardless of filter
       const filteredEntries = filterType === 'all'
@@ -692,6 +713,10 @@ function MiniMonth({
               workLocationSchedule={workLocationSchedule}
               viewOnly={viewOnly}
               attendance={attendanceByDate?.[iso]}
+              isOpen={hoveredIso === iso}
+              onCellEnter={() => handleCellEnter(iso)}
+              onCellLeave={handleCellLeave}
+              onCloseNow={handleCloseNow}
             />
           );
         })}
@@ -848,7 +873,7 @@ export default function HolidaysTab({
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       const entries = byDate[iso] ?? [];
-      const kind = getEffectiveDayKind(new Date(d), entries, undefined, workSchedule);
+      const kind = getEffectiveDayKind(new Date(d.getFullYear(), d.getMonth(), d.getDate()), entries, undefined, workSchedule);
 
       if (kind === 'working' || kind === 'working_override') workingDays++;
       if (kind === 'working_saturday') { workingDays++; workSats++; }
