@@ -13,6 +13,7 @@ import TeamCompOffRequests from '@/components/EmployeePortal/EmployeeManager/Tea
 import TeamWFHRequests from '@/components/EmployeePortal/EmployeeManager/TeamWFHRequests';
 import TeamMembersStrip from '@/components/EmployeePortal/EmployeeManager/TeamMembersStrip';
 import TeamOnDutyRequests from '@/components/EmployeePortal/EmployeeManager/TeamOnDutyRequests';
+import TeamLeaveOverview from '@/components/EmployeePortal/EmployeeManager/TeamLeaveOverview';
 
 type Tab =
   | 'leave-requests'
@@ -69,6 +70,9 @@ export default function MyTeamPage() {
               : `${team.length} team member${team.length !== 1 ? 's' : ''} reporting to you`}
           </p>
         </div>
+        
+        {/* Upcoming Team Leaves Widget */}
+        <TeamLeaveOverview subdomain={subdomain} />
       </div>
 
       {/* Team members story strip */}

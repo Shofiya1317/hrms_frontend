@@ -397,7 +397,7 @@ export interface IAttendancePolicyPayload {
   max_regularization_per_month: number;
   sandwich_policy_enabled: boolean;
   sandwich_include_weekoff: boolean;
-  sandwich_include_public_holiday: boolean;
+  // sandwich_include_public_holiday: boolean;
   sandwich_include_company_holiday: boolean;
 }
 

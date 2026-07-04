@@ -26,10 +26,12 @@ import {
   UserRoundCheck,
   UsersRound,
 } from 'lucide-react';
+import { getApprovalCounts, IApprovalCounts } from '@/lib/service/employee';
 import Avatar from '../Avatar/Avatar';
 import { Button } from '../Button/Button';
 import { useModal } from '../Modal/Context';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { useParams } from 'next/navigation';
 
 export interface IMenuItem {
   label: string;
@@ -38,6 +40,7 @@ export interface IMenuItem {
   isActive?: boolean;
   featureName?: string;
   menuItems?: IMenuItem[];
+  badgeCount?: number;
 }
 
 export interface IProfileItem {
@@ -196,18 +199,24 @@ function DesktopDropdownMenu({
         <li
           key={item.label}
           aria-hidden
-          className={`sub_item flex items-center justify-between mx-1 px-3 py-2 rounded-lg transition-colors ${
-            item.path && pathname.startsWith(item.path)
-              ? 'bg-teal-50 text-teal-700'
-              : 'hover:bg-slate-50'
-          } ${index === 0 ? 'mt-1' : ''} ${index === items.length - 1 ? 'mb-1' : ''}`}
+          className={`sub_item flex items-center justify-between mx-1 px-3 py-2 rounded-lg transition-colors ${item.path && pathname.startsWith(item.path)
+            ? 'bg-teal-50 text-teal-700'
+            : 'hover:bg-slate-50'
+            } ${index === 0 ? 'mt-1' : ''} ${index === items.length - 1 ? 'mb-1' : ''}`}
           style={{ cursor: 'pointer' }}
           onClick={() => {
             router.push(item.path);
             onClose();
           }}
         >
-          <p className="mb-0 text-sm font-medium">{item.label}</p>
+          <div className="flex items-center gap-2">
+            <p className="mb-0 text-sm font-medium">{item.label}</p>
+            {item.badgeCount && item.badgeCount > 0 && (
+              <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-sm ring-1 ring-white">
+                {item.badgeCount > 99 ? '99+' : item.badgeCount}
+              </span>
+            )}
+          </div>
           {item.icon}
         </li>
       ))}
@@ -257,7 +266,14 @@ function DesktopNavbarItem({
       >
         <div className="relative flex items-center whitespace-nowrap">
           {item.icon && <span className="mr-2 inline-flex">{item.icon}</span>}
-          <span className="mr-1">{item.label}</span>
+          <span className="mr-1 relative">
+            {item.label}
+            {item.badgeCount && item.badgeCount > 0 && (
+              <span className="absolute -top-1.5 -right-3.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-sm ring-1 ring-white">
+                {item.badgeCount > 99 ? '99+' : item.badgeCount}
+              </span>
+            )}
+          </span>
           {hasChildren && (
             <HiOutlineChevronDown
               size={16}
@@ -317,10 +333,9 @@ function MobileNavItem({
         type="button"
         onClick={handleParentClick}
         className={`w-full flex items-center justify-between px-3 py-3 rounded-lg transition-colors text-left
-          ${
-            isActive
-              ? 'text-[color:var(--primary,#0d9488)] bg-[color:var(--primary-light,#f0fdfa)] font-semibold'
-              : 'text-slate-700 hover:bg-slate-50 font-medium'
+          ${isActive
+            ? 'text-[color:var(--primary,#0d9488)] bg-[color:var(--primary-light,#f0fdfa)] font-semibold'
+            : 'text-slate-700 hover:bg-slate-50 font-medium'
           }`}
       >
         <span className="flex items-center gap-2.5">
@@ -331,7 +346,14 @@ function MobileNavItem({
               {item.icon}
             </span>
           )}
-          <span className="text-sm">{item.label}</span>
+          <span className="text-sm flex items-center gap-2">
+            {item.label}
+            {item.badgeCount && item.badgeCount > 0 && (
+              <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-sm ring-1 ring-white">
+                {item.badgeCount > 99 ? '99+' : item.badgeCount}
+              </span>
+            )}
+          </span>
         </span>
         {hasChildren && (
           <HiOutlineChevronDown
@@ -356,13 +378,19 @@ function MobileNavItem({
                     onClose();
                   }}
                   className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors
-                    ${
-                      subActive
-                        ? 'text-[color:var(--primary,#0d9488)] bg-[color:var(--primary-light,#f0fdfa)] font-semibold'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium'
+                    ${subActive
+                      ? 'text-[color:var(--primary,#0d9488)] bg-[color:var(--primary-light,#f0fdfa)] font-semibold'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium'
                     }`}
                 >
-                  {sub.label}
+                  <div className="flex items-center gap-2">
+                    {sub.label}
+                    {sub.badgeCount && sub.badgeCount > 0 && (
+                      <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-sm ring-1 ring-white">
+                        {sub.badgeCount > 99 ? '99+' : sub.badgeCount}
+                      </span>
+                    )}
+                  </div>
                 </button>
               </li>
             );
@@ -416,11 +444,10 @@ function ProfileNavbarItem({
   return (
     <li
       aria-hidden
-      className={`sub_item flex items-center justify-between mx-1 px-3 py-2 rounded-lg transition-colors ${
-        isProfileItemActive(item, pathname)
-          ? 'bg-teal-50 text-teal-700'
-          : 'hover:bg-slate-50'
-      } ${isFirst ? 'mt-1' : ''} ${isLast ? 'mb-1' : ''}`}
+      className={`sub_item flex items-center justify-between mx-1 px-3 py-2 rounded-lg transition-colors ${isProfileItemActive(item, pathname)
+        ? 'bg-teal-50 text-teal-700'
+        : 'hover:bg-slate-50'
+        } ${isFirst ? 'mt-1' : ''} ${isLast ? 'mb-1' : ''}`}
       onClick={() => {
         if (item.label === 'Logout') logoutModal();
         else router.push(item?.path);
@@ -496,10 +523,9 @@ function MobileProfileList({
                 }
               }}
               className={`w-full flex items-center justify-between px-3 py-3 rounded-lg text-sm transition-colors text-left
-                ${
-                  active
-                    ? 'text-[color:var(--primary,#0d9488)] bg-[color:var(--primary-light,#f0fdfa)] font-semibold'
-                    : 'text-slate-700 hover:bg-slate-50 font-medium'
+                ${active
+                  ? 'text-[color:var(--primary,#0d9488)] bg-[color:var(--primary-light,#f0fdfa)] font-semibold'
+                  : 'text-slate-700 hover:bg-slate-50 font-medium'
                 }`}
             >
               <span>{item.label}</span>
@@ -522,6 +548,10 @@ function Header(props: HeaderProps) {
   const [mobileView, setMobileView] = useState<
     'menu' | 'profile' | 'notifications'
   >('menu');
+  const [approvalCounts, setApprovalCounts] = useState<IApprovalCounts | null>(null);
+
+  const params = useParams();
+  const subdomain = params?.subdomain as string;
   const timeoutId = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rafId = useRef<number>(0);
   const navRef = useRef<HTMLDivElement>(null);
@@ -568,6 +598,16 @@ function Header(props: HeaderProps) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
+
+  useEffect(() => {
+    if (session && subdomain) {
+      getApprovalCounts(subdomain, session.user.token)
+        .then((res: any) => {
+          setApprovalCounts(res?.data?.data ?? res?.data ?? null);
+        })
+        .catch(console.error);
+    }
+  }, [session, subdomain]);
 
   const closeMobile = () => setIsMobileOpen(false);
 
@@ -641,11 +681,10 @@ function Header(props: HeaderProps) {
         <div className="flex items-center gap-2 lg:hidden">
           {/* Mobile Notification Icon */}
           <button
-            className={`relative flex items-center justify-center w-9 h-9 rounded-lg transition-colors ${
-              isNotificationsActive
-                ? 'bg-teal-50 text-teal-600'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
+            className={`relative flex items-center justify-center w-9 h-9 rounded-lg transition-colors ${isNotificationsActive
+              ? 'bg-teal-50 text-teal-600'
+              : 'text-slate-600 hover:bg-slate-100'
+              }`}
             type="button"
             aria-label="Notifications"
             onClick={() => {
@@ -722,10 +761,9 @@ function Header(props: HeaderProps) {
                   type="button"
                   onClick={() => setMobileView('menu')}
                   className={`flex-1 py-3.5 text-sm font-semibold transition-colors relative
-                    ${
-                      mobileView === 'menu'
-                        ? 'text-[color:var(--primary,#0d9488)]'
-                        : 'text-slate-400 hover:text-slate-600'
+                    ${mobileView === 'menu'
+                      ? 'text-[color:var(--primary,#0d9488)]'
+                      : 'text-slate-400 hover:text-slate-600'
                     }`}
                 >
                   Menu
@@ -737,10 +775,9 @@ function Header(props: HeaderProps) {
                   type="button"
                   onClick={() => setMobileView('notifications')}
                   className={`flex-1 py-3.5 text-sm font-semibold transition-colors relative
-                    ${
-                      mobileView === 'notifications'
-                        ? 'text-[color:var(--primary,#0d9488)]'
-                        : 'text-slate-400 hover:text-slate-600'
+                    ${mobileView === 'notifications'
+                      ? 'text-[color:var(--primary,#0d9488)]'
+                      : 'text-slate-400 hover:text-slate-600'
                     }`}
                 >
                   Notifications
@@ -752,10 +789,9 @@ function Header(props: HeaderProps) {
                   type="button"
                   onClick={() => setMobileView('profile')}
                   className={`flex-1 py-3.5 text-sm font-semibold transition-colors relative
-                    ${
-                      mobileView === 'profile'
-                        ? 'text-[color:var(--primary,#0d9488)]'
-                        : 'text-slate-400 hover:text-slate-600'
+                    ${mobileView === 'profile'
+                      ? 'text-[color:var(--primary,#0d9488)]'
+                      : 'text-slate-400 hover:text-slate-600'
                     }`}
                 >
                   Profile
@@ -768,15 +804,45 @@ function Header(props: HeaderProps) {
               {/* Menu view — accordion list, no absolute children */}
               {mobileView === 'menu' && (
                 <ul className="space-y-1 p-4 m-0">
-                  {menuItems.map((item) => (
-                    <MobileNavItem
-                      key={item.label}
-                      item={item}
-                      pathname={pathname}
-                      router={router}
-                      onClose={closeMobile}
-                    />
-                  ))}
+                  {menuItems.map((item) => {
+                    let parentBadge = 0;
+                    let enrichedItem = { ...item };
+
+                    if (approvalCounts) {
+                      const sumAll = Object.values(approvalCounts).reduce((a, b) => a + Number(b), 0);
+
+                      if (item.label === 'My Team') {
+                        parentBadge = sumAll;
+                      }
+
+                      if (item.menuItems) {
+                        enrichedItem.menuItems = item.menuItems.map((sub) => {
+                          let subBadge = 0;
+                          if (sub.label === 'Leave Management' || sub.label === 'Apply Leave') subBadge = approvalCounts.leave;
+                          if (sub.label === 'Regularization') subBadge = approvalCounts.regularization;
+                          if (sub.label === 'Comp Off') subBadge = approvalCounts.compOff;
+                          if (sub.label === 'Work From Home') subBadge = approvalCounts.wfh;
+                          if (sub.label === 'On Duty') subBadge = approvalCounts.onduty;
+                          if (sub.label === 'Resignation') subBadge = approvalCounts.resignation;
+
+                          parentBadge += subBadge;
+                          return { ...sub, badgeCount: subBadge };
+                        });
+                      }
+
+                      enrichedItem.badgeCount = parentBadge;
+                    }
+
+                    return (
+                      <MobileNavItem
+                        key={enrichedItem.label}
+                        item={enrichedItem}
+                        pathname={pathname}
+                        router={router}
+                        onClose={closeMobile}
+                      />
+                    );
+                  })}
                 </ul>
               )}
 
@@ -802,29 +868,55 @@ function Header(props: HeaderProps) {
         <div className="hidden lg:flex flex-1 min-w-0">
           <div className="custom-nav-container">
             <div className="flex min-w-0 flex-grow items-center justify-between">
-              <Nav
-                className="flex min-w-0 flex-grow justify-center gap-1 xl:gap-2"
-                ref={navRef}
-              >
-                {menuItems.map((item) => (
-                  <DesktopNavbarItem
-                    item={item}
-                    key={item.label}
-                    pathname={pathname}
-                    openMenu={openMenu}
-                    setOpenMenu={setOpenMenu}
-                  />
-                ))}
+              <Nav className="ml-auto flex items-center gap-4 lg:gap-5 xl:gap-8 header-menu mt-2">
+                {menuItems.map((item) => {
+                  let parentBadge = 0;
+                  let enrichedItem = { ...item };
+
+                  if (approvalCounts) {
+                    const sumAll = Object.values(approvalCounts).reduce((a, b) => a + Number(b), 0);
+
+                    if (item.label === 'My Team') {
+                      parentBadge = sumAll;
+                    }
+
+                    if (item.menuItems) {
+                      enrichedItem.menuItems = item.menuItems.map((sub) => {
+                        let subBadge = 0;
+                        if (sub.label === 'Leave Management' || sub.label === 'Apply Leave') subBadge = approvalCounts.leave;
+                        if (sub.label === 'Regularization') subBadge = approvalCounts.regularization;
+                        if (sub.label === 'Comp Off') subBadge = approvalCounts.compOff;
+                        if (sub.label === 'Work From Home') subBadge = approvalCounts.wfh;
+                        if (sub.label === 'On Duty') subBadge = approvalCounts.onduty;
+                        if (sub.label === 'Resignation') subBadge = approvalCounts.resignation;
+
+                        parentBadge += subBadge;
+                        return { ...sub, badgeCount: subBadge };
+                      });
+                    }
+
+                    enrichedItem.badgeCount = parentBadge;
+                  }
+
+                  return (
+                    <DesktopNavbarItem
+                      key={enrichedItem.label}
+                      item={enrichedItem}
+                      pathname={pathname}
+                      openMenu={openMenu}
+                      setOpenMenu={setOpenMenu}
+                    />
+                  );
+                })}
               </Nav>
 
               {/* Bell + avatar - Desktop view */}
               <div className="shrink-0 items-center gap-3 hidden lg:flex">
                 <button
-                  className={`hrms-header-icon-btn transition-all duration-200 relative ${
-                    isNotificationsActive
-                      ? 'bg-[#eef5f2] text-[#0f766e]'
-                      : 'text-slate-500 hover:bg-slate-100 hover:text-teal-600'
-                  }`}
+                  className={`hrms-header-icon-btn transition-all duration-200 relative ${isNotificationsActive
+                    ? 'bg-[#eef5f2] text-[#0f766e]'
+                    : 'text-slate-500 hover:bg-slate-100 hover:text-teal-600'
+                    }`}
                   type="button"
                   aria-label="Notifications"
                   onClick={() => router.push('/notifications')}

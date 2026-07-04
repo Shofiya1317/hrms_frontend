@@ -15,6 +15,7 @@ import { ShieldCheck, UsersRound } from 'lucide-react';
 import { object, string } from 'yup';
 import { Button } from '../Button/Button';
 import { FormikField } from '../FormikField/FormikField';
+import { AuthService } from '@/lib/service';
 
 export const handleSignInSubmit = async (
   values: { email: string; password: string },
@@ -28,6 +29,14 @@ export const handleSignInSubmit = async (
 ) => {
   validateForm(values);
   setSubmitting(true);
+
+  const authRes: any = await AuthService.signIn({ email: values.email, password: values.password, slug });
+  
+  if (authRes?.status === 401 && authRes?.data?.error && Array.isArray(authRes.data.error) && authRes.data.error.length > 0) {
+    toast.error(authRes.data.error[0]);
+    setSubmitting(false);
+    return;
+  }
 
   const res = await signIn('credentials', {
     email: values.email,

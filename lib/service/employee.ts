@@ -22,6 +22,23 @@ export interface InviteEmployeeDto {
   attendance_policy_id?: string;
 }
 
+export interface IApprovalCounts {
+  leave: number;
+  regularization: number;
+  compOff: number;
+  wfh: number;
+  onduty: number;
+  resignation: number;
+}
+
+export const getApprovalCounts = (tenantId: string, token?: string) =>
+  get<{ data: IApprovalCounts }>(
+    '/v1/employees/approval/counts',
+    undefined,
+    tenantId,
+    { bearerToken: token, isFetchToken: !token },
+  );
+
 export interface UpdateEmployeeDto {
   employee_code?: string;
   first_name?: string;

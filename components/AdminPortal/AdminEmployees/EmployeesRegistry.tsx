@@ -28,6 +28,8 @@ import {
   Briefcase,
   TrendingUp,
   Award,
+  GraduationCap,
+  ShieldCheck,
 } from 'lucide-react';
 import AddEmployeeModal from '@/components/AdminPortal/AdminEmployees/AddEmployeeModal';
 import { getEmployees, deleteEmployee } from '@/lib/service/employee';
@@ -35,6 +37,7 @@ import { getDepartments } from '@/lib/service/masters';
 import { useParams } from 'next/navigation';
 
 import ProbationTracker from './ProbationTracker';
+import InternTracker from './InternTracker';
 import NoticePeriodTracker from './NoticePeriodTracker';
 
 enum EmploymentStatus {
@@ -429,7 +432,7 @@ export default function EmployeesRegistry() {
   const params = useParams();
   const subdomain = params?.subdomain as string;
 
-  const [activeTab, setActiveTab] = useState<'registry' | 'probation' | 'notice-period'>(
+  const [activeTab, setActiveTab] = useState<'registry' | 'probation' | 'notice-period' | 'intern'>(
     'registry'
   );
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -558,7 +561,11 @@ export default function EmployeesRegistry() {
     setShowAddModal(true);
   };
 
-  const handleEmployeeAdded = () => loadEmployees();
+  const handleEmployeeAdded = () => {
+    loadEmployees();
+    setShowAddModal(false);
+    setEditingEmployee(null);
+  };
 
   const handleEditEmployee = (employee: Employee) => {
     setEditingEmployee(employee);
@@ -659,8 +666,21 @@ export default function EmployeesRegistry() {
               }`}
             >
               <div className="flex items-center gap-2">
-                <Clock size={16} />
+                <ShieldCheck size={16} />
                 Probation Tracker
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('intern')}
+              className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${
+                activeTab === 'intern'
+                  ? 'border-[#0f766e] text-[#0f766e]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <GraduationCap size={16} />
+                Intern Tracker
               </div>
             </button>
             <button
@@ -682,6 +702,8 @@ export default function EmployeesRegistry() {
         {/* Tab Content */}
         {activeTab === 'probation' ? (
           <ProbationTracker />
+        ) : activeTab === 'intern' ? (
+          <InternTracker />
         ) : activeTab === 'notice-period' ? (
           <NoticePeriodTracker />
         ) : (

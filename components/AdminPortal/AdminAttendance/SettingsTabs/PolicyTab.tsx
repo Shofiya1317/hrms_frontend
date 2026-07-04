@@ -23,7 +23,7 @@ const defaultPolicyForm: IAttendancePolicyPayload = {
   max_regularization_per_month: 2,
   sandwich_policy_enabled: false,
   sandwich_include_weekoff: false,
-  sandwich_include_public_holiday: false,
+  // sandwich_include_public_holiday: false,
   sandwich_include_company_holiday: false,
 };
 
@@ -66,7 +66,7 @@ export default function PolicyTab({ subdomain }: { subdomain: string }) {
       max_regularization_per_month: p.max_regularization_per_month,
       sandwich_policy_enabled: p.sandwich_policy_enabled,
       sandwich_include_weekoff: p.sandwich_include_weekoff,
-      sandwich_include_public_holiday: p.sandwich_include_public_holiday,
+      //sandwich_include_public_holiday: p.sandwich_include_public_holiday,
       sandwich_include_company_holiday: p.sandwich_include_company_holiday,
     });
     setEditingId(p.id);
@@ -172,7 +172,6 @@ export default function PolicyTab({ subdomain }: { subdomain: string }) {
                 {p.sandwich_policy_enabled && (
                   <>
                     {p.sandwich_include_weekoff && <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-500">Week-off</span>}
-                    {p.sandwich_include_public_holiday && <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-500">Public Holiday</span>}
                     {p.sandwich_include_company_holiday && <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-500">Company Holiday</span>}
                   </>
                 )}
@@ -248,7 +247,7 @@ export default function PolicyTab({ subdomain }: { subdomain: string }) {
                   <div className="space-y-2 pt-1 border-t border-gray-200">
                     {[
                       { label: 'Include Week-off days', field: 'sandwich_include_weekoff' as const },
-                      { label: 'Include Public Holidays', field: 'sandwich_include_public_holiday' as const },
+                      // { label: 'Include Public Holidays', field: 'sandwich_include_public_holiday' as const },
                       { label: 'Include Company Holidays', field: 'sandwich_include_company_holiday' as const },
                     ].map(({ label, field }) => (
                       <div key={field} className="flex items-center justify-between">

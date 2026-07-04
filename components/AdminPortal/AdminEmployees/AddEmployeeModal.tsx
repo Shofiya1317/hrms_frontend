@@ -211,7 +211,7 @@ export default function AddEmployeeModal({
       if (md) {
         if (md.departments) setDepartments(md.departments.map((d: any) => ({ id: d.id, name: d.name })));
         if (md.designations) setDesignations(md.designations.map((d: any) => ({ id: d.id, name: d.name })));
-        if (md.shifts) setShifts(md.shifts.map((d: any) => ({ id: d.id, name: d.name })));
+        if (md.shifts) setShifts(md.shifts.map((d: any) => ({ id: d.id, name: d.label || d.name })));
         if (md.leave_policies) setLeavePolicies(md.leave_policies.map((d: any) => ({ id: d.name, name: d.name })));
         if (md.attendance_policies) setAttendancePolicies(md.attendance_policies.map((d: any) => ({ id: d.id, name: d.name })));
         if (md.employment_types) setEmploymentTypes(md.employment_types.map((d: any) => ({ id: d.id, name: d.name })));
@@ -280,7 +280,7 @@ export default function AddEmployeeModal({
       const data = res?.data?.data;
       setDepartments(data?.departments ?? []);
       setDesignations(data?.designations ?? []);
-      setShifts(data?.shifts ?? []);
+      setShifts(data?.shifts?.map((d: any) => ({ id: d.id, name: d.label || d.name })) ?? []);
       setLeavePolicies(data?.leave_policies ?? []);
       setAttendancePolicies(data?.attendance_policies ?? []);
       setManagers(
@@ -646,6 +646,7 @@ export default function AddEmployeeModal({
                   options={isEditing && employmentTypes.length > 0 ? employmentTypes.map((type) => ({ value: type.id, label: type.name })) : [
                     { value: 'full_time', label: 'Full Time' },
                     { value: 'probation', label: 'Probation' },
+                    { value: 'intern', label: 'Intern' },
                   ]}
                   value={form.employmentType ? { value: form.employmentType, label: (isEditing ? employmentTypes.find((t) => t.id === form.employmentType)?.name : null) || form.employmentType.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) } : null}
                   onChange={(opt) => handleChange('employmentType', opt?.value ?? '')}
@@ -827,13 +828,13 @@ export default function AddEmployeeModal({
                   inputId="shiftId"
                   options={shifts.map((s) => ({
                     value: s.id,
-                    label: `${s.name ?? ''} (${s.start_time_24hr ?? ''} - ${s.end_time_24hr ?? ''})${s.code ? ` • ${s.code}` : ''}`,
+                    label: s.name,
                   }))}
                   value={
                     shifts
                       .map((s) => ({
                         value: s.id,
-                        label: `${s.name ?? ''} (${s.start_time_24hr ?? ''} - ${s.end_time_24hr ?? ''})${s.code ? ` • ${s.code}` : ''}`,
+                        label: s.name,
                       }))
                       .find((o) => o.value === form.shiftId) ?? null
                   }
