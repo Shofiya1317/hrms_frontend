@@ -5,12 +5,21 @@ import { ReactNode } from 'react';
 import { ModalProvider } from './Modal/Context';
 import { UserProvider } from './Context/userProvider';
 
-export default function Providers({ children }: { children: ReactNode }) {
+import { Session } from 'next-auth';
+
+import { ApprovalCountsProvider } from '@/lib/context/ApprovalCountsContext';
+import { TeamApprovalCountsProvider } from '@/lib/context/TeamApprovalCountsContext';
+
+export default function Providers({ children, session }: { children: ReactNode, session?: Session | null }) {
   return (
-    <SessionProvider>
+    <SessionProvider session={session} refetchOnWindowFocus={false}>
       <ModalProvider>
         <UserProvider>
-          {children}
+          <ApprovalCountsProvider>
+            <TeamApprovalCountsProvider>
+              {children}
+            </TeamApprovalCountsProvider>
+          </ApprovalCountsProvider>
         </UserProvider>
       </ModalProvider>
     </SessionProvider>

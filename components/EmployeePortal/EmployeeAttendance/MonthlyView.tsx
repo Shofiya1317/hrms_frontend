@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Clock, LogIn, LogOut, Calendar, CalendarDays, CalendarRange, X, RotateCcw } from 'lucide-react';
+import {
+  Clock, LogIn, LogOut, Calendar, CalendarClock, CalendarRange,
+  SlidersHorizontal, ListFilter, X,
+} from 'lucide-react';
 import { getAttendanceLogs, IAttendanceLogEntry, IAttendanceLogFilters } from '@/lib/service/attendance';
 
 const BADGE_COLORS: Record<string, { bg: string; color: string; border: string }> = {
@@ -25,12 +28,11 @@ function fmtMinutes(mins: number): string {
 const DEFAULT_VIEW = 'month';
 
 const VIEW_OPTIONS = [
-  { label: 'This Week',      value: 'week',       icon: '📅' },
-  { label: 'Prev Week',      value: 'prev_week',  icon: '⬅️' },
-  { label: 'This Month',     value: 'month',      icon: '🗓️' },
-  // { label: 'Prev Month',     value: 'prev_month', icon: '📆' },
-  { label: 'Custom Range',   value: 'custom',     icon: '✂️' },
-  { label: 'Last N Days',    value: 'limit',      icon: '🔢' },
+  { label: 'This Week',    value: 'week',      Icon: Calendar },
+  { label: 'Prev Week',    value: 'prev_week', Icon: CalendarClock },
+  { label: 'This Month',   value: 'month',     Icon: CalendarRange },
+  { label: 'Custom Range', value: 'custom',    Icon: SlidersHorizontal },
+  { label: 'Last N Days',  value: 'limit',     Icon: ListFilter },
 ];
 
 const ATTENDANCE_TYPES = new Set(['attendance', 'present', 'absent', 'half_day', 'late']);
@@ -98,62 +100,79 @@ export default function MonthlyView({
   return (
     <div style={{ padding: '24px', fontFamily: 'inherit' }}>
 
-      {/* ── Filter Pills ── */}
+      {/* ── Filter Bar ── */}
       <div style={{ marginBottom: 20 }}>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 2,
+            padding: 3,
+            borderRadius: 10,
+            background: '#f1f5f9',
+            border: '1px solid #e2e8f0',
+          }}
+        >
           {VIEW_OPTIONS.map((o) => {
             const active = view === o.value;
+            const Icon = o.Icon;
             return (
               <button
                 key={o.value}
                 onClick={() => setView(o.value)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: active ? 600 : 400,
-                  cursor: 'pointer', transition: 'all 0.15s',
-                  border: active ? '1.5px solid #2563eb' : '1.5px solid #e2e8f0',
-                  background: active ? '#eff6ff' : '#fff',
-                  color: active ? '#2563eb' : '#475569',
+                  padding: '7px 13px', borderRadius: 7, fontSize: 13,
+                  fontWeight: active ? 600 : 500,
+                  cursor: 'pointer',
+                  border: 'none',
+                  background: active ? '#ffffff' : 'transparent',
+                  color: active ? '#0f172a' : '#64748b',
+                  boxShadow: active ? '0 1px 2px rgba(15, 23, 42, 0.08)' : 'none',
+                  transition: 'background 0.15s, color 0.15s, box-shadow 0.15s',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                <span style={{ fontSize: 14 }}>{o.icon}</span>
+                <Icon size={14} strokeWidth={2} style={{ color: active ? '#2563eb' : '#94a3b8' }} />
                 {o.label}
               </button>
             );
           })}
-
-          {isFiltered && (
-            <button
-              onClick={handleClear}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 5,
-                padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 500,
-                cursor: 'pointer', border: '1.5px solid #fecaca',
-                background: '#fef2f2', color: '#dc2626',
-              }}
-            >
-              <RotateCcw size={13} />
-              Clear
-            </button>
-          )}
         </div>
+
+        {isFiltered && (
+          <button
+            onClick={handleClear}
+            title="Reset filter"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              marginLeft: 10,
+              padding: '7px 12px', borderRadius: 8, fontSize: 13, fontWeight: 500,
+              cursor: 'pointer', border: '1px solid #e2e8f0',
+              background: '#ffffff', color: '#64748b',
+            }}
+          >
+            <X size={13} strokeWidth={2} />
+            Clear
+          </button>
+        )}
 
         {/* Custom range inputs */}
         {view === 'custom' && (
           <div style={{ display: 'flex', gap: 10, marginTop: 12, alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '6px 12px' }}>
-              <CalendarDays size={14} style={{ color: '#64748b' }} />
+              <Calendar size={14} strokeWidth={2} style={{ color: '#94a3b8' }} />
               <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
                 style={{ border: 'none', background: 'transparent', fontSize: 13, outline: 'none', color: '#1e293b' }} />
             </div>
             <span style={{ color: '#94a3b8', fontSize: 13 }}>→</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '6px 12px' }}>
-              <CalendarRange size={14} style={{ color: '#64748b' }} />
+              <Calendar size={14} strokeWidth={2} style={{ color: '#94a3b8' }} />
               <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)}
                 style={{ border: 'none', background: 'transparent', fontSize: 13, outline: 'none', color: '#1e293b' }} />
             </div>
             <button onClick={() => fetchLogs()}
-              style={{ padding: '6px 16px', borderRadius: 8, border: 'none', background: '#2563eb', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+              style={{ padding: '6px 16px', borderRadius: 8, border: 'none', background: '#0f172a', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
               Apply
             </button>
           </div>
@@ -169,7 +188,7 @@ export default function MonthlyView({
               <span style={{ fontSize: 13, color: '#64748b' }}>days</span>
             </div>
             <button onClick={() => fetchLogs()}
-              style={{ padding: '6px 16px', borderRadius: 8, border: 'none', background: '#2563eb', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+              style={{ padding: '6px 16px', borderRadius: 8, border: 'none', background: '#0f172a', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
               Apply
             </button>
           </div>
@@ -196,7 +215,6 @@ export default function MonthlyView({
               const rowBg = i % 2 === 0 ? '#fff' : '#fafafa';
 
               if (!isAttendance) {
-                // Week off / holiday — single badge row, no empty columns
                 return (
                   <tr key={log.date} style={{ borderBottom: '1px solid #f1f5f9', background: rowBg }}>
                     <td style={{ padding: '12px 16px', fontWeight: 500, color: '#1e293b', whiteSpace: 'nowrap' }}>
@@ -215,7 +233,6 @@ export default function MonthlyView({
                 );
               }
 
-              // Attendance row — show full details
               return (
                 <tr key={log.date} style={{ borderBottom: '1px solid #f1f5f9', background: rowBg }}>
                   <td style={{ padding: '12px 16px', fontWeight: 500, color: '#1e293b', whiteSpace: 'nowrap' }}>
@@ -262,11 +279,11 @@ export default function MonthlyView({
                   <td style={{ padding: '12px 16px' }}>
                     {log.is_late ? (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#fff7ed', color: '#ea580c', border: '1px solid #fed7aa', borderRadius: 20, padding: '2px 10px', fontSize: 12, fontWeight: 600 }}>
-                        ⏰ {fmtMinutes(log.late_by_minutes ?? 0)}
+                        <Clock size={11} /> {fmtMinutes(log.late_by_minutes ?? 0)}
                       </span>
                     ) : (
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: 20, padding: '2px 10px', fontSize: 12, fontWeight: 600 }}>
-                        ✓ On Time
+                        On Time
                       </span>
                     )}
                   </td>

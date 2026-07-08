@@ -648,31 +648,15 @@ function MiniMonth({
           </div>
         </div>
         {/* Working/off summary */}
-        <div className="flex items-center gap-2 text-[11px] text-gray-400">
-          <span title="Working days" className="flex items-center gap-0.5">
-            <Briefcase size={8} className="text-emerald-500" />
-            {' '}
-            {summary.workingDays}
-            W
+        <div className="flex items-center gap-3 text-[11px] text-gray-500 font-medium">
+          <span title="Working days" className="flex items-center gap-1">
+            <Briefcase size={12} className="text-emerald-500" />
+            Working Days: {summary.workingDays}
           </span>
-          <span title="Off days" className="flex items-center gap-0.5">
-            <Sun size={8} className="text-slate-400" />
-            {' '}
-            {summary.offDays}
-            O
+          <span title="Off days" className="flex items-center gap-1">
+            <Sun size={12} className="text-slate-400" />
+            Off Days: {summary.offDays + summary.offSats}
           </span>
-          {summary.workSats > 0 && (
-            <span title="Working Saturdays" className="flex items-center gap-0.5 text-emerald-600 font-semibold">
-              {summary.workSats}
-              S↑
-            </span>
-          )}
-          {summary.offSats > 0 && (
-            <span title="Off Saturdays" className="flex items-center gap-0.5 text-slate-400 font-semibold">
-              {summary.offSats}
-              S↓
-            </span>
-          )}
         </div>
       </div>
 

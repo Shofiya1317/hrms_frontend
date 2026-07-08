@@ -39,6 +39,14 @@ export const getApprovalCounts = (tenantId: string, token?: string) =>
     { bearerToken: token, isFetchToken: !token },
   );
 
+export const getTeamApprovalCounts = (tenantId: string, token?: string) =>
+  get<{ data: IApprovalCounts }>(
+    '/v1/employees/approval/counts/team',
+    undefined,
+    tenantId,
+    { bearerToken: token, isFetchToken: !token },
+  );
+
 export interface UpdateEmployeeDto {
   employee_code?: string;
   first_name?: string;
@@ -96,6 +104,18 @@ export const createEmployee = (
 ) => post(
   '/v1/employees/invite',
   body,
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const bulkInviteEmployees = (
+  employees: any[],
+  tenantId: string,
+  token?: string,
+) => post(
+  '/v1/employees/bulk-invite',
+  { employees },
   undefined,
   tenantId,
   { bearerToken: token, isFetchToken: !token },

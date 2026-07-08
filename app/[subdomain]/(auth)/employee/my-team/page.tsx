@@ -14,6 +14,8 @@ import TeamWFHRequests from '@/components/EmployeePortal/EmployeeManager/TeamWFH
 import TeamMembersStrip from '@/components/EmployeePortal/EmployeeManager/TeamMembersStrip';
 import TeamOnDutyRequests from '@/components/EmployeePortal/EmployeeManager/TeamOnDutyRequests';
 import TeamLeaveOverview from '@/components/EmployeePortal/EmployeeManager/TeamLeaveOverview';
+import { useTeamApprovalCounts } from '@/lib/context/TeamApprovalCountsContext';
+import NotificationBadge from '@/components/NotificationBadge';
 
 type Tab =
   | 'leave-requests'
@@ -39,6 +41,7 @@ export default function MyTeamPage() {
   const [activeTab, setActiveTab] = useState<Tab>('leave-requests');
   const [team, setTeam] = useState<ITeamMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const { teamCounts } = useTeamApprovalCounts();
 
   useEffect(() => {
     if (subdomain) fetchTeam();
@@ -94,16 +97,27 @@ export default function MyTeamPage() {
           <div className="flex items-center gap-1 p-2 border-b border-gray-100 overflow-x-auto">
             {TABS.map((tab) => {
               const Icon = tab.icon;
+              
+              let badgeCount = 0;
+              if (teamCounts) {
+                if (tab.id === 'leave-requests') badgeCount = teamCounts.leave;
+                if (tab.id === 'regularization') badgeCount = teamCounts.regularization;
+                if (tab.id === 'comp-off') badgeCount = teamCounts.compOff;
+                if (tab.id === 'wfh-requests') badgeCount = teamCounts.wfh;
+                if (tab.id === 'onduty-requests') badgeCount = teamCounts.onduty;
+              }
+
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold transition-all whitespace-nowrap ${
+                  className={`relative flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold transition-all whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'bg-[#0f766e] text-white shadow-sm'
                       : 'text-gray-500 hover:bg-gray-50'
                   }`}
                 >
+                  <NotificationBadge count={badgeCount} />
                   <Icon size={14} />
                   {tab.label}
                 </button>

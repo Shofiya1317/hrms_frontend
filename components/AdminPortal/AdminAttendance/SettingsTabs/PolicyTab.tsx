@@ -19,7 +19,7 @@ interface Policy extends IAttendancePolicyPayload {
 const defaultPolicyForm: IAttendancePolicyPayload = {
   name: '',
   grace_period_minutes: 15,
-  auto_checkout_hours: 12,
+
   max_regularization_per_month: 2,
   sandwich_policy_enabled: false,
   sandwich_include_weekoff: false,
@@ -62,7 +62,7 @@ export default function PolicyTab({ subdomain }: { subdomain: string }) {
     setForm({
       name: p.name,
       grace_period_minutes: p.grace_period_minutes,
-      auto_checkout_hours: p.auto_checkout_hours,
+
       max_regularization_per_month: p.max_regularization_per_month,
       sandwich_policy_enabled: p.sandwich_policy_enabled,
       sandwich_include_weekoff: p.sandwich_include_weekoff,
@@ -153,10 +153,10 @@ export default function PolicyTab({ subdomain }: { subdomain: string }) {
                   </button>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 {[
                   { label: 'Grace Period', value: `${p.grace_period_minutes} min` },
-                  { label: 'Auto Checkout', value: `${p.auto_checkout_hours} hrs` },
+
                   { label: 'Max Regularization', value: `${p.max_regularization_per_month}/mo` },
                 ].map((item) => (
                   <div key={item.label} className="rounded-xl bg-gray-50 px-3 py-2.5 text-center">
@@ -212,10 +212,10 @@ export default function PolicyTab({ subdomain }: { subdomain: string }) {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 {[
                   { label: 'Grace Period (min)', field: 'grace_period_minutes' as const },
-                  { label: 'Auto Checkout (hrs)', field: 'auto_checkout_hours' as const },
+
                   { label: 'Max Regularization / mo', field: 'max_regularization_per_month' as const },
                 ].map(({ label, field }) => (
                   <div key={field}>

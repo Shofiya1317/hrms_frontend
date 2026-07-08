@@ -31,8 +31,12 @@ interface NewDept {
 interface NewShift {
   name: string;
   description: string;
+  shift_type: 'FIXED' | 'FLEXIBLE';
   start_time: string;
   end_time: string;
+  flex_start_time: string;
+  flex_end_time: string;
+  required_work_hours: string;
 }
 interface NewSchedule {
   name: string;
@@ -80,8 +84,12 @@ const emptyDept: NewDept = { name: '', description: '' };
 const emptyShift: NewShift = {
   name: '',
   description: '',
+  shift_type: 'FIXED',
   start_time: '',
   end_time: '',
+  flex_start_time: '',
+  flex_end_time: '',
+  required_work_hours: '',
 };
 const emptySchedule: NewSchedule = {
   name: '',
@@ -376,25 +384,46 @@ export default function OrganisationSetupForm({
       toast.error('Shift name must be at least 3 characters');
       return;
     }
-    if (!newShift.start_time) {
-      toast.error('Start time is required');
-      return;
-    }
-    if (!newShift.end_time) {
-      toast.error('End time is required');
-      return;
+    if (newShift.shift_type === 'FIXED') {
+      if (!newShift.start_time) {
+        toast.error('Start time is required');
+        return;
+      }
+      if (!newShift.end_time) {
+        toast.error('End time is required');
+        return;
+      }
+    } else {
+      if (!newShift.flex_start_time) {
+        toast.error('Flex start time is required');
+        return;
+      }
+      if (!newShift.flex_end_time) {
+        toast.error('Flex end time is required');
+        return;
+      }
+      if (!newShift.required_work_hours) {
+        toast.error('Required work hours is required');
+        return;
+      }
     }
     setSavingShift(true);
     try {
-      const res = await MastersService.createShift(
-        {
-          name: newShift.name.trim(),
-          description: newShift.description,
+      const payload = {
+        name: newShift.name.trim(),
+        description: newShift.description,
+        shift_type: newShift.shift_type,
+        ...(newShift.shift_type === 'FIXED' && {
           start_time: newShift.start_time,
           end_time: newShift.end_time,
-        },
-        slug,
-      );
+        }),
+        ...(newShift.shift_type === 'FLEXIBLE' && {
+          flex_start_time: newShift.flex_start_time,
+          flex_end_time: newShift.flex_end_time,
+          required_work_hours: parseFloat(newShift.required_work_hours),
+        }),
+      };
+      const res = await MastersService.createShift(payload, slug);
       const { success, error } = res?.data as {
         success: boolean;
         error: string;
@@ -835,24 +864,67 @@ export default function OrganisationSetupForm({
                     onChange={(e) => setNewShift({ ...newShift, description: e.target.value })}
                   />
                 </div>
-                <div className="row g-3 mb-3">
-                  <div className="col-6">
-                    <label className="form-label">Start Time</label>
-                    <TimePickerInput
-                      value={newShift.start_time}
-                      onChange={(val) => setNewShift({ ...newShift, start_time: val })}
-                      placeholder="Start time"
-                    />
-                  </div>
-                  <div className="col-6">
-                    <label className="form-label">End Time</label>
-                    <TimePickerInput
-                      value={newShift.end_time}
-                      onChange={(val) => setNewShift({ ...newShift, end_time: val })}
-                      placeholder="End time"
-                    />
-                  </div>
+                <div className="mb-3">
+                  <label className="form-label">Shift Type</label>
+                  <select
+                    className="form-control"
+                    value={newShift.shift_type}
+                    onChange={(e) => setNewShift({ ...newShift, shift_type: e.target.value as 'FIXED' | 'FLEXIBLE' })}
+                  >
+                    <option value="FIXED">Fixed Shift</option>
+                    <option value="FLEXIBLE">Flexible Shift</option>
+                  </select>
                 </div>
+                {newShift.shift_type === 'FIXED' ? (
+                  <div className="row g-3 mb-3">
+                    <div className="col-6">
+                      <label className="form-label">Start Time</label>
+                      <TimePickerInput
+                        value={newShift.start_time}
+                        onChange={(val) => setNewShift({ ...newShift, start_time: val })}
+                        placeholder="Start time"
+                      />
+                    </div>
+                    <div className="col-6">
+                      <label className="form-label">End Time</label>
+                      <TimePickerInput
+                        value={newShift.end_time}
+                        onChange={(val) => setNewShift({ ...newShift, end_time: val })}
+                        placeholder="End time"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="row g-3 mb-3">
+                    <div className="col-6">
+                      <label className="form-label">Flex Start Time</label>
+                      <TimePickerInput
+                        value={newShift.flex_start_time}
+                        onChange={(val) => setNewShift({ ...newShift, flex_start_time: val })}
+                        placeholder="Flex start"
+                      />
+                    </div>
+                    <div className="col-6">
+                      <label className="form-label">Flex End Time</label>
+                      <TimePickerInput
+                        value={newShift.flex_end_time}
+                        onChange={(val) => setNewShift({ ...newShift, flex_end_time: val })}
+                        placeholder="Flex end"
+                      />
+                    </div>
+                    <div className="col-12 mt-3">
+                      <label className="form-label">Required Work Hours</label>
+                      <input
+                        type="number"
+                        step="0.5"
+                        className="form-control"
+                        placeholder="e.g. 8.5"
+                        value={newShift.required_work_hours}
+                        onChange={(e) => setNewShift({ ...newShift, required_work_hours: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="modal-footer">
                 <Button

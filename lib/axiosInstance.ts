@@ -34,6 +34,35 @@ interface CustomResponse<T> {
   statusMessage?: string;
 }
  
+let cachedSession: any = null;
+let clientSessionPromise: Promise<any> | null = null;
+let lastFetchTime = 0;
+
+export const invalidateSessionCache = () => {
+  cachedSession = null;
+  lastFetchTime = 0;
+};
+
+const getClientSession = async () => {
+  const now = Date.now();
+  if (cachedSession && (now - lastFetchTime < 5 * 60 * 1000)) { // 5 minutes cache
+    return cachedSession;
+  }
+  if (!clientSessionPromise) {
+    clientSessionPromise = import('next-auth/react').then(async ({ getSession }) => {
+      const session = await getSession();
+      cachedSession = session;
+      lastFetchTime = Date.now();
+      clientSessionPromise = null;
+      return session;
+    }).catch(err => {
+      clientSessionPromise = null;
+      return null;
+    });
+  }
+  return clientSessionPromise;
+};
+
 /**
  * Safely resolves the session token depending on the execution context:
  * - Server Component / API Route: uses next-auth/jwt getServerToken (req required)
@@ -59,8 +88,7 @@ const getToken = async (req?: any, isFetchToken: boolean = true) => {
   // Client-side only: dynamic import prevents the module from being evaluated
   // during SSR / server-component rendering where the function doesn't exist
   if (typeof window !== 'undefined') {
-    const { getSession } = await import('next-auth/react');
-    const session = await getSession();
+    const session = await getClientSession();
     return (session as unknown as { user: object })?.user ?? null;
   }
  
@@ -150,11 +178,13 @@ export const createAxiosInstance = async (
               : '';
  
           await AuthService.refreshToken(slug, refreshToken);
+          invalidateSessionCache();
           return axiosInstance(originalRequest);
         } catch (err) {
           // Only call signOut on the client
           if (typeof window !== 'undefined') {
             const { signOut } = await import('next-auth/react');
+            invalidateSessionCache();
             signOut();
           }
           return Promise.reject(err);

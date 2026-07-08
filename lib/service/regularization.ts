@@ -187,3 +187,25 @@ export const getTeamRegularizations = (
   tenantId,
   { bearerToken: token, isFetchToken: !token },
 );
+
+export interface IBulkRegularizationPayload {
+  employee_ids: string[];
+  start_date: string;
+  end_date: string;
+  check_in_time?: string;
+  check_out_time?: string;
+  remarks: string;
+}
+
+export const bulkCreateRegularization = (
+  body: IBulkRegularizationPayload,
+  tenantId: string,
+  token?: string,
+) => post(
+  '/v1/attendance-regularizations/bulk',
+  body,
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+

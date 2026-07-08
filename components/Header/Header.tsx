@@ -26,12 +26,15 @@ import {
   UserRoundCheck,
   UsersRound,
 } from 'lucide-react';
-import { getApprovalCounts, IApprovalCounts } from '@/lib/service/employee';
+import { getApprovalCounts, IApprovalCounts,} from '@/lib/service/employee';
 import Avatar from '../Avatar/Avatar';
 import { Button } from '../Button/Button';
 import { useModal } from '../Modal/Context';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useParams } from 'next/navigation';
+import { useApprovalCounts } from '@/lib/context/ApprovalCountsContext';
+import { useTeamApprovalCounts } from '@/lib/context/TeamApprovalCountsContext';
+import NotificationBadge from '@/components/NotificationBadge';
 
 export interface IMenuItem {
   label: string;
@@ -209,13 +212,9 @@ function DesktopDropdownMenu({
             onClose();
           }}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 relative">
+            <NotificationBadge count={item.badgeCount} />
             <p className="mb-0 text-sm font-medium">{item.label}</p>
-            {item.badgeCount && item.badgeCount > 0 && (
-              <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-sm ring-1 ring-white">
-                {item.badgeCount > 99 ? '99+' : item.badgeCount}
-              </span>
-            )}
           </div>
           {item.icon}
         </li>
@@ -257,22 +256,18 @@ function DesktopNavbarItem({
       <span
         role="button"
         tabIndex={0}
-        className={`menu_item_routes ${isActive ? 'active' : ''}`}
+        className={`menu_item_routes ${isActive ? 'active' : ''} relative`}
         style={{ cursor: 'pointer' }}
         onClick={handleClick}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') { handleClick(e as unknown as React.MouseEvent); }
         }}
       >
-        <div className="relative flex items-center whitespace-nowrap">
+        <div className="flex items-center whitespace-nowrap">
+          <NotificationBadge count={item.badgeCount} />
           {item.icon && <span className="mr-2 inline-flex">{item.icon}</span>}
-          <span className="mr-1 relative">
+          <span className="mr-1">
             {item.label}
-            {item.badgeCount && item.badgeCount > 0 && (
-              <span className="absolute -top-1.5 -right-3.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-sm ring-1 ring-white">
-                {item.badgeCount > 99 ? '99+' : item.badgeCount}
-              </span>
-            )}
           </span>
           {hasChildren && (
             <HiOutlineChevronDown
@@ -548,7 +543,6 @@ function Header(props: HeaderProps) {
   const [mobileView, setMobileView] = useState<
     'menu' | 'profile' | 'notifications'
   >('menu');
-  const [approvalCounts, setApprovalCounts] = useState<IApprovalCounts | null>(null);
 
   const params = useParams();
   const subdomain = params?.subdomain as string;
@@ -599,15 +593,8 @@ function Header(props: HeaderProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
-  useEffect(() => {
-    if (session && subdomain) {
-      getApprovalCounts(subdomain, session.user.token)
-        .then((res: any) => {
-          setApprovalCounts(res?.data?.data ?? res?.data ?? null);
-        })
-        .catch(console.error);
-    }
-  }, [session, subdomain]);
+  const { counts: approvalCounts } = useApprovalCounts();
+  const { teamCounts } = useTeamApprovalCounts();
 
   const closeMobile = () => setIsMobileOpen(false);
 
@@ -808,12 +795,28 @@ function Header(props: HeaderProps) {
                     let parentBadge = 0;
                     let enrichedItem = { ...item };
 
-                    if (approvalCounts) {
-                      const sumAll = Object.values(approvalCounts).reduce((a, b) => a + Number(b), 0);
+                    if (item.label === 'My Team' && teamCounts) {
+                      const sumAll = Object.values(teamCounts).reduce((a, b) => a + Number(b), 0);
+                      parentBadge = sumAll;
 
-                      if (item.label === 'My Team') {
-                        parentBadge = sumAll;
+                      if (item.menuItems) {
+                        enrichedItem.menuItems = item.menuItems.map((sub) => {
+                          let subBadge = 0;
+                          if (sub.label === 'Leave Requests' || sub.label === 'Apply Leave') subBadge = teamCounts.leave;
+                          if (sub.label === 'Regularization') subBadge = teamCounts.regularization;
+                          if (sub.label === 'Comp Off') subBadge = teamCounts.compOff;
+                          if (sub.label === 'WFH Requests') subBadge = teamCounts.wfh;
+                          if (sub.label === 'On-Duty Requests') subBadge = teamCounts.onduty;
+                          if (sub.label === 'Resignation') subBadge = teamCounts.resignation;
+
+                          parentBadge += subBadge;
+                          return { ...sub, badgeCount: subBadge };
+                        });
                       }
+
+                      enrichedItem.badgeCount = parentBadge;
+                    } else if (approvalCounts && item.label !== 'My Team') {
+                      const sumAll = Object.values(approvalCounts).reduce((a, b) => a + Number(b), 0);
 
                       if (item.menuItems) {
                         enrichedItem.menuItems = item.menuItems.map((sub) => {
@@ -868,17 +871,33 @@ function Header(props: HeaderProps) {
         <div className="hidden lg:flex flex-1 min-w-0">
           <div className="custom-nav-container">
             <div className="flex min-w-0 flex-grow items-center justify-between">
-              <Nav className="ml-auto flex items-center gap-4 lg:gap-5 xl:gap-8 header-menu mt-2">
+              <Nav className="mx-auto flex items-center gap-4 lg:gap-5 xl:gap-8 header-menu mt-2">
                 {menuItems.map((item) => {
                   let parentBadge = 0;
                   let enrichedItem = { ...item };
 
-                  if (approvalCounts) {
-                    const sumAll = Object.values(approvalCounts).reduce((a, b) => a + Number(b), 0);
+                  if (item.label === 'My Team' && teamCounts) {
+                    const sumAll = Object.values(teamCounts).reduce((a, b) => a + Number(b), 0);
+                    parentBadge = sumAll;
 
-                    if (item.label === 'My Team') {
-                      parentBadge = sumAll;
+                    if (item.menuItems) {
+                      enrichedItem.menuItems = item.menuItems.map((sub) => {
+                        let subBadge = 0;
+                        if (sub.label === 'Leave Requests' || sub.label === 'Apply Leave') subBadge = teamCounts.leave;
+                        if (sub.label === 'Regularization') subBadge = teamCounts.regularization;
+                        if (sub.label === 'Comp Off') subBadge = teamCounts.compOff;
+                        if (sub.label === 'WFH Requests') subBadge = teamCounts.wfh;
+                        if (sub.label === 'On-Duty Requests') subBadge = teamCounts.onduty;
+                        if (sub.label === 'Resignation') subBadge = teamCounts.resignation;
+
+                        parentBadge += subBadge;
+                        return { ...sub, badgeCount: subBadge };
+                      });
                     }
+
+                    enrichedItem.badgeCount = parentBadge;
+                  } else if (approvalCounts && item.label !== 'My Team') {
+                    const sumAll = Object.values(approvalCounts).reduce((a, b) => a + Number(b), 0);
 
                     if (item.menuItems) {
                       enrichedItem.menuItems = item.menuItems.map((sub) => {

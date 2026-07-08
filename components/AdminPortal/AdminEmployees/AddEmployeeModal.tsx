@@ -605,23 +605,16 @@ export default function AddEmployeeModal({
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div>
+              <div className={isEditing ? '' : 'col-span-2'}>
                 <label htmlFor="email" className="block text-xs font-semibold text-gray-600 mb-1.5">Work Email <span className="text-red-500">*</span></label>
                 <input id="email" type="email" value={form.email} onChange={(e) => handleChange('email', e.target.value)} placeholder="john.doe@company.com" className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" required />
               </div>
-              {isEditing ? (
-                <div>
-                  <label htmlFor="personalEmail" className="block text-xs font-semibold text-gray-600 mb-1.5">Personal Email</label>
-                  <input id="personalEmail" type="email" value={form.personalEmail} onChange={(e) => handleChange('personalEmail', e.target.value)} placeholder="john@gmail.com" className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
-                </div>
-              ) : (
-                <div>
-                  <label htmlFor="employeeCode" className="block text-xs font-semibold text-gray-600 mb-1.5">Employee Code</label>
-                  <input id="employeeCode" type="text" value={form.employeeCode} onChange={(e) => handleChange('employeeCode', e.target.value)} placeholder="e.g. IM05" className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
-                </div>
-              )}
               {isEditing && (
                 <>
+                  <div>
+                    <label htmlFor="personalEmail" className="block text-xs font-semibold text-gray-600 mb-1.5">Personal Email</label>
+                    <input id="personalEmail" type="email" value={form.personalEmail} onChange={(e) => handleChange('personalEmail', e.target.value)} placeholder="john@gmail.com" className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
+                  </div>
                   <div>
                     <label htmlFor="phone" className="block text-xs font-semibold text-gray-600 mb-1.5">Personal Phone</label>
                     <input id="phone" type="tel" value={form.phone} onChange={(e) => handleChange('phone', e.target.value)} placeholder="+91 98765 43210" className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
@@ -629,10 +622,6 @@ export default function AddEmployeeModal({
                   <div>
                     <label htmlFor="workPhone" className="block text-xs font-semibold text-gray-600 mb-1.5">Work Phone</label>
                     <input id="workPhone" type="tel" value={form.workPhone} onChange={(e) => handleChange('workPhone', e.target.value)} placeholder="+91 88888 88888" className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
-                  </div>
-                  <div>
-                    <label htmlFor="employeeCode" className="block text-xs font-semibold text-gray-600 mb-1.5">Employee Code</label>
-                    <input id="employeeCode" type="text" value={form.employeeCode} onChange={(e) => handleChange('employeeCode', e.target.value)} placeholder="e.g. IM05" className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2D7A4F]/20 focus:border-[#2D7A4F] transition-all" />
                   </div>
                 </>
               )}

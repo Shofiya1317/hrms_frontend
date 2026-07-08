@@ -6,6 +6,7 @@ import Providers from '../components/Providers';
 import { AuthLayout } from '../components/Layout/AuthLayout';
 import './globals.css';
 import './plate.css';
+import { auth } from '@/lib/auth';
 
 const interVariable = localFont({
   src: './fonts/Inter-VariableFont_opsz,wght.woff',
@@ -23,6 +24,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
   const headersList = headers();
   const host = headersList.get('host');
   const slug = host?.split('.')[0] ?? '';
@@ -30,7 +32,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={interVariable.className}>
-        <Providers>
+        <Providers session={session}>
           <AuthLayout slug={slug}>{children}</AuthLayout>
         </Providers>
         <Toaster

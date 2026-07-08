@@ -39,6 +39,10 @@ export interface IShift {
   description: string;
   start_time: string | null;
   end_time: string | null;
+  shift_type: 'FIXED' | 'FLEXIBLE';
+  flex_start_time: string | null;
+  flex_end_time: string | null;
+  required_work_hours: number | null;
   working_hours: number | null;
   code: string | null;
   source: string;

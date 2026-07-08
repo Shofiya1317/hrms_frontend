@@ -315,7 +315,7 @@ function SpecialDayScreen({ ctx, status }: { ctx: ICheckInContext; status: Dashb
         {ctx.shift && (
           <div className="flex items-center gap-2 text-xs text-slate-400">
             <Clock size={11} />
-            <span>Shift: <span className="font-semibold text-slate-600">{ctx.shift.start} – {ctx.shift.end}</span></span>
+            <span>{ctx.shift.name || 'Shift'}: <span className="font-semibold text-slate-600">{ctx.shift.start} – {ctx.shift.end}</span></span>
           </div>
         )}
 
@@ -501,7 +501,7 @@ export default function CheckInOutCard({
   const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.UPCOMING_SHIFT;
 
   const isCheckedIn = status === 'WORKING' || status === 'CHECK_OUT_PENDING';
-  const isCompleted = ['PRESENT', 'EARLY_EXIT', 'OVERTIME', 'AUTO_CHECKOUT', 'ABSENT'].includes(status);
+  const isCompleted = ['PRESENT', 'EARLY_EXIT', 'OVERTIME', 'AUTO_CHECKOUT'].includes(status);
   const isSpecialDay = ['ON_LEAVE', 'HOLIDAY', 'WEEK_OFF'].includes(status);
   const isRegularization = ['REGULARIZATION_PENDING', 'REGULARIZATION_APPROVED'].includes(status);
 
@@ -649,8 +649,12 @@ export default function CheckInOutCard({
       }
     } else {
       // CHECK OUT — guard early exit
-      const shiftEnd24 = context?.shift?.end_24hr;
-      const isEarly = shiftEnd24 ? new Date() < parseTime24(shiftEnd24) : false;
+      let isEarly = false;
+      if (context?.shift?.end_24hr) {
+        isEarly = new Date() < parseTime24(context.shift.end_24hr);
+      } else if (context?.work_summary) {
+        isEarly = context.work_summary.hours_met === false;
+      }
 
       if (isEarly) {
         setPendingLoc(locationData);
@@ -662,18 +666,17 @@ export default function CheckInOutCard({
     }
   };
 
-  // Shift progress
   const shiftEnd24 = context?.shift?.end_24hr;
   const shiftEndDisplay = context?.shift?.end;
   const checkIn24 = context?.check_in?.time_24hr;
-  const shiftDurSecs = shiftEnd24 && checkIn24
+  const shiftDurSecs = (shiftEnd24 && checkIn24)
     ? Math.floor((parseTime24(shiftEnd24).getTime() - parseTime24(checkIn24).getTime()) / 1000)
-    : 8 * 3600;
+    : (context?.work_summary?.required_minutes ? context.work_summary.required_minutes * 60 : (Number(context?.shift?.min_hours || 8) * 3600));
   const pct = Math.min((elapsed / shiftDurSecs) * 100, 100);
 
-  const remainingSecs = shiftEnd24
-    ? Math.max(0, Math.floor((parseTime24(shiftEnd24).getTime() - now.getTime()) / 1000))
-    : null;
+  const remainingSecs = !shiftEnd24
+    ? (context?.work_summary?.required_minutes ? Math.max(0, context.work_summary.required_minutes * 60 - elapsed) : null)
+    : (shiftEnd24 ? Math.max(0, Math.floor((parseTime24(shiftEnd24).getTime() - now.getTime()) / 1000)) : null);
   const remainingStr = remainingSecs !== null && remainingSecs > 0 ? fmtHM(remainingSecs) : null;
   const workedStr = fmtHM(elapsed);
 
@@ -689,9 +692,11 @@ export default function CheckInOutCard({
 
   // ── Button visibility ──
   const showButton =
+    status === 'UPCOMING_SHIFT' ||
     status === 'READY_TO_CHECK_IN' ||
     status === 'WORKING' ||
-    status === 'CHECK_OUT_PENDING';
+    status === 'CHECK_OUT_PENDING' ||
+    status === 'ABSENT';
 
   // Button label
   const buttonLabel = isCheckedIn ? 'Check Out' : 'Check In';
@@ -767,9 +772,11 @@ export default function CheckInOutCard({
                 <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 mb-3">
                   <AlertTriangle size={13} className="text-amber-500 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-xs font-bold text-amber-700">Shift ended — please check out</p>
-                    {context?.message?.notice && (
-                      <p className="text-[11px] text-amber-600 mt-0.5">{context.message.notice}</p>
+                    <p className="text-xs font-bold text-amber-700">{context?.message?.title || 'Shift ended — please check out'}</p>
+                    {(context?.message?.subtitle || context?.message?.notice) && (
+                      <p className="text-[11px] text-amber-600 mt-0.5">
+                        {context?.message?.subtitle || context?.message?.notice}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -782,11 +789,20 @@ export default function CheckInOutCard({
                     <span className="text-xs text-slate-500">
                       Working: <span className="font-bold text-slate-800">{workedStr}</span>
                     </span>
-                    {shiftEndDisplay && remainingStr && (
-                      <span className="text-xs text-slate-500">
-                        Ends <span className="font-bold text-slate-700">{shiftEndDisplay}</span>
-                        <span className="text-slate-400"> · {remainingStr} left</span>
-                      </span>
+                    {context?.shift?.type === 'FLEXIBLE' ? (
+                      context?.shift?.expected_checkout && remainingStr && (
+                        <span className="text-xs text-slate-500">
+                          Expected Out <span className="font-bold text-slate-700">{context.shift.expected_checkout}</span>
+                          <span className="text-slate-400"> · {remainingStr} left</span>
+                        </span>
+                      )
+                    ) : (
+                      shiftEndDisplay && remainingStr && (
+                        <span className="text-xs text-slate-500">
+                          Ends <span className="font-bold text-slate-700">{shiftEndDisplay}</span>
+                          <span className="text-slate-400"> · {remainingStr} left</span>
+                        </span>
+                      )
                     )}
                   </div>
                   {/* Status badge + subtitle */}
@@ -833,14 +849,18 @@ export default function CheckInOutCard({
                   {(context.shift?.start || context.shift?.end) && (
                     <div className="grid grid-cols-2 gap-2">
                       <div className="bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-100">
-                        <p className="text-[10px] font-semibold text-slate-400 uppercase">Shift Start</p>
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase">
+                          {context.shift?.type === 'FLEXIBLE' ? 'Check-in Start' : 'Shift Start'}
+                        </p>
                         <p className="text-xs font-bold text-slate-800 mt-0.5">{context.shift.start}</p>
                         {context.shift.grace_minutes && (
                           <p className="text-[10px] text-slate-400 mt-0.5">Grace: {context.shift.grace_minutes}m</p>
                         )}
                       </div>
                       <div className="bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-100">
-                        <p className="text-[10px] font-semibold text-slate-400 uppercase">Shift End</p>
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase">
+                          {context.shift?.type === 'FLEXIBLE' ? 'Check-in End' : 'Shift End'}
+                        </p>
                         <p className="text-xs font-bold text-slate-800 mt-0.5">{context.shift.end}</p>
                         {context.shift.min_hours && (
                           <p className="text-[10px] text-slate-400 mt-0.5">Min: {context.shift.min_hours}h</p>
@@ -885,13 +905,7 @@ export default function CheckInOutCard({
                 </button>
               )}
 
-              {/* ── Upcoming shift: no button, just info ── */}
-              {status === 'UPCOMING_SHIFT' && !showButton && (
-                <div className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-slate-400 bg-slate-50 border border-slate-100">
-                  <Clock size={14} />
-                  {context?.message?.title ?? 'Shift upcoming'}
-                </div>
-              )}
+
 
               {/* ── Weekly strip ── */}
               {context?.weekly_card && <WeekStrip entries={context.weekly_card} />}
@@ -1000,7 +1014,9 @@ export default function CheckInOutCard({
               </div>
               <div className="bg-amber-50 border border-amber-100 rounded-2xl p-3.5 mb-5">
                 <p className="text-xs text-amber-700 font-medium leading-relaxed">
-                  {`Shift ends at ${shiftEndDisplay ?? '—'}. Checking out now will be recorded as an early exit.`}
+                  {shiftEnd24 
+                    ? `Shift ends at ${shiftEndDisplay ?? '—'}. Checking out now will be recorded as an early exit.`
+                    : `You haven't completed your required ${context?.shift?.min_hours ?? 8} hours. Checking out now will be recorded as an early exit.`}
                 </p>
                 {remainingStr && (
                   <p className="text-[11px] text-amber-600 mt-1">{remainingStr} remaining in your shift.</p>

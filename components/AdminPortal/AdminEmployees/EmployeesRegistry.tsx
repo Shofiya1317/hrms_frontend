@@ -30,8 +30,10 @@ import {
   Award,
   GraduationCap,
   ShieldCheck,
+  Upload,
 } from 'lucide-react';
 import AddEmployeeModal from '@/components/AdminPortal/AdminEmployees/AddEmployeeModal';
+import BulkInviteModal from '@/components/AdminPortal/AdminEmployees/BulkInviteModal';
 import { getEmployees, deleteEmployee } from '@/lib/service/employee';
 import { getDepartments } from '@/lib/service/masters';
 import { useParams } from 'next/navigation';
@@ -39,6 +41,8 @@ import { useParams } from 'next/navigation';
 import ProbationTracker from './ProbationTracker';
 import InternTracker from './InternTracker';
 import NoticePeriodTracker from './NoticePeriodTracker';
+import { useApprovalCounts } from '@/lib/context/ApprovalCountsContext';
+import NotificationBadge from '@/components/NotificationBadge';
 
 enum EmploymentStatus {
   ACTIVE = 'ACTIVE',
@@ -427,7 +431,6 @@ function EmployeeProfileModal({
     </div>
   );
 }
-
 export default function EmployeesRegistry() {
   const params = useParams();
   const subdomain = params?.subdomain as string;
@@ -436,25 +439,61 @@ export default function EmployeesRegistry() {
     'registry'
   );
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const { counts } = useApprovalCounts();
   const [departments, setDepartments] = useState<
     Array<{ id: string; name: string }>
   >([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<EmploymentStatus | ''>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showBulkModal, setShowBulkModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
     null
   );
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
   const [showFilters, setShowFilters] = useState(false);
+
+  // Debounce search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 400);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [search]);
+
+  const handleDeptFilterChange = (val: string) => {
+    setDeptFilter(val);
+    setPage(1);
+  };
+
+  const handleStatusFilterChange = (val: string) => {
+    setStatusFilter(val);
+    setPage(1);
+  };
+
+  const handleTypeFilterChange = (val: string) => {
+    setTypeFilter(val);
+    setPage(1);
+  };
 
   // Stats calculations
   const stats = {
-    total: employees.length,
+    total: totalCount,
     active: employees.filter(
       (e) => e.status === 'ACTIVE' || e.status === 'active'
     ).length,
@@ -486,18 +525,22 @@ export default function EmployeesRegistry() {
     try {
       setLoading(true);
       const params: any = {
-        page: 1,
-        limit: 100,
+        page,
+        limit,
       };
-      if (search) params.search = search;
+      if (debouncedSearch) params.search = debouncedSearch;
       if (deptFilter) params.department_id = deptFilter;
-      if (statusFilter) params.employment_status = statusFilter;
+      if (statusFilter && statusFilter !== 'all') params.employment_status = statusFilter;
+      if (typeFilter && typeFilter !== 'all') params.employment_type = typeFilter;
 
       const response = await getEmployees(subdomain, params);
       const raw = response?.data;
       const list: any[] =
         raw?.employees ??
         (Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : []);
+
+      const total = raw?.meta?.totalCount ?? raw?.meta?.total_count ?? list.length;
+      setTotalCount(total);
 
       setEmployees(
         list.map((emp: any) => {
@@ -548,7 +591,7 @@ export default function EmployeesRegistry() {
     } finally {
       setLoading(false);
     }
-  }, [subdomain, search, deptFilter, statusFilter]);
+  }, [subdomain, debouncedSearch, deptFilter, statusFilter, typeFilter, page, limit]);
 
   useEffect(() => {
     loadEmployees();
@@ -691,7 +734,8 @@ export default function EmployeesRegistry() {
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 relative">
+                <NotificationBadge count={counts?.resignation} />
                 <Clock size={16} />
                 Notice Period
               </div>
@@ -773,28 +817,24 @@ export default function EmployeesRegistry() {
                     )}
                   </button>
 
-                  <button
-                    onClick={() => {
-                      setEditingEmployee(null);
-                      setShowAddModal(true);
-                    }}
-                    className="flex-1 flex items-center justify-center px-2 py-2 text-white bg-[#0f766e] rounded-lg"
-                  >
-                    <Plus size={16} /> Add
-                  </button>
-
-                  <button
-                    onClick={() =>
-                      setViewMode(viewMode === 'table' ? 'cards' : 'table')
-                    }
-                    className="flex-1 flex items-center justify-center px-2 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg"
-                  >
-                    {viewMode === 'table' ? (
-                      <Grid3x3 size={16} />
-                    ) : (
-                      <List size={16} />
-                    )}
-                  </button>
+                  {/* Mobile: Add + Bulk buttons */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setEditingEmployee(null);
+                        setShowAddModal(true);
+                      }}
+                      className="flex-1 flex items-center justify-center px-2 py-2 text-white bg-[#0f766e] rounded-lg"
+                    >
+                      <Plus size={16} /> Add
+                    </button>
+                    <button
+                      onClick={() => setShowBulkModal(true)}
+                      className="flex-1 flex items-center justify-center gap-1 px-2 py-2 text-teal-700 bg-teal-50 border border-teal-200 rounded-lg text-xs font-semibold"
+                    >
+                      <Upload size={13} /> Bulk
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -807,7 +847,7 @@ export default function EmployeesRegistry() {
                   />
                   <input
                     type="text"
-                    placeholder="Search by name, ID, email or role..."
+                    placeholder="Search by employee name..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all placeholder:text-gray-400"
@@ -838,19 +878,10 @@ export default function EmployeesRegistry() {
                 </button>
 
                 <button
-                  onClick={() =>
-                    setViewMode(viewMode === 'table' ? 'cards' : 'table')
-                  }
-                  className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors whitespace-nowrap"
+                  onClick={() => setShowBulkModal(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-teal-700 bg-teal-50 border border-teal-200 rounded-xl hover:bg-teal-100 transition-all whitespace-nowrap"
                 >
-                  {viewMode === 'table' ? (
-                    <Grid3x3 size={16} />
-                  ) : (
-                    <List size={16} />
-                  )}
-                  <span className="hidden sm:inline">
-                    {viewMode === 'table' ? 'Card View' : 'Table View'}
-                  </span>
+                  <Upload size={16} /> Bulk Invite
                 </button>
               </div>
 
@@ -859,7 +890,7 @@ export default function EmployeesRegistry() {
                 <div className="flex flex-col sm:flex-row gap-3 mt-3 animate-fade-in">
                   <select
                     value={deptFilter}
-                    onChange={(e) => setDeptFilter(e.target.value)}
+                    onChange={(e) => handleDeptFilterChange(e.target.value)}
                     className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                   >
                     <option value="">All Departments</option>
@@ -871,17 +902,24 @@ export default function EmployeesRegistry() {
                   </select>
                   <select
                     value={statusFilter}
-                    onChange={(e) =>
-                      setStatusFilter(e.target.value as EmploymentStatus | '')
-                    }
+                    onChange={(e) => handleStatusFilterChange(e.target.value)}
                     className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                   >
-                    <option value="">All Status</option>
-                    <option value={EmploymentStatus.ACTIVE}>Active</option>
-                    <option value={EmploymentStatus.ON_NOTICE}>
-                      On Notice
-                    </option>
-                    <option value={EmploymentStatus.EXITED}>Exited</option>
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="on_notice">On Notice</option>
+                    <option value="exited">Exited</option>
+                  </select>
+                  <select
+                    value={typeFilter}
+                    onChange={(e) => handleTypeFilterChange(e.target.value)}
+                    className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                  >
+                    <option value="all">All Employment Types</option>
+                    <option value="full_time">Full-Time</option>
+                    <option value="probation">Probation</option>
+                    <option value="intern">Intern</option>
                   </select>
                 </div>
               )}
@@ -892,78 +930,31 @@ export default function EmployeesRegistry() {
               <p className="text-xs text-gray-500">
                 Showing{' '}
                 <span className="font-semibold text-gray-700">
-                  {filtered.length}
+                  {employees.length}
                 </span>{' '}
                 of{' '}
                 <span className="font-semibold text-gray-700">
-                  {employees.length}
+                  {totalCount}
                 </span>{' '}
                 employees
               </p>
-              {search && (
+              {(search || deptFilter || statusFilter !== 'all' || typeFilter !== 'all') && (
                 <button
-                  onClick={() => setSearch('')}
+                  onClick={() => {
+                    setSearch('');
+                    setDeptFilter('');
+                    setStatusFilter('all');
+                    setTypeFilter('all');
+                    setPage(1);
+                  }}
                   className="text-xs text-[#2D7A4F] hover:underline"
                 >
-                  Clear search
+                  Clear all filters
                 </button>
               )}
             </div>
 
-            {/* Card View (Mobile Default) */}
-            {viewMode === 'cards' && (
-              <div className="space-y-3">
-                {loading ? (
-                  <div className="flex items-center justify-center py-12 bg-white rounded-xl border border-gray-200">
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 border-2 border-[#2D7A4F] border-t-transparent rounded-full animate-spin" />
-                      <span className="text-sm text-gray-500">
-                        Loading employees...
-                      </span>
-                    </div>
-                  </div>
-                ) : filtered.length === 0 ? (
-                  <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Users size={24} className="text-gray-400" />
-                    </div>
-                    <p className="text-sm text-gray-500 font-medium">
-                      No employees found
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Try adjusting your search or filters
-                    </p>
-                    <button
-                      onClick={() => {
-                        setSearch('');
-                        setDeptFilter('');
-                        setStatusFilter('');
-                      }}
-                      className="mt-3 text-sm text-[#2D7A4F] hover:underline"
-                    >
-                      Clear all filters
-                    </button>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {' '}
-                    {/* 👈 grid wrapper */}
-                    {filtered.map((emp) => (
-                      <EmployeeCard
-                        key={emp.id}
-                        employee={emp}
-                        onView={() => handleViewEmployee(emp)}
-                        onEdit={() => handleEditEmployee(emp)}
-                        onDelete={() => handleDeleteEmployee(emp.id)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Table View (Desktop) */}
-            {viewMode === 'table' && (
+            {/* Table View */}
               <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -1092,9 +1083,49 @@ export default function EmployeesRegistry() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Pagination Controls */}
+                <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">Rows per page:</span>
+                    <select
+                      value={limit}
+                      onChange={(e) => {
+                        setLimit(Number(e.target.value));
+                        setPage(1);
+                      }}
+                      className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:outline-none"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                    </select>
+                  </div>
+
+                  <div className="text-xs text-gray-500">
+                    Showing {totalCount > 0 ? (page - 1) * limit + 1 : 0} to {Math.min(page * limit, totalCount)} of {totalCount} entries
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                      disabled={page === 1}
+                      className="px-3 py-1 text-xs font-semibold rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={() => setPage((p) => Math.min(p + 1, Math.ceil(totalCount / limit)))}
+                      disabled={page >= Math.ceil(totalCount / limit)}
+                      className="px-3 py-1 text-xs font-semibold rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
               </div>
-            )}
-          </>
+            </>
         )}
       </div>
 
@@ -1108,6 +1139,15 @@ export default function EmployeesRegistry() {
           onSuccess={handleEmployeeAdded}
           editingEmployee={editingEmployee}
           isEditing={!!editingEmployee}
+        />
+      )}
+
+      {showBulkModal && (
+        <BulkInviteModal
+          onClose={() => setShowBulkModal(false)}
+          onSuccess={() => {
+            loadEmployees();
+          }}
         />
       )}
 

@@ -233,12 +233,18 @@ export interface IShiftInfo {
   name?: string;
   start?: string;
   end?: string;
+  start_label?: string;
+  end_label?: string;
   start_24hr?: string;
   end_24hr?: string;
   grace_minutes?: number;
   late_after?: string;
-  min_hours?: number;
+  min_hours?: number | string;
   auto_checkout?: string;
+  type?: string;
+  expected_checkout?: string | null;
+  end_display_label?: string | null;
+  end_display_time?: string | null;
 }
 
 export interface ICheckInDetail {
@@ -393,7 +399,7 @@ export const regularizeAttendance = (
 export interface IAttendancePolicyPayload {
   name: string;
   grace_period_minutes: number;
-  auto_checkout_hours: number;
+
   max_regularization_per_month: number;
   sandwich_policy_enabled: boolean;
   sandwich_include_weekoff: boolean;

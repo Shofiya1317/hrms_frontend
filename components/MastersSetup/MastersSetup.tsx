@@ -23,6 +23,10 @@ interface MasterItem {
   end_time?: string;
   start_time_24hr?: string;
   end_time_24hr?: string;
+  shift_type?: 'FIXED' | 'FLEXIBLE';
+  flex_start_time?: string;
+  flex_end_time?: string;
+  required_work_hours?: number;
   level?: string;
   code?: string;
 }
@@ -78,6 +82,10 @@ function CrudModal({ tab, editing, tenantId, onClose, onDone }: {
   const [code, setCode] = useState(editing?.code ?? '');
   const [startTime, setStartTime] = useState(editing?.start_time_24hr ?? editing?.start_time ?? '');
   const [endTime, setEndTime] = useState(editing?.end_time_24hr ?? editing?.end_time ?? '');
+  const [shiftType, setShiftType] = useState<'FIXED' | 'FLEXIBLE'>(editing?.shift_type ?? 'FIXED');
+  const [flexStartTime, setFlexStartTime] = useState(editing?.flex_start_time ?? '');
+  const [flexEndTime, setFlexEndTime] = useState(editing?.flex_end_time ?? '');
+  const [requiredWorkHours, setRequiredWorkHours] = useState(editing?.required_work_hours?.toString() ?? '');
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
@@ -87,8 +95,16 @@ function CrudModal({ tab, editing, tenantId, onClose, onDone }: {
 
   const handleSubmit = async () => {
     if (!name.trim()) { setErr('Name is required.'); return; }
-    if (tab === 'shift' && !startTime) { setErr('Start time is required.'); return; }
-    if (tab === 'shift' && !endTime) { setErr('End time is required.'); return; }
+    if (tab === 'shift') {
+      if (shiftType === 'FIXED') {
+        if (!startTime) { setErr('Start time is required.'); return; }
+        if (!endTime) { setErr('End time is required.'); return; }
+      } else {
+        if (!flexStartTime) { setErr('Flex start time is required.'); return; }
+        if (!flexEndTime) { setErr('Flex end time is required.'); return; }
+        if (!requiredWorkHours) { setErr('Required work hours is required.'); return; }
+      }
+    }
     setSaving(true); setErr('');
     try {
       if (tab === 'department') {
@@ -98,7 +114,17 @@ function CrudModal({ tab, editing, tenantId, onClose, onDone }: {
         const body = { name: name.trim(), ...(description && { description }), ...(level && { level }), ...(code && { code }) };
         isEdit ? await updateDesignation(editing!.id, body, tenantId) : await createDesignation(body, tenantId);
       } else if (tab === 'shift') {
-        const body = { name: name.trim(), ...(description && { description }), start_time: startTime, end_time: endTime };
+        const body = { 
+          name: name.trim(), 
+          ...(description && { description }), 
+          shift_type: shiftType,
+          ...(shiftType === 'FIXED' && { start_time: startTime, end_time: endTime }),
+          ...(shiftType === 'FLEXIBLE' && { 
+              flex_start_time: flexStartTime, 
+              flex_end_time: flexEndTime, 
+              required_work_hours: requiredWorkHours ? parseFloat(requiredWorkHours) : null 
+          })
+        };
         isEdit ? await updateShift(editing!.id, body, tenantId) : await createShift(body, tenantId);
       }
       //  else if (tab === 'industry') {
@@ -159,19 +185,55 @@ function CrudModal({ tab, editing, tenantId, onClose, onDone }: {
             )}
 
             {tab === 'shift' && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">
-                    Start Time <span className="text-red-500">*</span>
-                  </label>
-                  <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className={inputCls} />
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">Shift Type</label>
+                  <select
+                    value={shiftType}
+                    onChange={(e) => setShiftType(e.target.value as 'FIXED' | 'FLEXIBLE')}
+                    className={inputCls}
+                  >
+                    <option value="FIXED">Fixed Shift</option>
+                    <option value="FLEXIBLE">Flexible Shift</option>
+                  </select>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">
-                    End Time <span className="text-red-500">*</span>
-                  </label>
-                  <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={inputCls} />
-                </div>
+                {shiftType === 'FIXED' ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                        Start Time <span className="text-red-500">*</span>
+                      </label>
+                      <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className={inputCls} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                        End Time <span className="text-red-500">*</span>
+                      </label>
+                      <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={inputCls} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                        Flex Start <span className="text-red-500">*</span>
+                      </label>
+                      <input type="time" value={flexStartTime} onChange={(e) => setFlexStartTime(e.target.value)} className={inputCls} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                        Flex End <span className="text-red-500">*</span>
+                      </label>
+                      <input type="time" value={flexEndTime} onChange={(e) => setFlexEndTime(e.target.value)} className={inputCls} />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                        Required Work Hours <span className="text-red-500">*</span>
+                      </label>
+                      <input type="number" step="0.5" value={requiredWorkHours} onChange={(e) => setRequiredWorkHours(e.target.value)} placeholder="e.g. 8.5" className={inputCls} />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

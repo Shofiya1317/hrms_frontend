@@ -230,6 +230,7 @@ export interface LeavePolicyTypeConfig {
 
 export interface LeavePolicyPayload {
   name: string;
+  is_default?: boolean;
   leave_type_configs: LeavePolicyTypeConfig[];
 }
 
@@ -238,12 +239,13 @@ export interface LeavePolicyItem {
   policy_name: string;
   policy_code: string | null;
   policy_description: string | null;
+  is_default?: boolean;
   leave_types_count: number;
   is_synced: boolean;
   createdAt: string;
   leave_types: {
     leave_type_id: string;
-    leave_type: { id: string; name: string; code: string; [key: string]: any };
+    leave_type: { id: string; name: string; code: string;[key: string]: any };
     days_per_year: string;
     accrual_type: string;
     is_carry_forward: boolean;
@@ -289,16 +291,15 @@ export const createLeavePolicy = (
   { bearerToken: token, isFetchToken: !token },
 );
 
-// Update by policy name: PUT /v1/leave-policies/:name
+// Update by policy name: PATCH /v1/leave-policies/:name
 export const updateLeavePolicy = (
   name: string,
   body: Partial<LeavePolicyPayload>,
   tenantId: string,
   token?: string,
-) => put(
+) => patch(
   `/v1/leave-policies/${encodeURIComponent(name)}`,
   body,
-  undefined,
   tenantId,
   { bearerToken: token, isFetchToken: !token },
 );
@@ -313,5 +314,30 @@ export const deleteLeavePolicy = (
   undefined,
   tenantId,
   undefined,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+// ── Default Policy Mapping ─────────────────────────────────────────
+// GET /v1/employees/policy-mapping
+export const getPolicyMapping = (
+  tenantId: string,
+  token?: string,
+) => get(
+  '/v1/employees/policy-mapping',
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+// PUT /v1/employees/policy-mapping
+export const updatePolicyMapping = (
+  body: Record<string, any>,
+  tenantId: string,
+  token?: string,
+) => put(
+  '/v1/employees/policy-mapping',
+  body,
+  undefined,
+  tenantId,
   { bearerToken: token, isFetchToken: !token },
 );

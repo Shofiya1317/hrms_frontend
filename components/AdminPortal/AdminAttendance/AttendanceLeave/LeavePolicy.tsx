@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useParams } from 'next/navigation';
 import {
   Plus, Pencil, Trash2, X, AlertTriangle, Loader2, ChevronDown, ChevronUp, Search,
 } from 'lucide-react';
@@ -12,10 +13,14 @@ import {
   updateLeavePolicy,
   deleteLeavePolicy,
   getLeaveTypes,
+  getPolicyMapping,
+  updatePolicyMapping,
   LeavePolicyPayload,
   LeavePolicyTypeConfig,
   LeavePolicyItem,
 } from '@/lib/service/leave';
+import { getInviteMasterData } from '@/lib/service/employee';
+import { Sliders, CalendarDays } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────
 interface LeaveTypeOption {
@@ -39,6 +44,7 @@ const EMPTY_CONFIG: LeavePolicyTypeConfig = {
 function itemToPayload(item: LeavePolicyItem): LeavePolicyPayload {
   return {
     name: item.policy_name,
+    is_default: item.is_default || false,
     leave_type_configs: (item.leave_types ?? []).map((lt) => ({
       leave_type_id: lt.leave_type_id,
       days_per_year: parseFloat(lt.days_per_year) || 0,
@@ -66,11 +72,11 @@ function PolicyModal({
   mode, initial, leaveTypes, onClose, onSave, saving,
 }: PolicyModalProps) {
   const [form, setForm] = useState<LeavePolicyPayload>(
-    initial ? itemToPayload(initial) : { name: '', leave_type_configs: [{ ...EMPTY_CONFIG }] },
+    initial ? itemToPayload(initial) : { name: '', is_default: false, leave_type_configs: [{ ...EMPTY_CONFIG }] },
   );
 
   useEffect(() => {
-    setForm(initial ? itemToPayload(initial) : { name: '', leave_type_configs: [{ ...EMPTY_CONFIG }] });
+    setForm(initial ? itemToPayload(initial) : { name: '', is_default: false, leave_type_configs: [{ ...EMPTY_CONFIG }] });
   }, [initial, mode]);
 
   const setConfig = (index: number, field: keyof LeavePolicyTypeConfig, value: unknown) => setForm((prev) => {
@@ -112,19 +118,30 @@ function PolicyModal({
         </div>
 
         <div className="px-4 py-4 space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-600">
-              Policy name
-              {' '}
-              <span className="text-red-500">*</span>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-600">
+                Policy name
+                {' '}
+                <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={form.name}
+                onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                placeholder="e.g. Contract Leave Policy 2025"
+                className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
+              />
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.is_default || false}
+                onChange={(e) => setForm((prev) => ({ ...prev, is_default: e.target.checked }))}
+                className="w-4 h-4 text-teal-600 border-slate-300 rounded focus:ring-teal-500"
+              />
+              <span className="text-sm text-slate-700 font-medium">Set as Default Policy</span>
             </label>
-            <input
-              type="text"
-              value={form.name}
-              onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-              placeholder="e.g. Contract Leave Policy 2025"
-              className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
-            />
           </div>
 
           <div className="space-y-3">
@@ -223,9 +240,8 @@ function PolicyModal({
                       key={field}
                       type="button"
                       onClick={() => setConfig(index, field, !config[field])}
-                      className={`flex items-center justify-between gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
-                        config[field] ? 'bg-teal-50 border-teal-300 text-teal-700' : 'bg-white border-slate-200 text-slate-500'
-                      }`}
+                      className={`flex items-center justify-between gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${config[field] ? 'bg-teal-50 border-teal-300 text-teal-700' : 'bg-white border-slate-200 text-slate-500'
+                        }`}
                     >
                       <span>{field === 'is_carry_forward' ? 'Carry forward' : 'Encashable'}</span>
                       <div className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 border ${config[field] ? 'bg-teal-600 border-teal-600' : 'border-slate-300'}`}>
@@ -327,9 +343,16 @@ function PolicyCard({
   return (
     <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 flex items-center gap-2">
           <p className="text-sm font-semibold text-slate-800 truncate">{policy.policy_name}</p>
-          <p className="text-xs text-slate-400 mt-0.5">
+          {policy.is_default && (
+            <span className="px-2 py-0.5 rounded-md bg-teal-100 text-teal-700 text-[10px] font-bold uppercase tracking-wider">
+              Default
+            </span>
+          )}
+        </div>
+        <div className="flex-1 min-w-0 mt-1">
+          <p className="text-xs text-slate-400">
             {policy.leave_types_count ?? configs.length}
             {' '}
             leave type
@@ -419,6 +442,7 @@ interface LeavePolicyTabProps {
 }
 
 export default function LeavePolicyTab({ apiKey, token }: LeavePolicyTabProps) {
+  const [subTab, setSubTab] = useState<'policies' | 'mappings'>('policies');
   const [policies, setPolicies] = useState<LeavePolicyItem[]>([]);
   const [leaveTypes, setLeaveTypes] = useState<LeaveTypeOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -526,11 +550,35 @@ export default function LeavePolicyTab({ apiKey, token }: LeavePolicyTabProps) {
 
   return (
     <>
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-4 border-b border-slate-100">
-          <div>
-            <h3 className="text-lg font-bold text-slate-900">Leave policies</h3>
+      <div className="flex gap-2 mb-4 border-b border-slate-200 pb-2">
+        <button
+          onClick={() => setSubTab('policies')}
+          className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+            subTab === 'policies'
+              ? 'bg-[#0f766e] text-white shadow-sm'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-teal-600'
+          }`}
+        >
+          Leave Policies
+        </button>
+        <button
+          onClick={() => setSubTab('mappings')}
+          className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+            subTab === 'mappings'
+              ? 'bg-[#0f766e] text-white shadow-sm'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-teal-600'
+          }`}
+        >
+          Default Policy Mapping
+        </button>
+      </div>
+
+      {subTab === 'policies' ? (
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-4 border-b border-slate-100">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Leave policies</h3>
             <p className="text-xs text-slate-400 mt-0.5">
               {loading ? 'Loading…' : `${policies.length} polic${policies.length !== 1 ? 'ies' : 'y'} configured`}
             </p>
@@ -603,6 +651,9 @@ export default function LeavePolicyTab({ apiKey, token }: LeavePolicyTabProps) {
           </div>
         )}
       </div>
+      ) : (
+        <PolicyMappingView apiKey={apiKey} token={token} />
+      )}
 
       {(modal === 'create' || modal === 'edit') && (
         <PolicyModal
@@ -624,5 +675,262 @@ export default function LeavePolicyTab({ apiKey, token }: LeavePolicyTabProps) {
         />
       )}
     </>
+  );
+}
+
+// ── Default Policy Mapping View ───────────────────────────────────
+interface PolicyMappingViewProps {
+  apiKey: string;
+  token?: string;
+}
+
+function PolicyMappingView({ apiKey, token }: PolicyMappingViewProps) {
+  const { subdomain } = useParams();
+  const tenantId = (subdomain as string) || apiKey;
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [masterData, setMasterData] = useState<any>(null);
+  const [mappings, setMappings] = useState<any>({
+    full_time: { leave_policy_name: '', attendance_policy_id: '', shift_id: '', work_schedule: { monday: true, tuesday: true, wednesday: true, thursday: true, friday: true } },
+    probation: { leave_policy_name: '', attendance_policy_id: '', shift_id: '', work_schedule: { monday: true, tuesday: true, wednesday: true, thursday: true, friday: true } },
+    intern: { leave_policy_name: '', attendance_policy_id: '', shift_id: '', work_schedule: { monday: true, tuesday: true, wednesday: true, thursday: true, friday: true } },
+  });
+
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        console.log('[PolicyMapping] Fetching master data and mapping with tenantId:', { tenantId, token: token ? 'Present' : 'Missing' });
+        const [masterRes, mappingRes] = await Promise.all([
+          getInviteMasterData(tenantId, token),
+          getPolicyMapping(tenantId, token),
+        ]);
+        console.log('[PolicyMapping] Fetch results:', { masterRes, mappingRes });
+        
+        // Robust check to handle raw data vs nested Axios responses
+        const mData = masterRes?.data?.data || masterRes?.data || masterRes;
+        console.log('[PolicyMapping] Resolved master data:', mData);
+        if (mData) {
+          setMasterData(mData);
+        }
+        
+        const mapData = mappingRes?.data?.data || mappingRes?.data || mappingRes;
+        console.log('[PolicyMapping] Resolved mapping data:', mapData);
+        if (mapData) {
+          setMappings((prev: any) => ({
+            ...prev,
+            ...mapData,
+          }));
+        }
+      } catch (err) {
+        console.error('[PolicyMapping] Load error:', err);
+        toast.error('Failed to load mapping data');
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [tenantId, token]);
+
+  const handleFieldChange = (type: string, field: string, value: any) => {
+    setMappings((prev: any) => ({
+      ...prev,
+      [type]: {
+        ...prev[type],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleScheduleChange = (type: string, day: string, checked: boolean) => {
+    setMappings((prev: any) => {
+      const schedule = { ...(prev[type]?.work_schedule || {}) };
+      schedule[day] = checked;
+      return {
+        ...prev,
+        [type]: {
+          ...prev[type],
+          work_schedule: schedule
+        }
+      };
+    });
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    const t = toast.loading('Saving policy mappings...');
+    try {
+      await updatePolicyMapping(mappings, tenantId, token);
+      toast.success('Default policy mappings saved successfully', { id: t });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save mapping', { id: t });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-12 text-sm text-slate-400">
+        <Loader2 size={16} className="animate-spin" />
+        {' '}
+        Loading mappings…
+      </div>
+    );
+  }
+
+  const employmentTypes = [
+    { key: 'full_time', label: 'Full Time', color: 'border-teal-500' },
+    { key: 'probation', label: 'Probation', color: 'border-indigo-500' },
+    { key: 'intern', label: 'Intern', color: 'border-amber-500' },
+  ];
+
+  const weekdays = [
+    { key: 'monday', label: 'Mon' },
+    { key: 'tuesday', label: 'Tue' },
+    { key: 'wednesday', label: 'Wed' },
+    { key: 'thursday', label: 'Thu' },
+    { key: 'friday', label: 'Fri' },
+    { key: 'sunday', label: 'Sun' },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {employmentTypes.map(({ key, label, color }) => {
+          const typeMapping = mappings[key] || {};
+          const schedule = typeMapping.work_schedule || {};
+          const hasSaturday = !!(schedule.saturday_week_1 || schedule.saturday_week_2 || schedule.saturday_week_3 || schedule.saturday_week_4 || schedule.saturday_week_5);
+
+          return (
+            <div key={key} className={`bg-white border-t-4 ${color} border border-slate-200 rounded-xl shadow-sm p-5 space-y-4 hover:shadow-md transition-all`}>
+              <div>
+                <h4 className="text-sm font-bold text-slate-800">{label} Assignments</h4>
+                <p className="text-[11px] text-slate-400 mt-0.5">Configure automatic rules for onboarding {label.toLowerCase()} employees</p>
+              </div>
+
+              <div className="space-y-3">
+                {/* Leave Policy */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-600">Default Leave Policy</label>
+                  <select
+                    value={typeMapping.leave_policy_name || ''}
+                    onChange={(e) => handleFieldChange(key, 'leave_policy_name', e.target.value)}
+                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 bg-white transition-all"
+                  >
+                    <option value="">No default policy (Select manually)</option>
+                    {masterData?.leave_policies?.map((lp: any) => (
+                      <option key={lp.name} value={lp.name}>{lp.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Attendance Policy */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-600">Default Attendance Policy</label>
+                  <select
+                    value={typeMapping.attendance_policy_id || ''}
+                    onChange={(e) => handleFieldChange(key, 'attendance_policy_id', e.target.value)}
+                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 bg-white transition-all"
+                  >
+                    <option value="">No default policy (Select manually)</option>
+                    {masterData?.attendance_policies?.map((ap: any) => (
+                      <option key={ap.id} value={ap.id}>{ap.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Shift */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-600">Default Shift</label>
+                  <select
+                    value={typeMapping.shift_id || ''}
+                    onChange={(e) => handleFieldChange(key, 'shift_id', e.target.value)}
+                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 bg-white transition-all"
+                  >
+                    <option value="">No default shift (Select manually)</option>
+                    {masterData?.shifts?.map((sf: any) => (
+                      <option key={sf.id} value={sf.id}>{sf.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Work Schedule */}
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <CalendarDays size={13} className="text-slate-500" />
+                    Work Schedule
+                  </label>
+                  
+                  {/* Weekdays */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {weekdays.map(d => (
+                      <label key={d.key} className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer hover:text-slate-900 transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={!!schedule[d.key]}
+                          onChange={(e) => handleScheduleChange(key, d.key, e.target.checked)}
+                          className="w-3.5 h-3.5 text-teal-600 border-slate-300 rounded focus:ring-teal-500"
+                        />
+                        <span>{d.label}</span>
+                      </label>
+                    ))}
+                  </div>
+
+                  {/* Saturdays checkbox */}
+                  <div className="pt-1.5 space-y-1.5">
+                    <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={hasSaturday}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          handleScheduleChange(key, 'saturday_week_1', checked);
+                          handleScheduleChange(key, 'saturday_week_2', checked);
+                          handleScheduleChange(key, 'saturday_week_3', checked);
+                          handleScheduleChange(key, 'saturday_week_4', checked);
+                          handleScheduleChange(key, 'saturday_week_5', checked);
+                        }}
+                        className="w-3.5 h-3.5 text-teal-600 border-slate-300 rounded focus:ring-teal-500"
+                      />
+                      <span>Active on Saturdays</span>
+                    </label>
+
+                    {/* Expandable Saturday weeks list */}
+                    {hasSaturday && (
+                      <div className="ml-5 pl-2 border-l border-slate-200 grid grid-cols-2 gap-1.5 pt-0.5">
+                        {[1, 2, 3, 4, 5].map(wk => (
+                          <label key={wk} className="flex items-center gap-1.5 text-[11px] text-slate-500 cursor-pointer hover:text-slate-800 transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={!!schedule[`saturday_week_${wk}`]}
+                              onChange={(e) => handleScheduleChange(key, `saturday_week_${wk}`, e.target.checked)}
+                              className="w-3 h-3 text-teal-500 border-slate-200 rounded focus:ring-teal-400"
+                            />
+                            <span>Week {wk}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex justify-end pt-2">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-[#0f766e] hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm hover:shadow-md transition-all"
+        >
+          {saving && <Loader2 size={12} className="animate-spin" />}
+          Save Assignments
+        </button>
+      </div>
+    </div>
   );
 }

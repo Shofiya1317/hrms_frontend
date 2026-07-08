@@ -10,6 +10,9 @@ import HolidaysTab from './HolidaysTab';
 import LeaveTypesTab from './LeaveTypesTab';
 import LeavePolicyTab from './LeavePolicy';
 
+import { useApprovalCounts } from '@/lib/context/ApprovalCountsContext';
+import NotificationBadge from '@/components/NotificationBadge';
+
 const TABS = ['Requests', 'Leave Types', 'Balances', 'Holidays', 'Leave policy'] as const;
 type Tab = typeof TABS[number];
 
@@ -53,6 +56,7 @@ interface AttendanceLeaveProps {
 
 export default function AttendanceLeave({ apiKey, token }: AttendanceLeaveProps) {
   const [subTab, setSubTab] = useState<Tab>('Requests');
+  const { counts } = useApprovalCounts();
 
   return (
     <div className="min-h-screen">
@@ -65,19 +69,25 @@ export default function AttendanceLeave({ apiKey, token }: AttendanceLeaveProps)
         {/* <SummaryStrip /> */}
 
         <div className="grid grid-cols-2 sm:flex sm:gap-2 gap-2">
-          {TABS.map((t) => (
-            <button
-              key={t}
-              onClick={() => setSubTab(t)}
-              className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
-                subTab === t
-                  ? 'bg-[#0f766e] text-white shadow-sm'
-                  : 'bg-white text-slate-600 border border-slate-200 hover:border-teal-200 hover:text-teal-600'
-              }`}
-            >
-              {t}
-            </button>
-          ))}
+          {TABS.map((t) => {
+            let badgeCount = 0;
+            if (t === 'Requests' && counts) badgeCount = counts.leave;
+            
+            return (
+              <button
+                key={t}
+                onClick={() => setSubTab(t)}
+                className={`relative px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
+                  subTab === t
+                    ? 'bg-[#0f766e] text-white shadow-sm'
+                    : 'bg-white text-slate-600 border border-slate-200 hover:border-teal-200 hover:text-teal-600'
+                }`}
+              >
+                <NotificationBadge count={badgeCount} />
+                {t}
+              </button>
+            );
+          })}
         </div>
 
         {subTab === 'Requests' && <RequestsTab />}
