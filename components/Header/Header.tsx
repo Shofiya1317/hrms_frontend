@@ -25,6 +25,11 @@ import {
   Shield,
   UserRoundCheck,
   UsersRound,
+  Bell,
+  CheckCircle2,
+  XCircle,
+  Info,
+  Mail,
 } from 'lucide-react';
 import { getApprovalCounts, IApprovalCounts,} from '@/lib/service/employee';
 import Avatar from '../Avatar/Avatar';
@@ -35,6 +40,7 @@ import { useParams } from 'next/navigation';
 import { useApprovalCounts } from '@/lib/context/ApprovalCountsContext';
 import { useTeamApprovalCounts } from '@/lib/context/TeamApprovalCountsContext';
 import NotificationBadge from '@/components/NotificationBadge';
+import { useNotifications } from '@/lib/context/NotificationContext';
 
 export interface IMenuItem {
   label: string;
@@ -538,6 +544,7 @@ function Header(props: HeaderProps) {
     menuItems, pathname, profileMenu, user,
   } = props;
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [mobileView, setMobileView] = useState<
@@ -550,6 +557,9 @@ function Header(props: HeaderProps) {
   const rafId = useRef<number>(0);
   const navRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const { data: session } = useSession();
   const router = useRouter();
   const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
@@ -561,6 +571,7 @@ function Header(props: HeaderProps) {
     const handleClickOutside = (e: MouseEvent) => {
       if (navRef.current && !navRef.current.contains(e.target as Node)) { setOpenMenu(null); }
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) { setShowProfileMenu(false); }
+      if (notificationsRef.current && !notificationsRef.current.contains(e.target as Node)) { setShowNotifications(false); }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -598,61 +609,106 @@ function Header(props: HeaderProps) {
 
   const closeMobile = () => setIsMobileOpen(false);
 
+  const handleNotificationClick = async (notif: any, onCloseMobile?: () => void) => {
+    if (!notif.is_read) {
+      await markAsRead(notif.id);
+    }
+    
+    const type = notif.type;
+    let targetPath = '';
+
+    if (type === 'LEAVE_REQUEST') {
+      targetPath = '/employee/my-team?tab=leave-requests';
+    } else if (type === 'WFH_REQUEST') {
+      targetPath = '/employee/my-team?tab=wfh-requests';
+    } else if (type === 'ON_DUTY_REQUEST') {
+      targetPath = '/employee/my-team?tab=onduty-requests';
+    } else if (type === 'COMP_OFF_REQUEST') {
+      targetPath = '/employee/my-team?tab=comp-off';
+    } else if (type === 'ATTENDANCE_REGULARIZATION') {
+      targetPath = '/employee/my-team?tab=regularization';
+    } else if (type === 'RESIGNATION_SUBMITTED') {
+      targetPath = '/employee/my-team';
+    } else if (type === 'LEAVE_APPROVED' || type === 'LEAVE_REJECTED') {
+      targetPath = '/employee/attendance/apply-leave';
+    } else if (type === 'WFH_APPROVED' || type === 'WFH_REJECTED') {
+      targetPath = '/employee/attendance/wfh-request';
+    } else if (type === 'ON_DUTY_APPROVED' || type === 'ON_DUTY_REJECTED') {
+      targetPath = '/employee/attendance/on-duty';
+    } else if (type === 'COMP_OFF_APPROVED' || type === 'COMP_OFF_REJECTED') {
+      targetPath = '/employee/attendance/comp-off';
+    } else if (type === 'ATTENDANCE_REGULARIZATION_APPROVED' || type === 'ATTENDANCE_REGULARIZATION_REJECTED') {
+      targetPath = '/employee/attendance/regularization';
+    } else if (type === 'PROBATION_CONFIRMED') {
+      targetPath = '/employee/dashboard';
+    } else if (type === 'RESIGNATION_APPROVED' || type === 'RESIGNATION_REJECTED') {
+      targetPath = '/employee/attendance/resignation';
+    }
+
+    if (targetPath) {
+      router.push(targetPath);
+    }
+    setShowNotifications(false);
+    if (onCloseMobile) onCloseMobile();
+  };
+
   // Mobile Notifications View Component
-  const MobileNotificationsView = ({ onClose }: { onClose: () => void }) => (
-    <div className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+  const MobileNotificationsView = ({ onClose }: { onClose: () => void }) => {
+    return (
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+          {unreadCount > 0 && (
+            <button
+              onClick={markAllAsRead}
+              className="text-xs text-teal-600 font-medium hover:text-teal-700"
+            >
+              Mark all as read
+            </button>
+          )}
+        </div>
+
+        <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+          {notifications.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-4">No notifications yet</p>
+          ) : (
+            notifications.map((notif) => (
+              <div
+                key={notif.id}
+                onClick={() => handleNotificationClick(notif, onClose)}
+                className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                  !notif.is_read
+                    ? 'bg-teal-50/50 border-teal-100 hover:bg-teal-100/30'
+                    : 'bg-gray-50 border-gray-100 hover:bg-gray-100'
+                }`}
+              >
+                <p className="text-sm font-semibold text-gray-900 flex justify-between items-center">
+                  <span>{notif.title}</span>
+                  {!notif.is_read && <span className="w-2 h-2 bg-teal-600 rounded-full" />}
+                </p>
+                <p className="text-xs text-gray-600 mt-1">
+                  {notif.message}
+                </p>
+                <p className="text-[10px] text-gray-400 mt-2">
+                  {new Date(notif.created_at || (notif as any).createdAt).toLocaleString()}
+                </p>
+              </div>
+            ))
+          )}
+        </div>
+
         <button
-          onClick={() => router.push('/notifications')}
-          className="text-sm text-teal-600 font-medium hover:text-teal-700"
+          onClick={() => {
+            router.push('/notifications');
+            onClose();
+          }}
+          className="w-full mt-4 py-2.5 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors"
         >
-          View All
+          View All Notifications
         </button>
       </div>
-
-      {/* Quick notification preview */}
-      <div className="space-y-3">
-        <div className="p-3 bg-teal-50 rounded-lg border border-teal-100">
-          <p className="text-sm font-medium text-gray-900">
-            Leave Request Approved
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            Your annual leave request has been approved
-          </p>
-          <p className="text-xs text-teal-600 mt-2">2 hours ago</p>
-        </div>
-        <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
-          <p className="text-sm font-medium text-gray-900">
-            New Announcement
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            Company holiday schedule for December
-          </p>
-          <p className="text-xs text-gray-400 mt-2">1 day ago</p>
-        </div>
-        <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
-          <p className="text-sm font-medium text-gray-900">
-            Timesheet Reminder
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            Your timesheet for November is pending
-          </p>
-          <p className="text-xs text-gray-400 mt-2">3 days ago</p>
-        </div>
-      </div>
-
-      <button
-        onClick={() => {
-          router.push('/notifications');
-          onClose();
-        }}
-        className="w-full mt-4 py-2.5 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors"
-      >
-        View All Notifications
-      </button>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="fixed inset-x-0 top-0 p-0" style={{ zIndex: 1030 }}>
@@ -679,11 +735,12 @@ function Header(props: HeaderProps) {
               setMobileView('notifications');
             }}
           >
-            <FaRegBell size={18} />
-            {/* Optional: Unread badge */}
-            {/* <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-red-500 rounded-full text-white text-[8px] flex items-center justify-center">
-              3
-            </span> */}
+            <Bell size={18} />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-white text-[8px] flex items-center justify-center font-bold">
+                {unreadCount}
+              </span>
+            )}
           </button>
 
           {/* Hamburger button */}
@@ -930,23 +987,124 @@ function Header(props: HeaderProps) {
               </Nav>
 
               {/* Bell + avatar - Desktop view */}
-              <div className="shrink-0 items-center gap-3 hidden lg:flex">
+              <div className="shrink-0 items-center gap-3 hidden lg:flex relative" ref={notificationsRef}>
                 <button
-                  className={`hrms-header-icon-btn transition-all duration-200 relative ${isNotificationsActive
+                  className={`hrms-header-icon-btn transition-all duration-200 relative ${showNotifications || isNotificationsActive
                     ? 'bg-[#eef5f2] text-[#0f766e]'
                     : 'text-slate-500 hover:bg-slate-100 hover:text-teal-600'
                     }`}
                   type="button"
                   aria-label="Notifications"
-                  onClick={() => router.push('/notifications')}
+                  onClick={() => setShowNotifications((prev) => !prev)}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <FaRegBell size={18} />
+                  <Bell size={18} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-rose-500 rounded-full text-white text-[9px] font-bold flex items-center justify-center animate-pulse">
+                      {unreadCount}
+                    </span>
+                  )}
                 </button>
+
+                {/* Desktop Notifications Dropdown */}
+                {showNotifications && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden" style={{ zIndex: 1050, top: '44px' }}>
+                    {/* Header */}
+                    <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                      <span className="font-semibold text-slate-800 text-sm">Notifications</span>
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            markAllAsRead();
+                          }}
+                          className="text-xs text-teal-600 hover:text-teal-700 font-medium transition-colors"
+                        >
+                          Mark all as read
+                        </button>
+                      )}
+                    </div>
+
+                    {/* List */}
+                    <div className="max-h-[360px] overflow-y-auto divide-y divide-slate-50">
+                      {notifications.length === 0 ? (
+                        <div className="py-8 px-4 text-center text-slate-400 text-xs">
+                          <Bell className="mx-auto mb-2 text-slate-300" size={24} />
+                          No notifications yet
+                        </div>
+                      ) : (
+                        notifications.map((notif) => {
+                          let Icon = Bell;
+                          let iconColor = 'text-slate-500 bg-slate-50';
+
+                          if (notif.type.includes('APPROVED') || notif.type.includes('CONFIRMED')) {
+                            Icon = CheckCircle2;
+                            iconColor = 'text-emerald-500 bg-emerald-50';
+                          } else if (notif.type.includes('REJECTED')) {
+                            Icon = XCircle;
+                            iconColor = 'text-rose-500 bg-rose-50';
+                          } else if (notif.type.includes('INVITED')) {
+                            Icon = Mail;
+                            iconColor = 'text-teal-500 bg-teal-50';
+                          } else if (notif.type.includes('REQUEST') || notif.type.includes('SUBMITTED')) {
+                            Icon = Info;
+                            iconColor = 'text-amber-500 bg-amber-50';
+                          }
+
+                          return (
+                            <div
+                              key={notif.id}
+                              onClick={() => {
+                                handleNotificationClick(notif);
+                              }}
+                              className={`p-3 flex gap-3 cursor-pointer transition-colors relative text-left ${
+                                !notif.is_read ? 'bg-teal-50/30 hover:bg-teal-50/60' : 'hover:bg-slate-50'
+                              }`}
+                            >
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${iconColor}`}>
+                                <Icon size={16} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-1">
+                                  <p className="text-xs font-semibold text-slate-800 truncate">{notif.title}</p>
+                                  {!notif.is_read && (
+                                    <span className="w-1.5 h-1.5 bg-teal-600 rounded-full mt-1.5 shrink-0" />
+                                  )}
+                                </div>
+                                <p className="text-xs text-slate-500 mt-0.5 line-clamp-2 leading-normal">{notif.message}</p>
+                                <span className="text-[10px] text-slate-400 mt-1 block">
+                                  {new Date(notif.created_at || (notif as any).createdAt).toLocaleDateString(undefined, {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="px-4 py-2.5 border-t border-slate-100 text-center bg-slate-50/30">
+                      <button
+                        onClick={() => {
+                          setShowNotifications(false);
+                          router.push('/notifications');
+                        }}
+                        className="text-xs font-medium text-teal-600 hover:text-teal-700 transition-colors w-full"
+                      >
+                        View All Notifications
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div
                   role="button"

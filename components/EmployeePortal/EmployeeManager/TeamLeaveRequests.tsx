@@ -11,6 +11,7 @@ import {
   ILeaveApplication, ILeaveApprovalPayload, LeaveStatus,
 } from '@/lib/service/leaveApplication';
 import { getTeamLeaves } from '@/lib/service/employee';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 const STATUS_META: Record<LeaveStatus, { label: string; bg: string; text: string; dot: string; border: string }> = {
   [LeaveStatus.PENDING]: {
@@ -50,6 +51,7 @@ function daysBetween(from: string, to: string) {
 function ApprovalDrawer({ app, onClose, onDone }: { app: ILeaveApplication; onClose: () => void; onDone: () => void }) {
   const params = useParams();
   const subdomain = params?.subdomain as string;
+  const queryClient = useQueryClient();
   const [action, setAction] = useState<LeaveStatus>(LeaveStatus.APPROVED);
   const [reason, setReason] = useState('');
   const [saving, setSaving] = useState(false);
@@ -58,18 +60,30 @@ function ApprovalDrawer({ app, onClose, onDone }: { app: ILeaveApplication; onCl
   const days = Number(app.total_days) || daysBetween(app.from_date, app.to_date);
   const employeeName = app.employee?.name || app.employee_name || 'Employee';
 
+  const mutation = useMutation({
+    mutationFn: async (payload: ILeaveApprovalPayload) => {
+      return approveRejectLeave(app.id, payload, subdomain);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['approvalCounts'] });
+      queryClient.invalidateQueries({ queryKey: ['teamApprovalCounts'] });
+      onDone();
+    },
+    onError: (e: any) => {
+      setErr(e?.response?.data?.message || 'Something went wrong.');
+    },
+    onSettled: () => {
+      setSaving(false);
+    },
+  });
+
   const handleSubmit = async () => {
     if (action === LeaveStatus.REJECTED && !reason.trim()) { setErr('Rejection reason is required.'); return; }
     setSaving(true); setErr('');
-    try {
-      const payload: ILeaveApprovalPayload = action === LeaveStatus.REJECTED
-        ? { status: action, rejection_reason: reason }
-        : { status: action };
-      await approveRejectLeave(app.id, payload, subdomain);
-      onDone();
-    } catch (e: any) {
-      setErr(e?.response?.data?.message || 'Something went wrong.');
-    } finally { setSaving(false); }
+    const payload: ILeaveApprovalPayload = action === LeaveStatus.REJECTED
+      ? { status: action, rejection_reason: reason }
+      : { status: action };
+    mutation.mutate(payload);
   };
 
   return (

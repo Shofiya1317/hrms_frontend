@@ -1,8 +1,10 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { getApprovalCounts, IApprovalCounts } from '@/lib/service/employee';
 import { useSession } from 'next-auth/react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useUser } from '@/components/Context/userProvider';
 
 interface ApprovalCountsContextType {
   counts: IApprovalCounts | null;
@@ -15,28 +17,30 @@ const ApprovalCountsContext = createContext<ApprovalCountsContextType>({
 });
 
 export function ApprovalCountsProvider({ children }: { children: ReactNode }) {
-  const [counts, setCounts] = useState<IApprovalCounts | null>(null);
   const { data: session } = useSession();
+  const queryClient = useQueryClient();
+  const { currentUser } = useUser();
+
+  const token = (session?.user as any)?.accessToken;
+  const tenantId = (session?.user as any)?.apiKey;
+
+  const isAdmin = currentUser?.role?.toLowerCase() !== 'employee';
+
+  const { data } = useQuery({
+    queryKey: ['approvalCounts', tenantId, token],
+    queryFn: async () => {
+      if (!tenantId) return null;
+      const res = await getApprovalCounts(tenantId, token);
+      return res?.data?.data ?? res?.data ?? null;
+    },
+    enabled: !!tenantId && !!currentUser && isAdmin,
+  });
 
   const refreshCounts = () => {
-    if (!session?.user) return;
-    
-    const token = (session.user as any)?.accessToken;
-    const tenantId = (session.user as any)?.apiKey;
-    
-    if (tenantId) {
-      getApprovalCounts(tenantId, token)
-        .then((res: any) => {
-          // Adjust based on the actual API response shape
-          setCounts(res?.data?.data ?? res?.data ?? null);
-        })
-        .catch(console.error);
-    }
+    queryClient.invalidateQueries({ queryKey: ['approvalCounts'] });
   };
 
-  useEffect(() => {
-    refreshCounts();
-  }, [session]);
+  const counts = data ?? null;
 
   return (
     <ApprovalCountsContext.Provider value={{ counts, refreshCounts }}>

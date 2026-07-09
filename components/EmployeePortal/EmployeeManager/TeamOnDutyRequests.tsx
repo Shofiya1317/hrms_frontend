@@ -9,7 +9,8 @@ import {
 import {
   getTeamOnDutyApplications, approveRejectOnDuty,
   IOnDuty, OnDutyStatus, OnDutyType, IApproveRejectOnDutyPayload,
-} from '@/lib/service/onduty';
+} from '@/lib/service/onDuty';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 // ─────────────────────────────────────────────
 // Constants
@@ -86,25 +87,38 @@ function ApprovalDrawer({ req, onClose, onDone }: {
   const name = getEmployeeName(req);
   const meta = STATUS_META[req.status];
 
+  const queryClient = useQueryClient();
   const [action, setAction] = useState<OnDutyStatus.APPROVED | OnDutyStatus.REJECTED>(OnDutyStatus.APPROVED);
   const [reason, setReason] = useState('');
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
+
+  const mutation = useMutation({
+    mutationFn: async (payload: IApproveRejectOnDutyPayload) => {
+      return approveRejectOnDuty(req.id, payload, tenantId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['approvalCounts'] });
+      queryClient.invalidateQueries({ queryKey: ['teamApprovalCounts'] });
+      onDone();
+    },
+    onError: (e: any) => {
+      setErr(e?.response?.data?.message || 'Something went wrong.');
+    },
+    onSettled: () => {
+      setSaving(false);
+    },
+  });
 
   const handleSubmit = async () => {
     if (action === OnDutyStatus.REJECTED && !reason.trim()) {
       setErr('Rejection reason is required.'); return;
     }
     setSaving(true); setErr('');
-    try {
-      const payload: IApproveRejectOnDutyPayload = action === OnDutyStatus.REJECTED
-        ? { status: OnDutyStatus.REJECTED, rejection_reason: reason }
-        : { status: OnDutyStatus.APPROVED };
-      await approveRejectOnDuty(req.id, payload, tenantId);
-      onDone();
-    } catch (e: any) {
-      setErr(e?.response?.data?.message || 'Something went wrong.');
-    } finally { setSaving(false); }
+    const payload: IApproveRejectOnDutyPayload = action === OnDutyStatus.REJECTED
+      ? { status: OnDutyStatus.REJECTED, rejection_reason: reason }
+      : { status: OnDutyStatus.APPROVED };
+    mutation.mutate(payload);
   };
 
   return (

@@ -10,7 +10,7 @@ import {
   getMyOnDutyApplications, applyOnDuty, updateOnDuty, cancelOnDuty,
   IOnDuty, OnDutyStatus, OnDutyType,
   IApplyOnDutyPayload, IUpdateOnDutyPayload,
-} from '@/lib/service/onduty';
+} from '@/lib/service/onDuty';
 
 // ─────────────────────────────────────────────
 // Constants

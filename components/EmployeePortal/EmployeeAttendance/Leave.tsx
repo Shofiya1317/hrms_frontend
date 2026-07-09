@@ -21,6 +21,7 @@ import {
 } from '@/lib/service/leaveApplication';
 import { getEmployeeLeaveBalanceDetailed, EmployeeLeaveBalance } from '@/lib/service/leave';
 import { getEmployeeResignationStatus } from '@/lib/service/noticePeriod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import ConfirmModal from '@/components/common/ConfirmModal';
 
 interface LeaveTypeData {
@@ -279,20 +280,23 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
     setShowCancelModal(true);
   };
 
-  const confirmCancelLeave = async () => {
-    if (!selectedLeaveId) return;
-    
-    try {
-      setIsLoading(true);
-      const response = await cancelLeave(selectedLeaveId, apiKey, token);
-      
+  const queryClient = useQueryClient();
+
+  const cancelMutation = useMutation({
+    mutationFn: async (leaveId: string) => {
+      return cancelLeave(leaveId, apiKey, token);
+    },
+    onSuccess: (response) => {
       if (response?.data) {
         showToast(response?.data?.message || 'Leave application cancelled successfully', 'success');
         setShowCancelModal(false);
         setSelectedLeaveId('');
         fetchApplications(filterStatus);
       }
-    } catch (error: any) {
+      queryClient.invalidateQueries({ queryKey: ['approvalCounts'] });
+      queryClient.invalidateQueries({ queryKey: ['teamApprovalCounts'] });
+    },
+    onError: (error: any) => {
       console.error('Error cancelling leave:', error);
       
       let errorMsg = 'Failed to cancel leave';
@@ -310,9 +314,16 @@ export default function LeaveApplicationPage({ apiKey, token, employeeId }: Leav
       }
       
       showToast(errorMsg, 'error');
-    } finally {
+    },
+    onSettled: () => {
       setIsLoading(false);
-    }
+    },
+  });
+
+  const confirmCancelLeave = async () => {
+    if (!selectedLeaveId) return;
+    setIsLoading(true);
+    cancelMutation.mutate(selectedLeaveId);
   };
 
   const filteredApplications = applications;

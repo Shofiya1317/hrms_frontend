@@ -10,6 +10,7 @@ import {
   approveRejectWFH,
   IWFH, WFHStatus, IApproveRejectWFHPayload, getTeamWFHRequests,
 } from '@/lib/service/wfh';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 const STATUS_META: Record<WFHStatus, { label: string; bg: string; text: string; dot: string; border: string }> = {
   [WFHStatus.PENDING]: {
@@ -48,6 +49,7 @@ function fmtDate(iso: string) {
 function ApprovalDrawer({ wfh, onClose, onDone }: { wfh: IWFH; onClose: () => void; onDone: () => void }) {
   const params = useParams();
   const subdomain = params?.subdomain as string;
+  const queryClient = useQueryClient();
   const [action, setAction] = useState<WFHStatus>(WFHStatus.APPROVED);
   const [reason, setReason] = useState('');
   const [saving, setSaving] = useState(false);
@@ -55,18 +57,30 @@ function ApprovalDrawer({ wfh, onClose, onDone }: { wfh: IWFH; onClose: () => vo
   const meta = STATUS_META[wfh.status];
   const employeeName = wfh.employee?.name || 'Employee';
 
+  const mutation = useMutation({
+    mutationFn: async (payload: IApproveRejectWFHPayload) => {
+      return approveRejectWFH(wfh.id, payload, subdomain);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['approvalCounts'] });
+      queryClient.invalidateQueries({ queryKey: ['teamApprovalCounts'] });
+      onDone();
+    },
+    onError: (e: any) => {
+      setErr(e?.response?.data?.message || 'Something went wrong.');
+    },
+    onSettled: () => {
+      setSaving(false);
+    },
+  });
+
   const handleSubmit = async () => {
     if (action === WFHStatus.REJECTED && !reason.trim()) { setErr('Rejection reason is required.'); return; }
     setSaving(true); setErr('');
-    try {
-      const payload: IApproveRejectWFHPayload = action === WFHStatus.REJECTED
-        ? { status: action, rejection_reason: reason }
-        : { status: action };
-      await approveRejectWFH(wfh.id, payload, subdomain);
-      onDone();
-    } catch (e: any) {
-      setErr(e?.response?.data?.message || 'Something went wrong.');
-    } finally { setSaving(false); }
+    const payload: IApproveRejectWFHPayload = action === WFHStatus.REJECTED
+      ? { status: action, rejection_reason: reason }
+      : { status: action };
+    mutation.mutate(payload);
   };
 
   return (

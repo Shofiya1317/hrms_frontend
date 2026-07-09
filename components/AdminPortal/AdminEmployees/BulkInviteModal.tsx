@@ -107,6 +107,58 @@ async function downloadTemplate(masterData: any) {
   XLSX.writeFile(wb, 'bulk_employee_invite_template.xlsx');
 }
 
+// ── Helper to normalize Excel dates ───────────────────────────────────────────
+function normalizeDate(val: any): string {
+  if (!val) return '';
+  if (val instanceof Date) {
+    if (isNaN(val.getTime())) return '';
+    const yyyy = val.getFullYear();
+    const mm = String(val.getMonth() + 1).padStart(2, '0');
+    const dd = String(val.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  const str = String(val).trim();
+  if (!str) return '';
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    return str;
+  }
+
+  if (/^\d+(\.\d+)?$/.test(str)) {
+    const serial = parseFloat(str);
+    const date = new Date(Math.round((serial - 25569) * 86400 * 1000));
+    if (!isNaN(date.getTime())) {
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+  }
+
+  const match = str.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})$/);
+  if (match) {
+    const d = parseInt(match[1], 10);
+    const m = parseInt(match[2], 10);
+    const y = parseInt(match[3], 10);
+    if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      const mm = String(m).padStart(2, '0');
+      const dd = String(d).padStart(2, '0');
+      return `${y}-${mm}-${dd}`;
+    }
+  }
+
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime())) {
+    const yyyy = parsed.getFullYear();
+    const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+    const dd = String(parsed.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  return str;
+}
+
 // ── File parser ───────────────────────────────────────────────────────────────
 async function parseUploadedFile(file: File): Promise<ParsedRow[]> {
   const XLSX = await import('xlsx');
@@ -114,7 +166,7 @@ async function parseUploadedFile(file: File): Promise<ParsedRow[]> {
   const buffer = await file.arrayBuffer();
 
   // Support both .xlsx and .csv (from Google Sheets export)
-  const workbook = XLSX.read(buffer, { type: 'array', dateNF: 'yyyy-mm-dd' });
+  const workbook = XLSX.read(buffer, { type: 'array', cellDates: true, dateNF: 'yyyy-mm-dd' });
   const sheetName = workbook.SheetNames[0];
   const sheet = workbook.Sheets[sheetName];
 
@@ -127,21 +179,21 @@ async function parseUploadedFile(file: File): Promise<ParsedRow[]> {
     const norm: any = {};
     for (const key of Object.keys(raw)) {
       const normalKey = key.trim().toLowerCase().replace(/\s+/g, '_');
-      norm[normalKey] = typeof raw[key] === 'string' ? raw[key].trim() : String(raw[key]);
+      norm[normalKey] = raw[key];
     }
     return {
       row: idx + 2, // 1-based, +1 for header
-      email: norm.email || '',
-      first_name: norm.first_name || '',
-      last_name: norm.last_name || '',
-      department: norm.department || '',
-      designation: norm.designation || undefined,
-      employment_type: norm.employment_type || 'full_time',
-      date_of_joining: norm.date_of_joining || '',
-      reporting_manager: norm.reporting_manager || undefined,
-      gender: norm.gender || undefined,
-      personal_phone: norm.personal_phone || undefined,
-      employee_code: norm.employee_code || undefined,
+      email: norm.email ? String(norm.email).trim() : '',
+      first_name: norm.first_name ? String(norm.first_name).trim() : '',
+      last_name: norm.last_name ? String(norm.last_name).trim() : '',
+      department: norm.department ? String(norm.department).trim() : '',
+      designation: norm.designation ? String(norm.designation).trim() : undefined,
+      employment_type: norm.employment_type ? String(norm.employment_type).trim() : 'full_time',
+      date_of_joining: normalizeDate(norm.date_of_joining),
+      reporting_manager: norm.reporting_manager ? String(norm.reporting_manager).trim() : undefined,
+      gender: norm.gender ? String(norm.gender).trim() : undefined,
+      personal_phone: norm.personal_phone ? String(norm.personal_phone).trim() : undefined,
+      employee_code: norm.employee_code ? String(norm.employee_code).trim() : undefined,
     } as ParsedRow;
   });
 }

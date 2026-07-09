@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import {
   Loader2, Users, Calendar, ClipboardList, Gift, Home,
 } from 'lucide-react';
@@ -36,12 +36,20 @@ const TABS: { id: Tab; label: string; icon: any }[] = [
 
 export default function MyTeamPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const subdomain = params?.subdomain as string;
+  const queryTab = searchParams.get('tab') as Tab;
 
   const [activeTab, setActiveTab] = useState<Tab>('leave-requests');
   const [team, setTeam] = useState<ITeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const { teamCounts } = useTeamApprovalCounts();
+
+  useEffect(() => {
+    if (queryTab && TABS.some((t) => t.id === queryTab)) {
+      setActiveTab(queryTab);
+    }
+  }, [queryTab]);
 
   useEffect(() => {
     if (subdomain) fetchTeam();

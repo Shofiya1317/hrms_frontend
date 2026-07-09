@@ -14,6 +14,7 @@ import {
   IApproveRejectCompOffPayload,
   CompOffStatus,
 } from '@/lib/service/compOff';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 // ─────────────────────────────────────────────
 // Constants
@@ -100,6 +101,7 @@ function ApprovalDrawer({
   const tenantId = params?.subdomain as string;
   const name = getEmployeeName(item);
 
+  const queryClient = useQueryClient();
   const [action, setAction] = useState<'approved' | 'rejected'>('approved');
   const [reason, setReason] = useState('');
   const [saving, setSaving] = useState(false);
@@ -107,22 +109,32 @@ function ApprovalDrawer({
 
   const meta = STATUS_META[item.status] ?? STATUS_META[CompOffStatus.PENDING];
 
+  const mutation = useMutation({
+    mutationFn: async (payload: IApproveRejectCompOffPayload) => {
+      return approveRejectCompOff(item.id, payload, tenantId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['approvalCounts'] });
+      queryClient.invalidateQueries({ queryKey: ['teamApprovalCounts'] });
+      onDone();
+    },
+    onError: (e: any) => {
+      setErr(e?.response?.data?.message || 'Something went wrong.');
+    },
+    onSettled: () => {
+      setSaving(false);
+    },
+  });
+
   const handleSubmit = async () => {
     if (action === 'rejected' && !reason.trim()) {
       setErr('Rejection reason is required.'); return;
     }
     setSaving(true); setErr('');
-    try {
-      const payload: IApproveRejectCompOffPayload = action === 'rejected'
-        ? { status: 'rejected', rejection_reason: reason }
-        : { status: 'approved' };
-      await approveRejectCompOff(item.id, payload, tenantId);
-      onDone();
-    } catch (e: any) {
-      setErr(e?.response?.data?.message || 'Something went wrong.');
-    } finally {
-      setSaving(false);
-    }
+    const payload: IApproveRejectCompOffPayload = action === 'rejected'
+      ? { status: 'rejected', rejection_reason: reason }
+      : { status: 'approved' };
+    mutation.mutate(payload);
   };
 
   return (
