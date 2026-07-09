@@ -80,6 +80,7 @@ export const convertIntern = (
   post<{ success: boolean; message: string; data: any }>(
     `/v1/employees/intern/${employeeId}/convert`,
     payload,
+    undefined,
     tenantId,
     { bearerToken: token, isFetchToken: !token },
   );
@@ -93,6 +94,7 @@ export const extendInternship = (
   post<{ success: boolean; message: string; data: any }>(
     `/v1/employees/intern/${employeeId}/extend`,
     payload,
+    undefined,
     tenantId,
     { bearerToken: token, isFetchToken: !token },
   );
@@ -106,6 +108,7 @@ export const terminateInternship = (
   post<{ success: boolean; message: string; data: any }>(
     `/v1/employees/intern/${employeeId}/terminate`,
     payload,
+    undefined,
     tenantId,
     { bearerToken: token, isFetchToken: !token },
   );

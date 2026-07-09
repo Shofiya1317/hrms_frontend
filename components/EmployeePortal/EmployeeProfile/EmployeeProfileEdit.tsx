@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   User, Phone, MapPin, AlertCircle,
-  CheckCircle2, Loader2, Crosshair, Briefcase,
+  CheckCircle2, Loader2, Crosshair, Briefcase, XCircle,
 } from 'lucide-react';
 import {
   getEmployeeMe, updateEmployeeSelf, UpdateEmployeeSelfDto,
@@ -78,13 +78,19 @@ const buildFormFromEmployee = (employee: any): UpdateEmployeeSelfDto => ({
   emergency_contact_name: employee?.emergency_contact_name ?? '',
   emergency_contact_phone: employee?.emergency_contact_phone ?? '',
   emergency_contact_relation: employee?.emergency_contact_relation ?? '',
-  home_latitude: employee?.home_latitude ? Number(employee.home_latitude) : null,
-  home_longitude: employee?.home_longitude ? Number(employee.home_longitude) : null,
+  // NOTE: home_latitude / home_longitude are intentionally NOT pre-filled here.
+  // They are only injected into the payload when the employee explicitly clicks
+  // "Capture My Home Location", tracked by the locationCaptured state flag.
 });
 
 export default function EmployeeProfileEdit({ employee, token, slug }: EmployeeProfileEditProps) {
   const [employeeData, setEmployeeData] = useState<any>(employee ?? null);
   const [form, setForm] = useState<UpdateEmployeeSelfDto>(buildFormFromEmployee(employee));
+
+  // Tracks whether the employee clicked "Capture" in this session.
+  // Only when true will home_latitude/home_longitude be appended to the PATCH payload.
+  const [locationCaptured, setLocationCaptured] = useState(false);
+  const [capturedCoords, setCapturedCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -96,21 +102,26 @@ export default function EmployeeProfileEdit({ employee, token, slug }: EmployeeP
   };
 
   const captureHomeLocation = () => {
+    if (employeeData?.location_status === 'pending') {
+      showToast('You already have a pending location request awaiting approval.', 'error');
+      return;
+    }
     if (!navigator.geolocation) {
       showToast('Geolocation is not supported by your browser', 'error');
       return;
     }
-    
+
     setToast({ msg: 'Capturing location...', type: 'success' });
-    
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setForm((prev) => ({
-          ...prev,
-          home_latitude: position.coords.latitude,
-          home_longitude: position.coords.longitude,
-        }));
-        showToast('Home location captured! Click Save Changes.', 'success');
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        // Store captured coords separately — do NOT put them in `form`.
+        // They will only be sent in the PATCH when the employee explicitly saves.
+        setCapturedCoords({ lat, lng });
+        setLocationCaptured(true);
+        showToast('Home location captured! Click Save Changes to submit.', 'success');
       },
       (error) => {
         console.error('Error getting location', error);
@@ -159,16 +170,31 @@ export default function EmployeeProfileEdit({ employee, token, slug }: EmployeeP
         Object.entries(form).filter(([, v]) => v !== ''),
       ) as UpdateEmployeeSelfDto;
 
+      // Only include coordinates if the employee explicitly clicked Capture this session.
+      if (locationCaptured && capturedCoords) {
+        payload.home_latitude = capturedCoords.lat;
+        payload.home_longitude = capturedCoords.lng;
+      }
+
       const res = await updateEmployeeSelf(payload, slug, token);
 
-      // Reflect the freshly saved values back into the form/identity strip
-      const updated = res?.data?.data ?? { ...employeeData, ...payload };
-      setEmployeeData(updated);
-      setForm(buildFormFromEmployee(updated));
+      showToast(res?.data?.message || 'Profile updated successfully', 'success');
 
-      showToast('Profile updated successfully', 'success');
-    } catch {
-      showToast('Failed to update profile. Please try again.', 'error');
+      // Reset capture state regardless of outcome.
+      setLocationCaptured(false);
+      setCapturedCoords(null);
+
+      // Always re-fetch the latest employee data from the server so that
+      // fields like location_status, pending_latitude etc. are fresh.
+      const freshRes = await getEmployeeMe(slug, token);
+      const fresh = freshRes?.data?.data ?? null;
+      if (fresh) {
+        setEmployeeData(fresh);
+        setForm(buildFormFromEmployee(fresh));
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to update profile. Please try again.';
+      showToast(msg, 'error');
     } finally {
       setSaving(false);
     }
@@ -189,7 +215,7 @@ export default function EmployeeProfileEdit({ employee, token, slug }: EmployeeP
     <div className="min-h-screen">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="fixed top-[50px] left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
           <div className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-semibold shadow-lg border ${toast.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-red-50 border-red-200 text-red-600'}`}>
             {toast.type === 'success' ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
             {toast.msg}
@@ -197,140 +223,169 @@ export default function EmployeeProfileEdit({ employee, token, slug }: EmployeeP
         </div>
       )}
 
-    
-        {/* Header */}
-      
 
-        {/* Read-only identity strip */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-5 mb-4 flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
-            {employeeData?.profile_photo_url
-              ? <img src={employeeData.profile_photo_url} alt="avatar" className="w-14 h-14 rounded-2xl object-cover" />
-              : <User size={24} className="text-emerald-500" />}
-          </div>
-          <div>
-            <p className="text-base font-bold text-slate-900">
-              {employeeData?.first_name}
-              {' '}
-              {employeeData?.last_name}
-            </p>
-            <p className="text-xs text-slate-500">{employeeData?.work_email}</p>
-            <p className="text-xs text-slate-400 mt-0.5">
-              {employeeData?.designation?.name ?? ''}
-              {employeeData?.department?.name ? ` · ${employeeData.department.name}` : ''}
-            </p>
-          </div>
+      {/* Header */}
+
+
+      {/* Read-only identity strip */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-5 mb-4 flex items-center gap-4">
+        <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+          {employeeData?.profile_photo_url
+            ? <img src={employeeData.profile_photo_url} alt="avatar" className="w-14 h-14 rounded-2xl object-cover" />
+            : <User size={24} className="text-emerald-500" />}
         </div>
+        <div>
+          <p className="text-base font-bold text-slate-900">
+            {employeeData?.first_name}
+            {' '}
+            {employeeData?.last_name}
+          </p>
+          <p className="text-xs text-slate-500">{employeeData?.work_email}</p>
+          <p className="text-xs text-slate-400 mt-0.5">
+            {employeeData?.designation?.name ?? ''}
+            {employeeData?.department?.name ? ` · ${employeeData.department.name}` : ''}
+          </p>
+        </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {/* Basic Information */}
-          <Section title="Basic Information" icon={<User size={15} />}>
-            <Field label="First Name" name="first_name" value={form.first_name ?? ''} onChange={handleChange} placeholder="John" />
-            <Field label="Middle Name" name="middle_name" value={form.middle_name ?? ''} onChange={handleChange} placeholder="M" />
-            <Field label="Last Name" name="last_name" value={form.last_name ?? ''} onChange={handleChange} placeholder="Doe" />
-          </Section>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {/* Basic Information */}
+        <Section title="Basic Information" icon={<User size={15} />}>
+          <Field label="First Name" name="first_name" value={form.first_name ?? ''} onChange={handleChange} placeholder="John" />
+          <Field label="Middle Name" name="middle_name" value={form.middle_name ?? ''} onChange={handleChange} placeholder="M" />
+          <Field label="Last Name" name="last_name" value={form.last_name ?? ''} onChange={handleChange} placeholder="Doe" />
+        </Section>
 
-          {/* Contact */}
-          <Section title="Contact Information" icon={<Phone size={15} />}>
-            <Field label="Personal Email" name="personal_email" type="email" value={form.personal_email ?? ''} onChange={handleChange} />
-            <Field label="Personal Phone" name="personal_phone" value={form.personal_phone ?? ''} onChange={handleChange} placeholder="+91 9876543210" />
-            <Field label="Blood Group" name="blood_group" value={form.blood_group ?? ''} onChange={handleChange} placeholder="e.g. O+" />
-            {/* <Field label="Profile Photo URL" name="profile_photo_url" value={form.profile_photo_url ?? ''} onChange={handleChange} placeholder="https://..." /> */}
-          </Section>
+        {/* Contact */}
+        <Section title="Contact Information" icon={<Phone size={15} />}>
+          <Field label="Personal Email" name="personal_email" type="email" value={form.personal_email ?? ''} onChange={handleChange} />
+          <Field label="Personal Phone" name="personal_phone" value={form.personal_phone ?? ''} onChange={handleChange} placeholder="+91 9876543210" />
+          <Field label="Blood Group" name="blood_group" value={form.blood_group ?? ''} onChange={handleChange} placeholder="e.g. O+" />
+          {/* <Field label="Profile Photo URL" name="profile_photo_url" value={form.profile_photo_url ?? ''} onChange={handleChange} placeholder="https://..." /> */}
+        </Section>
 
-          {/* Address */}
-          <Section title="Address" icon={<MapPin size={15} />}>
-            <div className="sm:col-span-2">
-              <Field label="Current Address" name="current_address" value={form.current_address ?? ''} onChange={handleChange} placeholder="123 Main Street" />
-            </div>
-            <div className="sm:col-span-2">
-              <Field label="Permanent Address" name="permanent_address" value={form.permanent_address ?? ''} onChange={handleChange} placeholder="456 Home Town" />
-            </div>
-            <Field label="City" name="city" value={form.city ?? ''} onChange={handleChange} placeholder="Bangalore" />
-            <Field label="State" name="state" value={form.state ?? ''} onChange={handleChange} placeholder="Karnataka" />
-            <Field label="Pincode" name="pincode" value={form.pincode ?? ''} onChange={handleChange} placeholder="560001" />
-            <Field label="Country" name="country" value={form.country ?? ''} onChange={handleChange} placeholder="India" />
-          </Section>
-
-          {/* Geofencing */}
-          <Section title="Remote Work & Geofencing" icon={<Crosshair size={15} />}>
-            <div className="sm:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h4 className="text-sm font-bold text-slate-800">Home Location</h4>
-                <p className="text-xs text-slate-500 mt-1">
-                  Capture your home coordinates if you are permitted to work from home. This allows you to check in successfully.
-                </p>
-                {form.home_latitude && form.home_longitude ? (
-                  <p className="text-xs font-semibold text-emerald-600 mt-2 flex items-center gap-1">
-                    <CheckCircle2 size={12} />
-                    Current: {Number(form.home_latitude).toFixed(6)}, {Number(form.home_longitude).toFixed(6)}
-                  </p>
-                ) : (
-                  <p className="text-xs font-medium text-amber-600 mt-2 flex items-center gap-1">
-                    <AlertCircle size={12} />
-                    Not set
-                  </p>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={captureHomeLocation}
-                className="flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
-              >
-                <Crosshair size={14} className="text-emerald-500" />
-                Capture My Home Location
-              </button>
-            </div>
-          </Section>
-
-          {/* Employment Info - Read Only */}
-          {(employeeData?.department?.name || employeeData?.designation?.name || employeeData?.date_of_joining || employeeData?.employment_type) && (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 sm:p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600">
-                  <Briefcase size={15} />
-                </div>
-                <h3 className="text-sm font-bold text-slate-800">Employment Information</h3>
-                <span className="ml-auto text-xs text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full">Read-only</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {[
-                  { label: 'Department', value: employeeData?.department?.name },
-                  { label: 'Designation', value: employeeData?.designation?.name },
-                  { label: 'Employment Type', value: employeeData?.employment_type },
-                  { label: 'Date of Joining', value: employeeData?.date_of_joining ? new Date(employeeData.date_of_joining).toLocaleDateString() : null },
-                  { label: 'Reporting Manager', value: employeeData?.reporting_manager?.name || employeeData?.reporting_manager_name },
-                  { label: 'Work Email', value: employeeData?.work_email },
-                ].filter(f => f.value).map(({ label, value }) => (
-                  <div key={label} className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{label}</span>
-                    <span className="text-sm text-slate-700 bg-slate-50 border border-slate-100 rounded-xl px-3.5 py-2.5">{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Emergency Contact */}
-          <Section title="Emergency Contact" icon={<AlertCircle size={15} />}>
-            <Field label="Name" name="emergency_contact_name" value={form.emergency_contact_name ?? ''} onChange={handleChange} placeholder="Jane Doe" />
-            <Field label="Phone" name="emergency_contact_phone" value={form.emergency_contact_phone ?? ''} onChange={handleChange} placeholder="+91 9876543211" />
-            <Field label="Relation" name="emergency_contact_relation" value={form.emergency_contact_relation ?? ''} onChange={handleChange} placeholder="Spouse" />
-          </Section>
-
-          {/* Submit */}
-          <div className="flex justify-end pb-6">
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex items-center gap-2 px-6 py-2.5 bg-[#0f766e] text-white text-sm font-bold rounded-xl shadow-[0_4px_14px_rgba(16,185,129,0.35)] transition-all active:scale-95 disabled:opacity-60"
-            >
-              {saving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-              Save Changes
-            </button>
+        {/* Address */}
+        <Section title="Address" icon={<MapPin size={15} />}>
+          <div className="sm:col-span-2">
+            <Field label="Current Address" name="current_address" value={form.current_address ?? ''} onChange={handleChange} placeholder="123 Main Street" />
           </div>
-        </form>
-      
+          <div className="sm:col-span-2">
+            <Field label="Permanent Address" name="permanent_address" value={form.permanent_address ?? ''} onChange={handleChange} placeholder="456 Home Town" />
+          </div>
+          <Field label="City" name="city" value={form.city ?? ''} onChange={handleChange} placeholder="Bangalore" />
+          <Field label="State" name="state" value={form.state ?? ''} onChange={handleChange} placeholder="Karnataka" />
+          <Field label="Pincode" name="pincode" value={form.pincode ?? ''} onChange={handleChange} placeholder="560001" />
+          <Field label="Country" name="country" value={form.country ?? ''} onChange={handleChange} placeholder="India" />
+        </Section>
+
+        {/* Geofencing */}
+        <Section title="Remote Work & Geofencing" icon={<Crosshair size={15} />}>
+          <div className="sm:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h4 className="text-sm font-bold text-slate-800">Home Location</h4>
+              <p className="text-xs text-slate-500 mt-1">
+                Capture your home coordinates if you are permitted to work from home. This allows you to check in successfully.
+              </p>
+              {form.home_latitude && form.home_longitude ? (
+                <p className="text-xs font-semibold text-emerald-600 mt-2 flex items-center gap-1">
+                  <CheckCircle2 size={12} />
+                  Current Approved: {Number(form.home_latitude).toFixed(6)}, {Number(form.home_longitude).toFixed(6)}
+                </p>
+              ) : (
+                <p className="text-xs font-medium text-amber-600 mt-2 flex items-center gap-1">
+                  <AlertCircle size={12} />
+                  Not set
+                </p>
+              )}
+              {employeeData?.location_status === 'pending' && employeeData?.pending_latitude && employeeData?.pending_longitude && (
+                <div className="mt-2.5 p-2 bg-amber-50 border border-amber-100 rounded-lg text-amber-800 text-[11px] flex flex-col gap-0.5">
+                  <span className="font-bold flex items-center gap-1">
+                    <Loader2 size={11} className="animate-spin text-amber-600" />
+                    Pending Admin Approval
+                  </span>
+                  <span className="text-slate-600">
+                    Requested: {Number(employeeData.pending_latitude).toFixed(6)}, {Number(employeeData.pending_longitude).toFixed(6)}
+                  </span>
+                </div>
+              )}
+              {employeeData?.location_status === 'rejected' && (
+                <p className="text-[10px] text-red-600 font-semibold mt-1.5 flex items-center gap-1">
+                  <XCircle size={11} />
+                  Last location update request was rejected. You can capture and save again.
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={captureHomeLocation}
+              disabled={employeeData?.location_status === 'pending' || locationCaptured}
+              className="flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-55 disabled:cursor-not-allowed"
+            >
+              <Crosshair size={14} className="text-emerald-500" />
+              {locationCaptured ? 'Location Captured' : 'Capture My Home Location'}
+            </button>
+            {locationCaptured && capturedCoords && (
+              <div className="mt-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-[11px] flex flex-col gap-0.5">
+                <span className="font-bold flex items-center gap-1">
+                  <CheckCircle2 size={11} className="text-emerald-600" />
+                  New location ready — will be submitted on Save
+                </span>
+                <span className="text-slate-500">
+                  {capturedCoords.lat.toFixed(6)}, {capturedCoords.lng.toFixed(6)}
+                </span>
+              </div>
+            )}
+          </div>
+        </Section>
+
+        {/* Employment Info - Read Only */}
+        {(employeeData?.department?.name || employeeData?.designation?.name || employeeData?.date_of_joining || employeeData?.employment_type) && (
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 sm:p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600">
+                <Briefcase size={15} />
+              </div>
+              <h3 className="text-sm font-bold text-slate-800">Employment Information</h3>
+              <span className="ml-auto text-xs text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full">Read-only</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[
+                { label: 'Department', value: employeeData?.department?.name },
+                { label: 'Designation', value: employeeData?.designation?.name },
+                { label: 'Employment Type', value: employeeData?.employment_type },
+                { label: 'Date of Joining', value: employeeData?.date_of_joining ? new Date(employeeData.date_of_joining).toLocaleDateString() : null },
+                { label: 'Reporting Manager', value: employeeData?.reporting_manager?.name || employeeData?.reporting_manager_name },
+                { label: 'Work Email', value: employeeData?.work_email },
+              ].filter(f => f.value).map(({ label, value }) => (
+                <div key={label} className="flex flex-col gap-1">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{label}</span>
+                  <span className="text-sm text-slate-700 bg-slate-50 border border-slate-100 rounded-xl px-3.5 py-2.5">{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Emergency Contact */}
+        <Section title="Emergency Contact" icon={<AlertCircle size={15} />}>
+          <Field label="Name" name="emergency_contact_name" value={form.emergency_contact_name ?? ''} onChange={handleChange} placeholder="Jane Doe" />
+          <Field label="Phone" name="emergency_contact_phone" value={form.emergency_contact_phone ?? ''} onChange={handleChange} placeholder="+91 9876543211" />
+          <Field label="Relation" name="emergency_contact_relation" value={form.emergency_contact_relation ?? ''} onChange={handleChange} placeholder="Spouse" />
+        </Section>
+
+        {/* Submit */}
+        <div className="flex justify-end pb-6">
+          <button
+            type="submit"
+            disabled={saving}
+            className="flex items-center gap-2 px-6 py-2.5 bg-[#0f766e] text-white text-sm font-bold rounded-xl shadow-[0_4px_14px_rgba(16,185,129,0.35)] transition-all active:scale-95 disabled:opacity-60"
+          >
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+            Save Changes
+          </button>
+        </div>
+      </form>
+
     </div>
   );
 }

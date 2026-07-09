@@ -106,3 +106,40 @@ export const getDepartmentStats = (
   tenantId,
   { bearerToken: token, isFetchToken: !token },
 );
+
+// ─── Live Checked-in Employee Locations ──────────────────────────────────────
+
+export interface ILiveLocation {
+  id: string;
+  employee: {
+    id: string;
+    name: string;
+    employee_code: string | null;
+    profile_photo_url: string | null;
+    department_name: string | null;
+    designation_name: string | null;
+  };
+  check_in_time: string;
+  latitude: number;
+  longitude: number;
+  work_location: 'Office' | 'WFH';
+}
+
+export interface ILiveLocationsResponse {
+  locations: ILiveLocation[];
+  office_location: {
+    latitude: number;
+    longitude: number;
+    name: string;
+  } | null;
+}
+
+export const getLiveLocations = (
+  tenantId: string,
+  token?: string,
+) => get<{ success: boolean; data: ILiveLocationsResponse }>(
+  '/v1/attendance/dashboard/live-locations',
+  undefined,
+  tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);

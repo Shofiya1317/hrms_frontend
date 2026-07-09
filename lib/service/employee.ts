@@ -29,6 +29,7 @@ export interface IApprovalCounts {
   wfh: number;
   onduty: number;
   resignation: number;
+  locationRequests: number;
 }
 
 export const getApprovalCounts = (tenantId: string, token?: string) =>
@@ -95,6 +96,9 @@ export interface UpdateEmployeeDto {
   exit_reason?: string;
   home_latitude?: number | null;
   home_longitude?: number | null;
+  pending_latitude?: number | null;
+  pending_longitude?: number | null;
+  location_status?: string | null;
 }
 
 export const createEmployee = (
@@ -367,5 +371,39 @@ export const getProbationStatus = (
   '/v1/employees/me/probation-status',
   undefined,
   tenantId,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const getPendingLocations = (
+  slug: string,
+  token?: string,
+) => get<any>(
+  '/v1/employees/location/pending',
+  undefined,
+  slug,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const approveLocation = (
+  id: string,
+  slug: string,
+  token?: string,
+) => post<any>(
+  `/v1/employees/location/${id}/approve`,
+  {},
+  undefined,
+  slug,
+  { bearerToken: token, isFetchToken: !token },
+);
+
+export const rejectLocation = (
+  id: string,
+  slug: string,
+  token?: string,
+) => post<any>(
+  `/v1/employees/location/${id}/reject`,
+  {},
+  undefined,
+  slug,
   { bearerToken: token, isFetchToken: !token },
 );

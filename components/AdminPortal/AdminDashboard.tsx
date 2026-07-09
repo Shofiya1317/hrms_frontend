@@ -22,6 +22,7 @@ import {
   Zap,
   Home,
   LogIn,
+  Map as MapIcon,
 } from 'lucide-react';
 import {
   BarChart,
@@ -36,11 +37,14 @@ import {
   getAdminStats,
   getAdminWeeklyChart,
   getDepartmentStats,
+  getLiveLocations,
   IAdminStats,
   IAdminWeeklyChart,
   IDepartmentStatsResponse,
   IWeeklyChartDay,
+  ILiveLocation,
 } from '../../lib/service/adminDashboard';
+import LiveLocationMap from './LiveLocationMap';
 
 /* ── Custom chart tooltip ── */
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -155,6 +159,8 @@ export default function AdminDashboard() {
   const [adminStats, setAdminStats] = useState<IAdminStats | null>(null);
   const [weeklyChart, setWeeklyChart] = useState<IAdminWeeklyChart | null>(null);
   const [deptStats, setDeptStats] = useState<IDepartmentStatsResponse | null>(null);
+  const [liveLocations, setLiveLocations] = useState<ILiveLocation[]>([]);
+  const [officeLocation, setOfficeLocation] = useState<{ latitude: number; longitude: number; name: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -162,15 +168,25 @@ export default function AdminDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const [statsRes, chartRes, deptRes] = await Promise.all([
+      const [statsRes, chartRes, deptRes, liveLocationsRes] = await Promise.all([
         getAdminStats(subdomain),
         getAdminWeeklyChart(subdomain),
         getDepartmentStats(subdomain, { mode: 'today' }),
+        getLiveLocations(subdomain).catch((err) => {
+          console.error('Error fetching live employee locations:', err);
+          return null;
+        }),
       ]);
 
       setAdminStats(statsRes?.data?.data ?? statsRes?.data ?? null);
       setWeeklyChart(chartRes?.data?.data ?? chartRes?.data ?? null);
       setDeptStats(deptRes?.data?.data ?? deptRes?.data ?? null);
+
+      const liveData = liveLocationsRes?.data?.data;
+      if (liveData) {
+        setLiveLocations(liveData.locations || []);
+        setOfficeLocation(liveData.office_location || null);
+      }
     } catch (err: any) {
       setError(err?.message ?? 'Failed to load dashboard data');
     } finally {
@@ -654,6 +670,20 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* ── Live Employee Locations Map ── */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm mt-3">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-sm sm:text-[15px] font-bold text-slate-900 leading-tight">Live Employee Locations</p>
+            <p className="text-xs text-slate-400 mt-0.5 font-medium">Currently checked-in employee GPS coordinates</p>
+          </div>
+          <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center flex-shrink-0">
+            <MapIcon size={15} className="text-teal-600" />
+          </div>
+        </div>
+        <LiveLocationMap locations={liveLocations} officeLocation={officeLocation} />
       </div>
 
       {/* ── Quick Actions ── */}

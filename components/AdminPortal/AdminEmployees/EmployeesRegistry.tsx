@@ -31,6 +31,7 @@ import {
   GraduationCap,
   ShieldCheck,
   Upload,
+  // MapPin,
 } from 'lucide-react';
 import AddEmployeeModal from '@/components/AdminPortal/AdminEmployees/AddEmployeeModal';
 import BulkInviteModal from '@/components/AdminPortal/AdminEmployees/BulkInviteModal';
@@ -41,6 +42,7 @@ import { useParams } from 'next/navigation';
 import ProbationTracker from './ProbationTracker';
 import InternTracker from './InternTracker';
 import NoticePeriodTracker from './NoticePeriodTracker';
+import LocationApprovalsTracker from './LocationApprovalsTracker';
 import { useApprovalCounts } from '@/lib/context/ApprovalCountsContext';
 import NotificationBadge from '@/components/NotificationBadge';
 
@@ -435,7 +437,7 @@ export default function EmployeesRegistry() {
   const params = useParams();
   const subdomain = params?.subdomain as string;
 
-  const [activeTab, setActiveTab] = useState<'registry' | 'probation' | 'notice-period' | 'intern'>(
+  const [activeTab, setActiveTab] = useState<'registry' | 'probation' | 'notice-period' | 'intern' | 'location-approvals'>(
     'registry'
   );
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -740,6 +742,20 @@ export default function EmployeesRegistry() {
                 Notice Period
               </div>
             </button>
+            <button
+              onClick={() => setActiveTab('location-approvals')}
+              className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${
+                activeTab === 'location-approvals'
+                  ? 'border-[#0f766e] text-[#0f766e]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <div className="flex items-center gap-2 relative">
+                <NotificationBadge count={counts?.locationRequests} />
+                <MapPin size={16} />
+                Location Approvals
+              </div>
+            </button>
           </div>
         </div>
 
@@ -750,6 +766,8 @@ export default function EmployeesRegistry() {
           <InternTracker />
         ) : activeTab === 'notice-period' ? (
           <NoticePeriodTracker />
+        ) : activeTab === 'location-approvals' ? (
+          <LocationApprovalsTracker />
         ) : (
           <>
             {/* Stats Cards */}
